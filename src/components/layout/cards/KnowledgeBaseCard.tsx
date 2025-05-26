@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowRight, Database, Download, FileText } from 'lucide-react';
+import { BookOpen, ArrowRight, Database, Download, FileText, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserKnowledgeFiles } from '@/hooks/useUserKnowledgeFiles';
 import { useSystemKnowledge } from '@/hooks/useSystemKnowledge';
@@ -27,10 +27,13 @@ export function KnowledgeBaseCard() {
             <BookOpen className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <CardTitle className="text-lg">3-Tier Knowledge Base</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              3-Tier Knowledge Base
+              <Zap className="h-4 w-4 text-yellow-500" />
+            </CardTitle>
             <CardDescription>
               {totalCount > 0 
-                ? `${totalCount} total knowledge items across all tiers`
+                ? `${totalCount} total items • AI-integrated with CLIPOGINO`
                 : 'Advanced AI-integrated knowledge management system'
               }
             </CardDescription>
@@ -65,9 +68,15 @@ export function KnowledgeBaseCard() {
           
           <div className="text-sm text-muted-foreground">
             {totalCount > 0 ? (
-              'Intelligent knowledge retrieval ready for CLIPOGINO integration'
+              <>
+                <div className="flex items-center gap-1 text-green-600 font-medium mb-1">
+                  <Zap className="h-3 w-3" />
+                  CLIPOGINO Integration Active
+                </div>
+                Smart context retrieval and AI-powered recommendations during conversations
+              </>
             ) : (
-              'Personal files, system frameworks, and downloadable resources in one place'
+              'Personal files, system frameworks, and downloadable resources with AI integration'
             )}
           </div>
           

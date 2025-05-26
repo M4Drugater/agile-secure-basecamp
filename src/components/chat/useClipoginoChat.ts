@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +5,7 @@ import { useCostMonitoring } from '@/hooks/useCostMonitoring';
 import { useToast } from '@/hooks/use-toast';
 import { useChatHistory } from './useChatHistory';
 import { useProfileContext } from '@/hooks/useProfileContext';
+import { useKnowledgeContext } from '@/hooks/useKnowledgeContext';
 import { ChatMessage, ChatResponse } from './types';
 
 export function useClipoginoChat() {
@@ -14,10 +14,12 @@ export function useClipoginoChat() {
   const { checkBeforeAction, refreshUsage } = useCostMonitoring();
   const { saveMessage, currentConversationId, loadConversationMessages } = useChatHistory();
   const profileContext = useProfileContext();
+  const { buildKnowledgeContext, getKnowledgeRecommendations } = useKnowledgeContext();
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<'gpt-4o-mini' | 'gpt-4o'>('gpt-4o-mini');
+  const [knowledgeRecommendations, setKnowledgeRecommendations] = useState<any[]>([]);
 
   // Load conversation when conversation ID changes
   useEffect(() => {
@@ -62,17 +64,33 @@ export function useClipoginoChat() {
       // Save user message to database
       const conversationId = await saveMessage(userMessage, currentConversationId);
       
-      console.log('Sending message to CLIPOGINO with profile context:', {
+      // Build knowledge context from all three tiers
+      const knowledgeContext = await buildKnowledgeContext(userMessage.content);
+      
+      // Get knowledge recommendations for the sidebar
+      const recommendations = await getKnowledgeRecommendations(userMessage.content);
+      setKnowledgeRecommendations(recommendations);
+      
+      // Combine profile context with knowledge context
+      let fullContext = profileContext?.fullContext || '';
+      if (knowledgeContext) {
+        fullContext += knowledgeContext;
+      }
+      
+      console.log('Sending message to CLIPOGINO with enhanced context:', {
         messageLength: userMessage.content.length,
         historyLength: messages.length,
         hasProfileContext: !!profileContext,
+        hasKnowledgeContext: !!knowledgeContext,
+        knowledgeContextLength: knowledgeContext.length,
+        recommendationsCount: recommendations.length,
         model: selectedModel
       });
 
       const { data, error } = await supabase.functions.invoke('clipogino-chat', {
         body: {
           message: userMessage.content,
-          context: profileContext?.fullContext,
+          context: fullContext,
           conversationHistory: messages.slice(-10), // Send last 10 messages for context
           model: selectedModel,
         },
@@ -98,9 +116,13 @@ export function useClipoginoChat() {
       // Refresh usage after successful request
       await refreshUsage();
 
+      const contextInfo = [];
+      if (profileContext) contextInfo.push('personalization');
+      if (knowledgeContext) contextInfo.push('knowledge context');
+      
       toast({
         title: 'CLIPOGINO Response',
-        description: `Used ${response.usage.totalTokens} tokens (${response.model})${profileContext ? ' with personalization' : ''}`,
+        description: `Used ${response.usage.totalTokens} tokens (${response.model})${contextInfo.length > 0 ? ` with ${contextInfo.join(' & ')}` : ''}`,
         variant: 'default',
       });
 
@@ -134,15 +156,18 @@ export function useClipoginoChat() {
 
   const startNewConversation = () => {
     setMessages([]);
+    setKnowledgeRecommendations([]);
   };
 
   const selectConversation = async (conversationId: string) => {
     try {
       const loadedMessages = await loadConversationMessages(conversationId);
       setMessages(loadedMessages);
+      setKnowledgeRecommendations([]);
     } catch (error) {
       console.error('Error selecting conversation:', error);
       setMessages([]);
+      setKnowledgeRecommendations([]);
     }
   };
 
@@ -155,5 +180,6 @@ export function useClipoginoChat() {
     startNewConversation,
     selectConversation,
     hasProfileContext: !!profileContext,
+    knowledgeRecommendations,
   };
 }
