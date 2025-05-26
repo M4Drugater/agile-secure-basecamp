@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import ContentGeneratorPage from "./pages/ContentGenerator";
 import ContentLibraryPage from "./pages/ContentLibrary";
+import ContentAnalyticsPage from "./pages/ContentAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/content-library" element={
               <ProtectedRoute>
                 <ContentLibraryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-analytics" element={
+              <ProtectedRoute>
+                <ContentAnalyticsPage />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

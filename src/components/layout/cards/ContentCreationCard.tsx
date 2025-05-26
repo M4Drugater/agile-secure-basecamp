@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, ExternalLink, Library, Wand2 } from 'lucide-react';
+import { FileText, ExternalLink, Library, Wand2, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function ContentCreationCard() {
@@ -37,8 +37,17 @@ export function ContentCreationCard() {
             Content Library
             <ExternalLink className="h-3 w-3 ml-auto" />
           </Button>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start"
+            onClick={() => navigate('/content-analytics')}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Content Analytics
+            <ExternalLink className="h-3 w-3 ml-auto" />
+          </Button>
           <div className="text-xs text-muted-foreground">
-            Generate, organize and manage all your professional content in one place.
+            Generate, organize and track all your professional content in one place.
           </div>
         </div>
       </CardContent>
