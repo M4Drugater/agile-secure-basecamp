@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { FloatingHomeButton } from "@/components/ui/floating-home-button";
 import { AppLayout } from "@/components/layout/AppLayout";
+import Landing from "./pages/Landing";
 import Admin from "./pages/Admin";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
@@ -27,7 +29,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <AppLayout />
               </ProtectedRoute>
@@ -75,6 +78,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <FloatingHomeButton />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -12,7 +12,7 @@ export default function LearningManagement() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
           <LearningDashboard />
         </div>
       </div>
@@ -21,7 +21,7 @@ export default function LearningManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList>
             <TabsTrigger value="dashboard">Learning Dashboard</TabsTrigger>

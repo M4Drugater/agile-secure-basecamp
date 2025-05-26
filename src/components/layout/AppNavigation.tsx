@@ -11,7 +11,7 @@ export function AppNavigation() {
   const { user } = useAuth();
 
   const navigationItems = [
-    { icon: Home, label: 'Dashboard', path: '/' },
+    { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: MessageSquare, label: 'AI Chat', path: '/chat' },
     { icon: FileText, label: 'Content Generator', path: '/content-generator' },
     { icon: Library, label: 'Content Library', path: '/content-library' },
