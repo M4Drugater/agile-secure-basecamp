@@ -9,6 +9,8 @@ export interface KnowledgeFormData {
   tags: string;
 }
 
+export type DocumentType = 'personal' | 'system' | 'resource';
+
 export function useUserKnowledgeForm() {
   const [formData, setFormData] = useState<KnowledgeFormData>({
     title: '',
@@ -19,6 +21,7 @@ export function useUserKnowledgeForm() {
   const [editingFile, setEditingFile] = useState<UserKnowledgeFile | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inputMethod, setInputMethod] = useState<'manual' | 'upload'>('manual');
+  const [documentType, setDocumentType] = useState<DocumentType>('personal');
 
   const resetForm = () => {
     setFormData({
@@ -30,6 +33,7 @@ export function useUserKnowledgeForm() {
     setEditingFile(null);
     setSelectedFile(null);
     setInputMethod('manual');
+    setDocumentType('personal');
   };
 
   const populateForm = (file: UserKnowledgeFile) => {
@@ -47,13 +51,19 @@ export function useUserKnowledgeForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const setDocumentTypeForContext = (type: DocumentType) => {
+    setDocumentType(type);
+  };
+
   return {
     formData,
     editingFile,
     selectedFile,
     inputMethod,
+    documentType,
     setSelectedFile,
     setInputMethod,
+    setDocumentType: setDocumentTypeForContext,
     resetForm,
     populateForm,
     updateFormField,

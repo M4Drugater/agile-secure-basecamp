@@ -6,13 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileUploadZone } from './FileUploadZone';
 import { useUserKnowledgeFiles } from '@/hooks/useUserKnowledgeFiles';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { KnowledgeFormData } from '@/hooks/useUserKnowledgeForm';
-import { FileText, Upload, Loader2, Brain } from 'lucide-react';
+import { FileText, Upload, Loader2, Brain, BookOpen, Database, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
+export type DocumentType = 'personal' | 'system' | 'resource';
 
 interface UserKnowledgeDialogProps {
   isOpen: boolean;
@@ -21,10 +24,12 @@ interface UserKnowledgeDialogProps {
   editingFile: any;
   selectedFile: File | null;
   inputMethod: 'manual' | 'upload';
+  documentType: DocumentType;
   onFormUpdate: (field: keyof KnowledgeFormData, value: string) => void;
   onFileSelect: (file: File) => void;
   onRemoveFile: () => void;
   onInputMethodChange: (method: 'manual' | 'upload') => void;
+  onDocumentTypeChange: (type: DocumentType) => void;
   onSubmit: () => void;
   onReset: () => void;
 }
@@ -36,10 +41,12 @@ export function UserKnowledgeDialog({
   editingFile,
   selectedFile,
   inputMethod,
+  documentType,
   onFormUpdate,
   onFileSelect,
   onRemoveFile,
   onInputMethodChange,
+  onDocumentTypeChange,
   onSubmit,
   onReset,
 }: UserKnowledgeDialogProps) {
@@ -57,41 +64,102 @@ export function UserKnowledgeDialog({
 
   const isSubmitDisabled = isCreating || isUploading || !formData.title || (inputMethod === 'upload' && !selectedFile);
 
+  const getDocumentTypeConfig = (type: DocumentType) => {
+    switch (type) {
+      case 'personal':
+        return {
+          icon: BookOpen,
+          title: 'Personal Knowledge',
+          description: 'Your personal notes, insights, and learning materials',
+          color: 'text-blue-600'
+        };
+      case 'system':
+        return {
+          icon: Database,
+          title: 'System Knowledge',
+          description: 'Organizational frameworks and methodologies',
+          color: 'text-green-600'
+        };
+      case 'resource':
+        return {
+          icon: Download,
+          title: 'Downloadable Resource',
+          description: 'Templates, guides, and downloadable materials',
+          color: 'text-purple-600'
+        };
+    }
+  };
+
+  const currentConfig = getDocumentTypeConfig(documentType);
+  const IconComponent = currentConfig.icon;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {editingFile ? 'Edit Knowledge File' : 'Add New Knowledge'}
+          <DialogTitle className="flex items-center gap-2">
+            <IconComponent className={`h-5 w-5 ${currentConfig.color}`} />
+            {editingFile ? 'Edit Knowledge File' : `Add ${currentConfig.title}`}
           </DialogTitle>
           <DialogDescription>
-            Add your personal knowledge, notes, or upload documents to your knowledge base
+            {currentConfig.description}
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
           {!editingFile && (
-            <Tabs value={inputMethod} onValueChange={(value: any) => onInputMethodChange(value)}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="manual" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Manual Entry
-                </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  File Upload
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="upload" className="mt-4">
-                <FileUploadZone
-                  onFileSelect={onFileSelect}
-                  selectedFile={selectedFile}
-                  onRemoveFile={onRemoveFile}
-                  isUploading={isUploading}
-                />
-              </TabsContent>
-            </Tabs>
+            <>
+              <div className="space-y-4">
+                <Label>Document Type</Label>
+                <Select value={documentType} onValueChange={onDocumentTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-blue-600" />
+                        Personal Knowledge
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-green-600" />
+                        System Knowledge
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="resource">
+                      <div className="flex items-center gap-2">
+                        <Download className="h-4 w-4 text-purple-600" />
+                        Downloadable Resource
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Tabs value={inputMethod} onValueChange={(value: any) => onInputMethodChange(value)}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="manual" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Manual Entry
+                  </TabsTrigger>
+                  <TabsTrigger value="upload" className="flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    File Upload
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="mt-4">
+                  <FileUploadZone
+                    onFileSelect={onFileSelect}
+                    selectedFile={selectedFile}
+                    onRemoveFile={onRemoveFile}
+                    isUploading={isUploading}
+                  />
+                </TabsContent>
+              </Tabs>
+            </>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
