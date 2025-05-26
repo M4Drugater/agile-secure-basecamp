@@ -33,21 +33,34 @@ serve(async (req) => {
 
     const { user_uuid } = await req.json();
 
+    // Use the database function to get conversations
     const { data, error } = await supabaseClient
-      .from('chat_conversations')
-      .select('*')
-      .eq('user_id', user_uuid || user.id)
-      .order('updated_at', { ascending: false });
+      .rpc('get_user_conversations', { user_uuid: user_uuid || user.id });
 
     if (error) {
-      throw error;
+      console.error('Function error:', error);
+      // Fallback to direct query
+      const { data: fallbackData, error: fallbackError } = await supabaseClient
+        .from('chat_conversations')
+        .select('*')
+        .eq('user_id', user_uuid || user.id)
+        .order('updated_at', { ascending: false });
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      return new Response(JSON.stringify(fallbackData || []), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(data || []), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
+    console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

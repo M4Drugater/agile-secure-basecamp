@@ -24,26 +24,31 @@ export function useChatHistory() {
     
     setIsLoading(true);
     try {
-      // Using raw SQL query to bypass TypeScript issues
-      const { data, error } = await supabase
-        .rpc('get_user_conversations', { user_uuid: user.id });
+      // Try using the edge function first
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('get-user-conversations', {
+        body: { user_uuid: user.id }
+      });
 
-      if (!error && data) {
-        setConversations(data);
+      if (!functionError && functionData) {
+        setConversations(functionData);
       } else {
         // Fallback to direct table query
         const { data: fallbackData, error: fallbackError } = await supabase
-          .from('chat_conversations' as any)
+          .from('chat_conversations')
           .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false });
 
         if (!fallbackError && fallbackData) {
           setConversations(fallbackData);
+        } else {
+          console.error('Error loading conversations:', fallbackError);
+          setConversations([]);
         }
       }
     } catch (error) {
       console.error('Error loading conversations:', error);
+      setConversations([]);
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +60,7 @@ export function useChatHistory() {
 
     try {
       const { data, error } = await supabase
-        .from('chat_messages' as any)
+        .from('chat_messages')
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -87,7 +92,7 @@ export function useChatHistory() {
         : 'New Conversation';
 
       const { data: newConv, error: convError } = await supabase
-        .from('chat_conversations' as any)
+        .from('chat_conversations')
         .insert({
           user_id: user.id,
           title,
@@ -109,7 +114,7 @@ export function useChatHistory() {
     // Save the message
     try {
       const { error } = await supabase
-        .from('chat_messages' as any)
+        .from('chat_messages')
         .insert({
           conversation_id: activeConversationId,
           role: message.role,
@@ -117,9 +122,9 @@ export function useChatHistory() {
         });
 
       if (!error) {
-        // Update conversation message count and timestamp
+        // Update conversation timestamp
         await supabase
-          .from('chat_conversations' as any)
+          .from('chat_conversations')
           .update({ 
             updated_at: new Date().toISOString(),
           })
@@ -144,12 +149,14 @@ export function useChatHistory() {
 
   // Delete a conversation
   const deleteConversation = async (conversationId: string) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
-        .from('chat_conversations' as any)
+        .from('chat_conversations')
         .delete()
         .eq('id', conversationId)
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
       if (!error) {
         await loadConversations();
