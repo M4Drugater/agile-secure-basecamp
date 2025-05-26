@@ -6,10 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, FileText, Copy, Download, AlertTriangle } from 'lucide-react';
+import { Loader2, FileText, Copy, Download, AlertTriangle, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCostMonitoring } from '@/hooks/useCostMonitoring';
+import { useProfileContext } from '@/hooks/useProfileContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContentRequest {
@@ -19,6 +20,7 @@ interface ContentRequest {
   length: 'short' | 'medium' | 'long';
   targetAudience?: string;
   additionalInstructions?: string;
+  useProfileContext?: boolean;
 }
 
 interface ContentResponse {
@@ -42,11 +44,13 @@ export function ContentGenerator() {
   const { user } = useAuth();
   const { toast } = useToast();
   const { usage, isLoading: costLoading, checkBeforeAction, refreshUsage } = useCostMonitoring();
+  const profileContext = useProfileContext();
   const [request, setRequest] = useState<ContentRequest>({
     type: 'linkedin-post',
     topic: '',
     style: 'professional',
     length: 'medium',
+    useProfileContext: true,
   });
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +91,13 @@ export function ContentGenerator() {
     setIsLoading(true);
 
     try {
+      // Build context for content generation
+      let contextualInstructions = request.additionalInstructions || '';
+      
+      if (request.useProfileContext && profileContext) {
+        contextualInstructions = `${contextualInstructions}\n\nPersonalization Context:\n${profileContext.fullContext}`;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
           type: request.type,
@@ -94,7 +105,7 @@ export function ContentGenerator() {
           style: request.style,
           length: request.length,
           targetAudience: request.targetAudience,
-          additionalInstructions: request.additionalInstructions,
+          additionalInstructions: contextualInstructions,
           model: 'gpt-4o-mini',
         },
       });
@@ -112,7 +123,7 @@ export function ContentGenerator() {
 
       toast({
         title: 'Content Generated Successfully',
-        description: `Generated ${response.type} using ${response.usage.totalTokens} tokens`,
+        description: `Generated ${response.type} using ${response.usage.totalTokens} tokens${request.useProfileContext && profileContext ? ' with personalization' : ''}`,
         variant: 'default',
       });
 
@@ -170,6 +181,12 @@ export function ContentGenerator() {
             <div className="flex items-center space-x-2">
               <FileText className="h-6 w-6 text-primary" />
               <CardTitle>AI Content Generator</CardTitle>
+              {profileContext && request.useProfileContext && (
+                <Badge variant="secondary" className="ml-2">
+                  <User className="h-3 w-3 mr-1" />
+                  Personalized
+                </Badge>
+              )}
             </div>
             <Badge variant="outline">
               {usage ? `$${usage.dailyUsage.toFixed(4)} / $${usage.dailyLimit}` : 'Loading...'}
@@ -177,6 +194,16 @@ export function ContentGenerator() {
           </div>
         </CardHeader>
       </Card>
+
+      {/* Profile Integration Notice */}
+      {!profileContext && (
+        <Alert>
+          <User className="h-4 w-4" />
+          <AlertDescription>
+            Complete your profile to get personalized content suggestions and better results tailored to your career goals.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Usage Warning */}
       {usage && (usage.dailyPercentage > 80 || usage.monthlyPercentage > 80) && (
@@ -267,6 +294,21 @@ export function ContentGenerator() {
               </div>
             </div>
 
+            {profileContext && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="useProfile"
+                  checked={request.useProfileContext}
+                  onChange={(e) => setRequest(prev => ({ ...prev, useProfileContext: e.target.checked }))}
+                  className="rounded"
+                />
+                <label htmlFor="useProfile" className="text-sm font-medium">
+                  Use my profile for personalization
+                </label>
+              </div>
+            )}
+
             <div>
               <label className="text-sm font-medium">Target Audience (Optional)</label>
               <Textarea
@@ -345,6 +387,12 @@ export function ContentGenerator() {
                     <Badge variant="secondary">
                       {lastResponse.metadata.length}
                     </Badge>
+                    {request.useProfileContext && profileContext && (
+                      <Badge variant="secondary">
+                        <User className="h-3 w-3 mr-1" />
+                        Personalized
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>

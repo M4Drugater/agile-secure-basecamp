@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCostMonitoring } from '@/hooks/useCostMonitoring';
 import { useToast } from '@/hooks/use-toast';
 import { useChatHistory } from './useChatHistory';
+import { useProfileContext } from '@/hooks/useProfileContext';
 import { ChatMessage, ChatResponse } from './types';
 
 export function useClipoginoChat() {
@@ -12,6 +13,7 @@ export function useClipoginoChat() {
   const { toast } = useToast();
   const { checkBeforeAction, refreshUsage } = useCostMonitoring();
   const { saveMessage, currentConversationId, loadConversationMessages } = useChatHistory();
+  const profileContext = useProfileContext();
   
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,15 +62,17 @@ export function useClipoginoChat() {
       // Save user message to database
       const conversationId = await saveMessage(userMessage, currentConversationId);
       
-      console.log('Sending message to CLIPOGINO with conversation context:', {
+      console.log('Sending message to CLIPOGINO with profile context:', {
         messageLength: userMessage.content.length,
         historyLength: messages.length,
+        hasProfileContext: !!profileContext,
         model: selectedModel
       });
 
       const { data, error } = await supabase.functions.invoke('clipogino-chat', {
         body: {
           message: userMessage.content,
+          context: profileContext?.fullContext,
           conversationHistory: messages.slice(-10), // Send last 10 messages for context
           model: selectedModel,
         },
@@ -96,7 +100,7 @@ export function useClipoginoChat() {
 
       toast({
         title: 'CLIPOGINO Response',
-        description: `Used ${response.usage.totalTokens} tokens (${response.model})`,
+        description: `Used ${response.usage.totalTokens} tokens (${response.model})${profileContext ? ' with personalization' : ''}`,
         variant: 'default',
       });
 
@@ -150,5 +154,6 @@ export function useClipoginoChat() {
     sendMessage,
     startNewConversation,
     selectConversation,
+    hasProfileContext: !!profileContext,
   };
 }

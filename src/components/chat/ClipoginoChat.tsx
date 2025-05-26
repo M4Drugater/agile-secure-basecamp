@@ -3,9 +3,12 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { MessageSquare, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClipoginoChat } from './useClipoginoChat';
 import { useChatHistory } from './useChatHistory';
+import { useProfileContext } from '@/hooks/useProfileContext';
 import { ChatHeader } from './ChatHeader';
 import { UsageWarning } from './UsageWarning';
 import { WelcomeMessage } from './WelcomeMessage';
@@ -23,10 +26,12 @@ export function ClipoginoChat() {
     setSelectedModel,
     sendMessage, 
     startNewConversation,
-    selectConversation 
+    selectConversation,
+    hasProfileContext 
   } = useClipoginoChat();
   
   const { setCurrentConversationId } = useChatHistory();
+  const profileContext = useProfileContext();
   const [showSidebar, setShowSidebar] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +55,16 @@ export function ClipoginoChat() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <ChatHeader />
       <UsageWarning />
+
+      {/* Profile Integration Status */}
+      {!profileContext && (
+        <Alert>
+          <User className="h-4 w-4" />
+          <AlertDescription>
+            Complete your profile to get personalized mentoring and advice tailored to your career goals and experience.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex gap-6">
         {/* Sidebar */}
@@ -78,6 +93,12 @@ export function ClipoginoChat() {
                   </Button>
                   <MessageSquare className="h-4 w-4" />
                   <span className="text-sm font-medium">Professional Development Chat</span>
+                  {hasProfileContext && (
+                    <Badge variant="secondary" className="ml-2">
+                      <User className="h-3 w-3 mr-1" />
+                      Personalized
+                    </Badge>
+                  )}
                 </div>
                 <div className="w-64">
                   <ModelSelector 
