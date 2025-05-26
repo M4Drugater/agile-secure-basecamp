@@ -2,16 +2,22 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowRight, Plus } from 'lucide-react';
+import { BookOpen, ArrowRight, Database, Download, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUserKnowledgeFiles } from '@/hooks/useUserKnowledgeFiles';
+import { useSystemKnowledge } from '@/hooks/useSystemKnowledge';
+import { useDownloadableResources } from '@/hooks/useDownloadableResources';
 
 export function KnowledgeBaseCard() {
   const navigate = useNavigate();
   const { files } = useUserKnowledgeFiles();
+  const { documents } = useSystemKnowledge();
+  const { resources } = useDownloadableResources();
 
-  const fileCount = files?.length || 0;
-  const hasFiles = fileCount > 0;
+  const personalCount = files?.length || 0;
+  const systemCount = documents?.length || 0;
+  const resourceCount = resources?.length || 0;
+  const totalCount = personalCount + systemCount + resourceCount;
 
   return (
     <Card className="relative overflow-hidden">
@@ -21,11 +27,11 @@ export function KnowledgeBaseCard() {
             <BookOpen className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <CardTitle className="text-lg">Knowledge Base</CardTitle>
+            <CardTitle className="text-lg">3-Tier Knowledge Base</CardTitle>
             <CardDescription>
-              {hasFiles 
-                ? `${fileCount} knowledge file${fileCount !== 1 ? 's' : ''} in your personal library`
-                : 'Build your personal knowledge repository'
+              {totalCount > 0 
+                ? `${totalCount} total knowledge items across all tiers`
+                : 'Advanced AI-integrated knowledge management system'
               }
             </CardDescription>
           </div>
@@ -33,15 +39,37 @@ export function KnowledgeBaseCard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {hasFiles ? (
-            <div className="text-sm text-muted-foreground">
-              Personal knowledge files ready for AI-powered insights and referencing
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+              <FileText className="h-4 w-4 text-blue-600" />
+              <div>
+                <div className="font-medium">{personalCount}</div>
+                <div className="text-xs text-muted-foreground">Personal</div>
+              </div>
             </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Store your personal knowledge, notes, and references to enhance CLIPOGINO's advice
+            <div className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg">
+              <Database className="h-4 w-4 text-purple-600" />
+              <div>
+                <div className="font-medium">{systemCount}</div>
+                <div className="text-xs text-muted-foreground">System</div>
+              </div>
             </div>
-          )}
+            <div className="flex items-center gap-2 p-2 bg-orange-50 rounded-lg">
+              <Download className="h-4 w-4 text-orange-600" />
+              <div>
+                <div className="font-medium">{resourceCount}</div>
+                <div className="text-xs text-muted-foreground">Resources</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            {totalCount > 0 ? (
+              'Intelligent knowledge retrieval ready for CLIPOGINO integration'
+            ) : (
+              'Personal files, system frameworks, and downloadable resources in one place'
+            )}
+          </div>
           
           <Button 
             variant="outline" 
@@ -49,17 +77,8 @@ export function KnowledgeBaseCard() {
             className="w-full"
             onClick={() => navigate('/knowledge-base')}
           >
-            {hasFiles ? (
-              <>
-                Manage Knowledge
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
-            ) : (
-              <>
-                Add First Knowledge File
-                <Plus className="h-4 w-4 ml-2" />
-              </>
-            )}
+            Access Knowledge Base
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
       </CardContent>
