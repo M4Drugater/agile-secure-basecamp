@@ -14,6 +14,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import ContentGeneratorPage from "./pages/ContentGenerator";
 import ContentLibraryPage from "./pages/ContentLibrary";
 import ContentAnalyticsPage from "./pages/ContentAnalytics";
+import LearningManagement from "./pages/LearningManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,11 @@ const App = () => (
             <Route path="/content-analytics" element={
               <ProtectedRoute>
                 <ContentAnalyticsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/learning" element={
+              <ProtectedRoute>
+                <LearningManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, MessageSquare, User, BookOpen, FileText, Library, Settings, BarChart3 } from 'lucide-react';
+import { Home, MessageSquare, User, BookOpen, FileText, Library, Settings, BarChart3, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function AppNavigation() {
@@ -17,6 +17,7 @@ export function AppNavigation() {
     { icon: Library, label: 'Content Library', path: '/content-library' },
     { icon: BarChart3, label: 'Content Analytics', path: '/content-analytics' },
     { icon: BookOpen, label: 'Knowledge Base', path: '/knowledge-base' },
+    { icon: GraduationCap, label: 'Learning Paths', path: '/learning' },
     { icon: User, label: 'Profile', path: '/profile' },
   ];
 

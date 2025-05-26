@@ -6,6 +6,7 @@ import { ContentCreationCard } from './cards/ContentCreationCard';
 import { UserProfileCard } from './cards/UserProfileCard';
 import { ProfileCompletionCard } from './cards/ProfileCompletionCard';
 import { KnowledgeBaseCard } from './cards/KnowledgeBaseCard';
+import { LearningManagementCard } from './cards/LearningManagementCard';
 import { AdminPanelCard } from './cards/AdminPanelCard';
 import { SystemStatusCard } from './cards/SystemStatusCard';
 import { DevelopmentProgressCard } from './cards/DevelopmentProgressCard';
@@ -19,6 +20,7 @@ export function DashboardCards() {
       <QuickAccessCard />
       <ProfileCompletionCard />
       <KnowledgeBaseCard />
+      <LearningManagementCard />
       <ContentCreationCard />
       <UserProfileCard />
       
