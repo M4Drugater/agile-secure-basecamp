@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,14 +16,20 @@ import {
 } from 'lucide-react';
 import { useLearningPaths } from '@/hooks/useLearningPaths';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
+import { useAuth } from '@/contexts/AuthContext';
 import { LearningPathCard } from './LearningPathCard';
+import { CreateLearningPathForm } from './CreateLearningPathForm';
 
 export function LearningDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   
+  const { profile } = useAuth();
   const { learningPaths, isLoading: pathsLoading } = useLearningPaths();
   const { userProgress, enrollInPath, isLoading: progressLoading } = useLearningProgress();
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
 
   // Filter paths based on search and difficulty
   const filteredPaths = learningPaths?.filter(path => {
@@ -73,10 +78,12 @@ export function LearningDashboard() {
             Track your learning journey and explore new paths
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Path
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => setShowCreateForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Path
+          </Button>
+        )}
       </div>
 
       {/* Stats Overview */}
@@ -244,6 +251,12 @@ export function LearningDashboard() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Create Learning Path Form */}
+      <CreateLearningPathForm 
+        open={showCreateForm} 
+        onOpenChange={setShowCreateForm} 
+      />
     </div>
   );
 }
