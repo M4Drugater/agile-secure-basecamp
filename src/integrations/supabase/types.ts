@@ -407,6 +407,63 @@ export type Database = {
         }
         Relationships: []
       }
+      downloadable_resources: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          download_count: number | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          metadata: Json | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_count?: number | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          metadata?: Json | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          download_count?: number | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          metadata?: Json | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       knowledge_documents: {
         Row: {
           content: string | null
@@ -533,6 +590,132 @@ export type Database = {
         }
         Relationships: []
       }
+      system_knowledge_base: {
+        Row: {
+          category: string
+          content: string
+          context_triggers: string[] | null
+          created_at: string
+          created_by: string | null
+          effectiveness_score: number | null
+          embeddings: string | null
+          id: string
+          is_active: boolean | null
+          knowledge_type: string
+          last_updated_by: string | null
+          metadata: Json | null
+          priority: number | null
+          subcategory: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category: string
+          content: string
+          context_triggers?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          effectiveness_score?: number | null
+          embeddings?: string | null
+          id?: string
+          is_active?: boolean | null
+          knowledge_type: string
+          last_updated_by?: string | null
+          metadata?: Json | null
+          priority?: number | null
+          subcategory?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          context_triggers?: string[] | null
+          created_at?: string
+          created_by?: string | null
+          effectiveness_score?: number | null
+          embeddings?: string | null
+          id?: string
+          is_active?: boolean | null
+          knowledge_type?: string
+          last_updated_by?: string | null
+          metadata?: Json | null
+          priority?: number | null
+          subcategory?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      user_knowledge_files: {
+        Row: {
+          content: string | null
+          created_at: string
+          description: string | null
+          embeddings: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_ai_processed: boolean | null
+          key_insights: string[] | null
+          metadata: Json | null
+          processing_status: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          embeddings?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_ai_processed?: boolean | null
+          key_insights?: string[] | null
+          metadata?: Json | null
+          processing_status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          embeddings?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_ai_processed?: boolean | null
+          key_insights?: string[] | null
+          metadata?: Json | null
+          processing_status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           career_goals: string[] | null
@@ -628,6 +811,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       calculate_profile_completeness: {
         Args: {
           profile_row: Database["public"]["Tables"]["user_profiles"]["Row"]
@@ -650,6 +837,22 @@ export type Database = {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
       }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       has_role: {
         Args: {
           user_id: string
@@ -657,8 +860,88 @@ export type Database = {
         }
         Returns: boolean
       }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      increment_download_count: {
+        Args: { resource_id: string }
+        Returns: undefined
+      }
+      increment_knowledge_usage: {
+        Args: { knowledge_id: string }
+        Returns: undefined
+      }
       increment_message_count: {
         Args: { conversation_id: string }
+        Returns: number
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
         Returns: number
       }
     }

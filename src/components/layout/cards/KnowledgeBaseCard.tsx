@@ -4,14 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowRight, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useKnowledgeBase } from '@/hooks/useKnowledgeBase';
+import { useUserKnowledgeFiles } from '@/hooks/useUserKnowledgeFiles';
 
 export function KnowledgeBaseCard() {
   const navigate = useNavigate();
-  const { documents } = useKnowledgeBase();
+  const { files } = useUserKnowledgeFiles();
 
-  const documentCount = documents?.length || 0;
-  const hasDocuments = documentCount > 0;
+  const fileCount = files?.length || 0;
+  const hasFiles = fileCount > 0;
 
   return (
     <Card className="relative overflow-hidden">
@@ -23,8 +23,8 @@ export function KnowledgeBaseCard() {
           <div>
             <CardTitle className="text-lg">Knowledge Base</CardTitle>
             <CardDescription>
-              {hasDocuments 
-                ? `${documentCount} document${documentCount !== 1 ? 's' : ''} in your knowledge base`
+              {hasFiles 
+                ? `${fileCount} knowledge file${fileCount !== 1 ? 's' : ''} in your personal library`
                 : 'Build your personal knowledge repository'
               }
             </CardDescription>
@@ -33,13 +33,13 @@ export function KnowledgeBaseCard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {hasDocuments ? (
+          {hasFiles ? (
             <div className="text-sm text-muted-foreground">
-              Recent documents, notes, and references ready for AI-powered insights
+              Personal knowledge files ready for AI-powered insights and referencing
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">
-              Store documents, notes, and references to enhance CLIPOGINO's personalized advice
+              Store your personal knowledge, notes, and references to enhance CLIPOGINO's advice
             </div>
           )}
           
@@ -49,14 +49,14 @@ export function KnowledgeBaseCard() {
             className="w-full"
             onClick={() => navigate('/knowledge-base')}
           >
-            {hasDocuments ? (
+            {hasFiles ? (
               <>
-                Manage Documents
+                Manage Knowledge
                 <ArrowRight className="h-4 w-4 ml-2" />
               </>
             ) : (
               <>
-                Add First Document
+                Add First Knowledge File
                 <Plus className="h-4 w-4 ml-2" />
               </>
             )}
