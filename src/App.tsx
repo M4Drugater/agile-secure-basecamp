@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Admin from "./pages/Admin";
+import Chat from "./pages/Chat";
+import ContentGeneratorPage from "./pages/ContentGenerator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,16 @@ const App = () => (
             <Route path="/" element={
               <ProtectedRoute>
                 <AppLayout />
+              </ProtectedRoute>
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-generator" element={
+              <ProtectedRoute>
+                <ContentGeneratorPage />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

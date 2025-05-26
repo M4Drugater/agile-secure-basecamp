@@ -69,7 +69,7 @@ export function useCostMonitoring(): CostMonitoringHook {
         return;
       }
 
-      const dailyUsage = parseFloat(dailyData || '0');
+      const dailyUsage = parseFloat(String(dailyData || '0'));
       const monthlyUsage = monthlyData?.reduce((sum: number, log: any) => sum + parseFloat(log.total_cost), 0) || 0;
       const dailyLimit = configData?.per_user_daily_limit || 5.0;
       const monthlyLimit = configData?.monthly_limit || 1000.0;
