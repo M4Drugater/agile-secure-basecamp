@@ -13,12 +13,34 @@ export function useKnowledgeContext() {
       }
 
       const contextSections = {
+        learning_path: relevantKnowledge.filter(k => k.source === 'learning_path'),
         personal: relevantKnowledge.filter(k => k.source === 'personal'),
         system: relevantKnowledge.filter(k => k.source === 'system'),
         downloadable: relevantKnowledge.filter(k => k.source === 'downloadable'),
       };
 
       let context = '\n--- RELEVANT KNOWLEDGE CONTEXT ---\n';
+
+      // Add learning paths first (highest priority for course recommendations)
+      if (contextSections.learning_path.length > 0) {
+        context += '\n🎓 INTERNAL LEARNING PATHS & COURSES:\n';
+        contextSections.learning_path.forEach(item => {
+          context += `• "${item.title}" (${item.difficulty_level || 'beginner'} level)\n`;
+          if (item.content && item.content.length < 300) {
+            context += `  Description: ${item.content.substring(0, 200)}${item.content.length > 200 ? '...' : ''}\n`;
+          }
+          if (item.estimated_duration_hours) {
+            context += `  Duration: ${item.estimated_duration_hours} hours\n`;
+          }
+          if (item.enrollment_count && item.enrollment_count > 0) {
+            context += `  ${item.enrollment_count} users enrolled\n`;
+          }
+          if (item.tags && item.tags.length > 0) {
+            context += `  Topics: ${item.tags.join(', ')}\n`;
+          }
+          context += '\n';
+        });
+      }
 
       // Add personal knowledge
       if (contextSections.personal.length > 0) {
@@ -63,7 +85,7 @@ export function useKnowledgeContext() {
       }
 
       context += '\n--- END KNOWLEDGE CONTEXT ---\n';
-      context += '\nPlease reference and incorporate relevant knowledge from the above context in your response when applicable. If you reference specific frameworks, methodologies, or resources, mention them by name to help the user understand the source of the guidance.\n';
+      context += '\nPLEASE PRIORITIZE RECOMMENDING INTERNAL LEARNING PATHS when users ask about learning, training, skill development, or career growth. These are courses specifically designed for our platform users. Reference specific course titles, difficulty levels, and topics covered when making recommendations.\n';
 
       return context;
     } catch (error) {

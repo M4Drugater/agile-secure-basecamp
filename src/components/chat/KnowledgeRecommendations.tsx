@@ -1,44 +1,42 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, FileText, Download, Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { BookOpen, ExternalLink, GraduationCap, Clock, Users } from 'lucide-react';
 import { KnowledgeSearchResult } from '@/hooks/useKnowledgeRetrieval';
 
 interface KnowledgeRecommendationsProps {
   recommendations: KnowledgeSearchResult[];
-  onViewResource?: (resource: KnowledgeSearchResult) => void;
+  onViewResource: (resource: KnowledgeSearchResult) => void;
 }
 
-export function KnowledgeRecommendations({ 
-  recommendations, 
-  onViewResource 
-}: KnowledgeRecommendationsProps) {
-  if (recommendations.length === 0) {
-    return null;
-  }
+export function KnowledgeRecommendations({ recommendations, onViewResource }: KnowledgeRecommendationsProps) {
+  if (recommendations.length === 0) return null;
 
   const getSourceIcon = (source: string) => {
     switch (source) {
+      case 'learning_path':
+        return <GraduationCap className="h-4 w-4" />;
       case 'personal':
-        return <FileText className="h-4 w-4 text-blue-600" />;
+        return <BookOpen className="h-4 w-4" />;
       case 'system':
-        return <BookOpen className="h-4 w-4 text-purple-600" />;
+        return <BookOpen className="h-4 w-4" />;
       case 'downloadable':
-        return <Download className="h-4 w-4 text-orange-600" />;
+        return <ExternalLink className="h-4 w-4" />;
       default:
-        return <FileText className="h-4 w-4" />;
+        return <BookOpen className="h-4 w-4" />;
     }
   };
 
   const getSourceLabel = (source: string) => {
     switch (source) {
+      case 'learning_path':
+        return 'Course';
       case 'personal':
         return 'Personal';
       case 'system':
-        return 'System';
+        return 'Framework';
       case 'downloadable':
         return 'Resource';
       default:
@@ -46,98 +44,88 @@ export function KnowledgeRecommendations({
     }
   };
 
-  const getSourceColor = (source: string) => {
-    switch (source) {
-      case 'personal':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'system':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'downloadable':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
   return (
-    <Card className="w-80 flex-shrink-0">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <BookOpen className="h-4 w-4" />
-          Relevant Knowledge
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-3">
-            {recommendations.map((item) => (
-              <div
-                key={`${item.source}-${item.id}`}
-                className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    {getSourceIcon(item.source)}
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs ${getSourceColor(item.source)}`}
-                    >
-                      {getSourceLabel(item.source)}
-                    </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {Math.round(item.relevanceScore * 10) / 10}
-                  </div>
-                </div>
-                
-                <h4 className="text-sm font-medium line-clamp-2 mb-1">
-                  {item.title}
-                </h4>
-                
-                {item.content && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                    {item.content.substring(0, 100)}
-                    {item.content.length > 100 ? '...' : ''}
-                  </p>
-                )}
-
-                {item.category && (
-                  <div className="text-xs text-muted-foreground mb-2">
-                    Category: {item.category}
-                  </div>
-                )}
-
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {item.tags.slice(0, 2).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {item.tags.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{item.tags.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                {onViewResource && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full h-6 text-xs"
-                    onClick={() => onViewResource(item)}
-                  >
-                    <Eye className="h-3 w-3 mr-1" />
-                    View
-                  </Button>
-                )}
+    <div className="w-80 flex-shrink-0">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Related Knowledge
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recommendations.map((item, index) => (
+            <div
+              key={`${item.source}-${item.id}-${index}`}
+              className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h4 className="font-medium text-sm line-clamp-2">{item.title}</h4>
+                <Badge 
+                  variant={item.source === 'learning_path' ? 'default' : 'secondary'} 
+                  className="flex-shrink-0"
+                >
+                  {getSourceIcon(item.source)}
+                  <span className="ml-1 text-xs">{getSourceLabel(item.source)}</span>
+                </Badge>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              
+              {item.content && (
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                  {item.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                </p>
+              )}
+
+              {item.source === 'learning_path' && (
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+                  {item.difficulty_level && (
+                    <Badge variant="outline" className="text-xs">
+                      {item.difficulty_level}
+                    </Badge>
+                  )}
+                  {item.estimated_duration_hours && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{item.estimated_duration_hours}h</span>
+                    </div>
+                  )}
+                  {item.enrollment_count && item.enrollment_count > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{item.enrollment_count}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {item.tags && item.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {item.tags.slice(0, 3).map((tag, tagIndex) => (
+                    <Badge key={tagIndex} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {item.tags.length > 3 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{item.tags.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => onViewResource(item)}
+              >
+                {item.source === 'learning_path' ? 'View Course' : 'View Resource'}
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

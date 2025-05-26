@@ -7,11 +7,14 @@ export interface KnowledgeSearchResult {
   id: string;
   title: string;
   content: string;
-  source: 'personal' | 'system' | 'downloadable';
+  source: 'personal' | 'system' | 'downloadable' | 'learning_path';
   relevanceScore: number;
   category?: string;
   tags?: string[];
   type?: string;
+  difficulty_level?: string;
+  estimated_duration_hours?: number;
+  enrollment_count?: number;
 }
 
 export function useKnowledgeRetrieval() {
@@ -26,6 +29,42 @@ export function useKnowledgeRetrieval() {
     const results: KnowledgeSearchResult[] = [];
 
     try {
+      // Search learning paths (prioritized for course recommendations)
+      const { data: learningPaths } = await supabase
+        .from('learning_paths')
+        .select('id, title, description, difficulty_level, estimated_duration_hours, tags, learning_objectives, enrollment_count, is_published')
+        .eq('is_published', true);
+
+      if (learningPaths) {
+        learningPaths.forEach(path => {
+          const searchableText = `${path.title} ${path.description || ''} ${path.learning_objectives?.join(' ') || ''} ${path.tags?.join(' ') || ''}`.toLowerCase();
+          let relevanceScore = calculateRelevanceScore(searchableText, searchTerms);
+          
+          // Boost learning paths relevance for course-related queries
+          const courseKeywords = ['course', 'learn', 'training', 'skill', 'development', 'education', 'study', 'practice'];
+          const hasCourseKeywords = searchTerms.some(term => courseKeywords.some(keyword => keyword.includes(term) || term.includes(keyword)));
+          if (hasCourseKeywords) {
+            relevanceScore *= 2.5; // Significant boost for course-related queries
+          }
+          
+          if (relevanceScore > 0) {
+            results.push({
+              id: path.id,
+              title: path.title,
+              content: path.description || '',
+              source: 'learning_path',
+              relevanceScore,
+              category: 'Learning Path',
+              tags: path.tags,
+              type: 'course',
+              difficulty_level: path.difficulty_level,
+              estimated_duration_hours: path.estimated_duration_hours,
+              enrollment_count: path.enrollment_count,
+            });
+          }
+        });
+      }
+
       // Search personal knowledge files
       const { data: personalFiles } = await supabase
         .from('user_knowledge_files')
@@ -102,9 +141,14 @@ export function useKnowledgeRetrieval() {
         });
       }
 
-      // Sort by relevance and return top results
+      // Sort by relevance and return top results, prioritizing learning paths
       return results
-        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .sort((a, b) => {
+          // Prioritize learning paths
+          if (a.source === 'learning_path' && b.source !== 'learning_path') return -1;
+          if (b.source === 'learning_path' && a.source !== 'learning_path') return 1;
+          return b.relevanceScore - a.relevanceScore;
+        })
         .slice(0, limit);
 
     } catch (error) {

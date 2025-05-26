@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useContentItems, ContentItem, CreateContentItem } from '@/hooks/useContentItems';
 import { ArrowLeft, Save, Eye, Calendar, Clock, Hash } from 'lucide-react';
 import { format } from 'date-fns';
@@ -104,7 +104,13 @@ export function ContentEditor({ item, onClose }: ContentEditorProps) {
     }
   };
 
-  const wordCount = formData.content.split(' ').filter(word => word.length > 0).length;
+  // Calculate word count from HTML content
+  const getWordCount = (htmlContent: string) => {
+    const textContent = htmlContent.replace(/<[^>]*>/g, '');
+    return textContent.split(' ').filter(word => word.length > 0).length;
+  };
+
+  const wordCount = getWordCount(formData.content);
   const estimatedReadTime = Math.max(1, Math.ceil(wordCount / 200));
 
   return (
@@ -204,13 +210,11 @@ export function ContentEditor({ item, onClose }: ContentEditorProps) {
 
               <div>
                 <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Write your content here..."
-                  rows={12}
-                  className="resize-none"
+                <RichTextEditor
+                  content={formData.content}
+                  onChange={(content) => setFormData(prev => ({ ...prev, content }))}
+                  placeholder="Write your content here. Use the toolbar to format text, add links, images, and more..."
+                  className="min-h-[400px]"
                 />
               </div>
             </CardContent>

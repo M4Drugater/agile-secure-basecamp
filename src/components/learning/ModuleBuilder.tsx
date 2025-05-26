@@ -3,12 +3,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { 
   Plus, 
   X, 
@@ -148,12 +148,11 @@ export function ModuleBuilder({ learningPathId, onModuleCreated }: ModuleBuilder
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={newModule.description || ''}
-                onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
+              <RichTextEditor
+                content={newModule.description || ''}
+                onChange={(content) => setNewModule({ ...newModule, description: content })}
                 placeholder="Brief description of what this module covers"
-                rows={3}
+                className="min-h-[120px]"
               />
             </div>
 
@@ -185,13 +184,11 @@ export function ModuleBuilder({ learningPathId, onModuleCreated }: ModuleBuilder
           <TabsContent value="content" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="content">Module Content</Label>
-              <Textarea
-                id="content"
-                value={newModule.content || ''}
-                onChange={(e) => setNewModule({ ...newModule, content: e.target.value })}
-                placeholder="Enter the main content for this module..."
-                rows={8}
-                className="min-h-[200px]"
+              <RichTextEditor
+                content={newModule.content || ''}
+                onChange={(content) => setNewModule({ ...newModule, content })}
+                placeholder="Enter the main content for this module. You can use rich formatting, add links, images, and code blocks..."
+                className="min-h-[300px]"
               />
             </div>
 
