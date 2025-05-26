@@ -353,25 +353,6 @@
   @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
 }
 
-/* Professional content styles */
-.prose-enhanced {
-  @apply prose prose-slate max-w-none;
-}
-
-.prose-enhanced h1,
-.prose-enhanced h2,
-.prose-enhanced h3 {
-  @apply text-foreground;
-}
-
-.prose-enhanced p {
-  @apply text-muted-foreground leading-relaxed;
-}
-
-.prose-enhanced a {
-  @apply text-primary no-underline hover:underline;
-}
-
 /* Responsive utilities */
 @media (max-width: 768px) {
   .mobile-padding {
