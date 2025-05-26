@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,22 +15,34 @@ import {
   Filter,
   Plus
 } from 'lucide-react';
-import { useLearningPaths } from '@/hooks/useLearningPaths';
+import { useLearningPaths, LearningPath } from '@/hooks/useLearningPaths';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { LearningPathCard } from './LearningPathCard';
+import { LearningPathDetail } from './LearningPathDetail';
 import { CreateLearningPathForm } from './CreateLearningPathForm';
 
 export function LearningDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedPath, setSelectedPath] = useState<LearningPath | null>(null);
   
   const { profile } = useAuth();
   const { learningPaths, isLoading: pathsLoading } = useLearningPaths();
   const { userProgress, enrollInPath, isLoading: progressLoading } = useLearningProgress();
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+
+  // If a path is selected, show the detail view
+  if (selectedPath) {
+    return (
+      <LearningPathDetail 
+        path={selectedPath} 
+        onBack={() => setSelectedPath(null)} 
+      />
+    );
+  }
 
   // Filter paths based on search and difficulty
   const filteredPaths = learningPaths?.filter(path => {
@@ -55,6 +68,10 @@ export function LearningDashboard() {
 
   const handleEnroll = (pathId: string) => {
     enrollInPath(pathId);
+  };
+
+  const handleViewPath = (path: LearningPath) => {
+    setSelectedPath(path);
   };
 
   if (pathsLoading || progressLoading) {
@@ -185,8 +202,8 @@ export function LearningDashboard() {
                   path={path}
                   userProgress={progress}
                   onEnroll={() => handleEnroll(path.id)}
-                  onContinue={() => {/* Navigate to path */}}
-                  onView={() => {/* View path details */}}
+                  onContinue={() => handleViewPath(path)}
+                  onView={() => handleViewPath(path)}
                 />
               );
             })}
@@ -216,8 +233,8 @@ export function LearningDashboard() {
                     key={item.id}
                     path={item.path!}
                     userProgress={item}
-                    onContinue={() => {/* Navigate to path */}}
-                    onView={() => {/* View path details */}}
+                    onContinue={() => handleViewPath(item.path!)}
+                    onView={() => handleViewPath(item.path!)}
                   />
                 ))}
             </div>
@@ -244,7 +261,7 @@ export function LearningDashboard() {
                     key={item.id}
                     path={item.path!}
                     userProgress={item}
-                    onView={() => {/* View certificate */}}
+                    onView={() => handleViewPath(item.path!)}
                   />
                 ))}
             </div>
