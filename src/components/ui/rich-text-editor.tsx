@@ -4,13 +4,14 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { createLowlight } from 'lowlight';
 import { Button } from '@/components/ui/button';
 import { 
   Bold, 
   Italic, 
-  Underline, 
+  Underline as UnderlineIcon, 
   Link as LinkIcon, 
   Image as ImageIcon, 
   Code, 
@@ -22,7 +23,7 @@ import {
   Quote
 } from 'lucide-react';
 
-// Create a lowlight instance
+// Create a lowlight instance with common languages
 const lowlight = createLowlight();
 
 interface RichTextEditorProps {
@@ -35,7 +36,10 @@ interface RichTextEditorProps {
 export function RichTextEditor({ content, onChange, placeholder, className }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        codeBlock: false, // Disable default code block to use lowlight version
+      }),
+      Underline,
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
@@ -49,6 +53,9 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
       }),
       CodeBlockLowlight.configure({
         lowlight,
+        HTMLAttributes: {
+          class: 'rounded-md bg-muted p-4 font-mono text-sm',
+        },
       }),
     ],
     content,
@@ -112,7 +119,7 @@ export function RichTextEditor({ content, onChange, placeholder, className }: Ri
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           type="button"
         >
-          <Underline className="h-4 w-4" />
+          <UnderlineIcon className="h-4 w-4" />
         </Button>
 
         <div className="w-px h-6 bg-border mx-1" />
