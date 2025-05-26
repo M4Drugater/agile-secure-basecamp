@@ -5,8 +5,10 @@ import { ChatErrorBoundary } from '@/components/chat/ChatErrorBoundary';
 
 export default function Chat() {
   return (
-    <ChatErrorBoundary>
-      <ClipoginoChat />
-    </ChatErrorBoundary>
+    <div className="min-h-screen bg-background">
+      <ChatErrorBoundary>
+        <ClipoginoChat />
+      </ChatErrorBoundary>
+    </div>
   );
 }

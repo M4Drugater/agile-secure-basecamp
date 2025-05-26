@@ -117,6 +117,65 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          message_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_monitoring_config: {
         Row: {
           circuit_breaker_threshold: number
@@ -147,6 +206,69 @@ export type Database = {
           monthly_limit?: number
           per_user_daily_limit?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      knowledge_documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          description: string | null
+          document_type: string
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_active: boolean | null
+          key_insights: string[] | null
+          privacy_level: string | null
+          processed_at: string | null
+          processing_status: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          document_type: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_insights?: string[] | null
+          privacy_level?: string | null
+          processed_at?: string | null
+          processing_status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          document_type?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_insights?: string[] | null
+          privacy_level?: string | null
+          processed_at?: string | null
+          processing_status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -213,6 +335,96 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          career_goals: string[] | null
+          certifications: string[] | null
+          communication_style: string | null
+          company: string | null
+          created_at: string
+          current_position: string | null
+          current_skills: string[] | null
+          experience_level: string | null
+          feedback_preference: string | null
+          full_name: string | null
+          id: string
+          industry: string | null
+          last_updated: string | null
+          leadership_experience: boolean | null
+          learning_priorities: string[] | null
+          learning_style: string | null
+          management_level: string | null
+          profile_completeness: number | null
+          skill_gaps: string[] | null
+          target_industry: string | null
+          target_position: string | null
+          target_salary_range: string | null
+          team_size: number | null
+          updated_at: string
+          user_id: string
+          work_environment: string | null
+          years_of_experience: number | null
+        }
+        Insert: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
+          created_at?: string
+          current_position?: string | null
+          current_skills?: string[] | null
+          experience_level?: string | null
+          feedback_preference?: string | null
+          full_name?: string | null
+          id?: string
+          industry?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
+          updated_at?: string
+          user_id: string
+          work_environment?: string | null
+          years_of_experience?: number | null
+        }
+        Update: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
+          created_at?: string
+          current_position?: string | null
+          current_skills?: string[] | null
+          experience_level?: string | null
+          feedback_preference?: string | null
+          full_name?: string | null
+          id?: string
+          industry?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
+          updated_at?: string
+          user_id?: string
+          work_environment?: string | null
+          years_of_experience?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -240,6 +452,10 @@ export type Database = {
           required_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      increment_message_count: {
+        Args: { conversation_id: string }
+        Returns: number
       }
     }
     Enums: {

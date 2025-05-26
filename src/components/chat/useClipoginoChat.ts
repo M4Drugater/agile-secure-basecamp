@@ -21,8 +21,13 @@ export function useClipoginoChat() {
   useEffect(() => {
     const loadMessages = async () => {
       if (currentConversationId) {
-        const loadedMessages = await loadConversationMessages(currentConversationId);
-        setMessages(loadedMessages);
+        try {
+          const loadedMessages = await loadConversationMessages(currentConversationId);
+          setMessages(loadedMessages);
+        } catch (error) {
+          console.error('Error loading conversation messages:', error);
+          setMessages([]);
+        }
       } else {
         setMessages([]);
       }
@@ -53,7 +58,13 @@ export function useClipoginoChat() {
 
     try {
       // Save user message to database
-      await saveMessage(userMessage, currentConversationId);
+      const conversationId = await saveMessage(userMessage, currentConversationId);
+      
+      console.log('Sending message to CLIPOGINO with conversation context:', {
+        messageLength: userMessage.content.length,
+        historyLength: messages.length,
+        model: selectedModel
+      });
 
       const { data, error } = await supabase.functions.invoke('clipogino-chat', {
         body: {
@@ -78,7 +89,7 @@ export function useClipoginoChat() {
       setMessages(prev => [...prev, assistantMessage]);
       
       // Save assistant message to database
-      await saveMessage(assistantMessage, currentConversationId);
+      await saveMessage(assistantMessage, conversationId);
       
       // Refresh usage after successful request
       await refreshUsage();
@@ -122,8 +133,13 @@ export function useClipoginoChat() {
   };
 
   const selectConversation = async (conversationId: string) => {
-    const loadedMessages = await loadConversationMessages(conversationId);
-    setMessages(loadedMessages);
+    try {
+      const loadedMessages = await loadConversationMessages(conversationId);
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error('Error selecting conversation:', error);
+      setMessages([]);
+    }
   };
 
   return {
