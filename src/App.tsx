@@ -12,6 +12,7 @@ import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import ContentGeneratorPage from "./pages/ContentGenerator";
+import ContentLibraryPage from "./pages/ContentLibrary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,11 @@ const App = () => (
             <Route path="/content-generator" element={
               <ProtectedRoute>
                 <ContentGeneratorPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-library" element={
+              <ProtectedRoute>
+                <ContentLibraryPage />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

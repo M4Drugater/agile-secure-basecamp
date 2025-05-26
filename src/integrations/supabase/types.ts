@@ -176,6 +176,204 @@ export type Database = {
           },
         ]
       }
+      content_analytics: {
+        Row: {
+          click_through_rate: number | null
+          comments: number | null
+          content_item_id: string
+          created_at: string
+          engagement_rate: number | null
+          id: string
+          likes: number | null
+          platform: string | null
+          recorded_at: string | null
+          shares: number | null
+          views: number | null
+        }
+        Insert: {
+          click_through_rate?: number | null
+          comments?: number | null
+          content_item_id: string
+          created_at?: string
+          engagement_rate?: number | null
+          id?: string
+          likes?: number | null
+          platform?: string | null
+          recorded_at?: string | null
+          shares?: number | null
+          views?: number | null
+        }
+        Update: {
+          click_through_rate?: number | null
+          comments?: number | null
+          content_item_id?: string
+          created_at?: string
+          engagement_rate?: number | null
+          id?: string
+          likes?: number | null
+          platform?: string | null
+          recorded_at?: string | null
+          shares?: number | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_analytics_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_items: {
+        Row: {
+          content: string
+          content_type: string
+          created_at: string
+          estimated_read_time: number | null
+          id: string
+          is_favorite: boolean | null
+          metadata: Json | null
+          published_at: string | null
+          scheduled_for: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          content: string
+          content_type: string
+          created_at?: string
+          estimated_read_time?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          content?: string
+          content_type?: string
+          created_at?: string
+          estimated_read_time?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      content_seo_data: {
+        Row: {
+          analyzed_at: string | null
+          content_item_id: string
+          created_at: string
+          focus_keywords: string[] | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          readability_level: string | null
+          readability_score: number | null
+          seo_score: number | null
+          suggested_improvements: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          content_item_id: string
+          created_at?: string
+          focus_keywords?: string[] | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          readability_level?: string | null
+          readability_score?: number | null
+          seo_score?: number | null
+          suggested_improvements?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          content_item_id?: string
+          created_at?: string
+          focus_keywords?: string[] | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          readability_level?: string | null
+          readability_score?: number | null
+          seo_score?: number | null
+          suggested_improvements?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_seo_data_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_versions: {
+        Row: {
+          changes_summary: string | null
+          content: string
+          content_item_id: string
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          version_number: number
+        }
+        Insert: {
+          changes_summary?: string | null
+          content: string
+          content_item_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          title: string
+          version_number: number
+        }
+        Update: {
+          changes_summary?: string | null
+          content?: string
+          content_item_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_versions_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cost_monitoring_config: {
         Row: {
           circuit_breaker_threshold: number

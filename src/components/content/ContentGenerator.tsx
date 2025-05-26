@@ -1,69 +1,40 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, FileText, Copy, Download, AlertTriangle, User, ExternalLink, Settings } from 'lucide-react';
+import { Loader2, Wand2, Save, Download, Copy, Library } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCostMonitoring } from '@/hooks/useCostMonitoring';
-import { useProfileContext } from '@/hooks/useProfileContext';
-import { useToast } from '@/hooks/use-toast';
-
-interface ContentRequest {
-  type: 'resume' | 'cover-letter' | 'linkedin-post' | 'email' | 'presentation' | 'article';
-  topic: string;
-  style: 'professional' | 'casual' | 'formal' | 'creative';
-  length: 'short' | 'medium' | 'long';
-  targetAudience?: string;
-  additionalInstructions?: string;
-  useProfileContext?: boolean;
-}
-
-interface ContentResponse {
-  content: string;
-  type: string;
-  usage: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-  model: string;
-  metadata: {
-    style: string;
-    length: string;
-    targetAudience?: string;
-    generatedAt: string;
-  };
-}
+import { toast } from 'sonner';
+import { useContentItems } from '@/hooks/useContentItems';
+import { useNavigate } from 'react-router-dom';
 
 export function ContentGenerator() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const { usage, isLoading: costLoading, checkBeforeAction, refreshUsage } = useCostMonitoring();
-  const profileContext = useProfileContext();
-  const [request, setRequest] = useState<ContentRequest>({
-    type: 'linkedin-post',
+  const navigate = useNavigate();
+  const { createContentItem } = useContentItems();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [formData, setFormData] = useState({
+    type: 'resume',
     topic: '',
     style: 'professional',
     length: 'medium',
-    useProfileContext: true,
+    model: 'gpt-4o-mini',
+    customPrompt: ''
   });
-  const [generatedContent, setGeneratedContent] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [lastResponse, setLastResponse] = useState<ContentResponse | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const contentTypes = [
-    { value: 'resume', label: 'Resume Section' },
-    { value: 'cover-letter', label: 'Cover Letter' },
-    { value: 'linkedin-post', label: 'LinkedIn Post' },
-    { value: 'email', label: 'Professional Email' },
-    { value: 'presentation', label: 'Presentation Content' },
-    { value: 'article', label: 'Article' },
+    { value: 'resume', label: 'Resume', description: 'Professional resume with work experience and skills' },
+    { value: 'cover-letter', label: 'Cover Letter', description: 'Personalized cover letter for job applications' },
+    { value: 'linkedin-post', label: 'LinkedIn Post', description: 'Professional social media content' },
+    { value: 'email', label: 'Professional Email', description: 'Business correspondence and communication' },
+    { value: 'presentation', label: 'Presentation Outline', description: 'Structured presentation content' },
+    { value: 'article', label: 'Article', description: 'Professional articles and thought leadership' },
   ];
 
   const styles = [
@@ -71,207 +42,133 @@ export function ContentGenerator() {
     { value: 'casual', label: 'Casual' },
     { value: 'formal', label: 'Formal' },
     { value: 'creative', label: 'Creative' },
+    { value: 'technical', label: 'Technical' },
   ];
 
   const lengths = [
-    { value: 'short', label: 'Short (100-300 words)' },
-    { value: 'medium', label: 'Medium (300-600 words)' },
-    { value: 'long', label: 'Long (600-1200 words)' },
+    { value: 'short', label: 'Short (1-2 paragraphs)' },
+    { value: 'medium', label: 'Medium (3-5 paragraphs)' },
+    { value: 'long', label: 'Long (6+ paragraphs)' },
+  ];
+
+  const models = [
+    { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast & Cost-effective)' },
+    { value: 'gpt-4o', label: 'GPT-4o (Advanced)' },
   ];
 
   const handleGenerate = async () => {
-    if (!request.topic.trim() || !user) return;
-
-    // Clear previous errors
-    setApiError(null);
-
-    // Estimate cost based on content type and length
-    const estimatedCost = request.length === 'long' ? 0.05 : request.length === 'medium' ? 0.03 : 0.01;
-    
-    if (!checkBeforeAction(estimatedCost)) {
+    if (!formData.topic.trim()) {
+      toast.error('Please provide a topic or description');
       return;
     }
 
-    setIsLoading(true);
-
+    setIsGenerating(true);
     try {
-      // Build context for content generation
-      let contextualInstructions = request.additionalInstructions || '';
-      
-      if (request.useProfileContext && profileContext) {
-        contextualInstructions = `${contextualInstructions}\n\nPersonalization Context:\n${profileContext.fullContext}`;
-      }
-
-      console.log('Making request to generate-content function...');
-
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
-          type: request.type,
-          topic: request.topic,
-          style: request.style,
-          length: request.length,
-          targetAudience: request.targetAudience,
-          additionalInstructions: contextualInstructions,
-          model: 'gpt-4o-mini',
+          type: formData.type,
+          topic: formData.topic,
+          style: formData.style,
+          length: formData.length,
+          model: formData.model,
+          customPrompt: formData.customPrompt || undefined,
         },
       });
 
-      console.log('Function response:', { data, error });
+      if (error) throw error;
 
-      if (error) {
-        console.error('Function error:', error);
-        throw error;
-      }
-
-      const response = data as ContentResponse;
-      setGeneratedContent(response.content);
-      setLastResponse(response);
-      
-      // Refresh usage after successful request
-      await refreshUsage();
-
-      toast({
-        title: 'Content Generated Successfully',
-        description: `Generated ${response.type} using ${response.usage.totalTokens} tokens${request.useProfileContext && profileContext ? ' with personalization' : ''}`,
-        variant: 'default',
-      });
-
-    } catch (error: any) {
-      console.error('Content generation error:', error);
-      
-      let errorMessage = 'Failed to generate content';
-      let isApiError = false;
-
-      if (error.message?.includes('Usage limit reached') || error.message?.includes('insufficient_quota')) {
-        errorMessage = 'OpenAI API quota exceeded. Please check your OpenAI billing and usage limits.';
-        isApiError = true;
-      } else if (error.message?.includes('Cost limit exceeded')) {
-        errorMessage = 'Request would exceed your usage limits';
-      } else if (error.message?.includes('non-2xx status code') || error.message?.includes('Edge Function')) {
-        errorMessage = 'OpenAI API connection error. Please verify your API key and quota.';
-        isApiError = true;
-      }
-
-      setApiError(isApiError ? errorMessage : null);
-
-      toast({
-        title: 'Generation Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      setGeneratedContent(data.content);
+      toast.success('Content generated successfully!');
+    } catch (error) {
+      console.error('Error generating content:', error);
+      toast.error('Failed to generate content. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
-  const handleCopy = async () => {
-    if (generatedContent) {
-      await navigator.clipboard.writeText(generatedContent);
-      toast({
-        title: 'Copied to Clipboard',
-        description: 'Content has been copied to your clipboard',
-        variant: 'default',
-      });
+  const handleSaveToLibrary = () => {
+    if (!generatedContent) {
+      toast.error('No content to save');
+      return;
     }
+
+    const selectedType = contentTypes.find(t => t.value === formData.type);
+    const title = `${selectedType?.label} - ${formData.topic}`;
+
+    createContentItem.mutate({
+      title,
+      content: generatedContent,
+      content_type: formData.type as any,
+      status: 'draft',
+      tags: [formData.style, 'ai-generated'],
+      metadata: {
+        generatedWith: formData.model,
+        originalTopic: formData.topic,
+        style: formData.style,
+        length: formData.length,
+      }
+    });
   };
 
-  const handleDownload = () => {
-    if (generatedContent) {
-      const blob = new Blob([generatedContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${request.type}-${Date.now()}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(generatedContent);
+    toast.success('Content copied to clipboard!');
+  };
+
+  const downloadContent = () => {
+    const selectedType = contentTypes.find(t => t.value === formData.type);
+    const blob = new Blob([generatedContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedType?.label}-${formData.topic}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <CardTitle>AI Content Generator</CardTitle>
-              {profileContext && request.useProfileContext && (
-                <Badge variant="secondary" className="ml-2">
-                  <User className="h-3 w-3 mr-1" />
-                  Personalized
-                </Badge>
-              )}
-            </div>
-            <Badge variant="outline">
-              {usage ? `$${usage.dailyUsage.toFixed(4)} / $${usage.dailyLimit}` : 'Loading...'}
-            </Badge>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* API Error Alert */}
-      {apiError && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{apiError}</span>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/admin" target="_blank" rel="noopener noreferrer">
-                <Settings className="h-4 w-4 mr-2" />
-                Check Settings
-                <ExternalLink className="h-4 w-4 ml-2" />
-              </a>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Profile Integration Notice */}
-      {!profileContext && (
-        <Alert>
-          <User className="h-4 w-4" />
-          <AlertDescription>
-            Complete your profile to get personalized content suggestions and better results tailored to your career goals.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Usage Warning */}
-      {usage && (usage.dailyPercentage > 80 || usage.monthlyPercentage > 80) && (
-        <Alert variant={usage.dailyPercentage > 95 ? "destructive" : "default"}>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {usage.dailyPercentage > 95 
-              ? "You're very close to your daily limit. Use AI requests sparingly."
-              : "You're approaching your usage limits. Monitor your requests."
-            }
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">AI Content Generator</h1>
+          <p className="text-muted-foreground">
+            Generate professional content with AI assistance
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/content-library')}>
+          <Library className="h-4 w-4 mr-2" />
+          Content Library
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Panel */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Content Configuration</CardTitle>
+            <CardTitle className="flex items-center">
+              <Wand2 className="h-5 w-5 mr-2" />
+              Content Settings
+            </CardTitle>
+            <CardDescription>
+              Configure your content generation preferences
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Content Type</label>
-              <Select
-                value={request.type}
-                onValueChange={(value: any) => setRequest(prev => ({ ...prev, type: value }))}
-              >
+              <Label htmlFor="type">Content Type</Label>
+              <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {contentTypes.map((type) => (
+                  {contentTypes.map(type => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      <div>
+                        <div className="font-medium">{type.label}</div>
+                        <div className="text-xs text-muted-foreground">{type.description}</div>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -279,27 +176,25 @@ export function ContentGenerator() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Topic/Subject</label>
+              <Label htmlFor="topic">Topic/Description</Label>
               <Textarea
-                value={request.topic}
-                onChange={(e) => setRequest(prev => ({ ...prev, topic: e.target.value }))}
-                placeholder="Describe what you want to create content about..."
-                className="min-h-[80px]"
+                id="topic"
+                value={formData.topic}
+                onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                placeholder="Describe what you want to create (e.g., 'Software Engineer resume with 5 years experience in React and Node.js')"
+                rows={3}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Style</label>
-                <Select
-                  value={request.style}
-                  onValueChange={(value: any) => setRequest(prev => ({ ...prev, style: value }))}
-                >
+                <Label htmlFor="style">Writing Style</Label>
+                <Select value={formData.style} onValueChange={(value) => setFormData(prev => ({ ...prev, style: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {styles.map((style) => (
+                    {styles.map(style => (
                       <SelectItem key={style.value} value={style.value}>
                         {style.label}
                       </SelectItem>
@@ -309,16 +204,13 @@ export function ContentGenerator() {
               </div>
 
               <div>
-                <label className="text-sm font-medium">Length</label>
-                <Select
-                  value={request.length}
-                  onValueChange={(value: any) => setRequest(prev => ({ ...prev, length: value }))}
-                >
+                <Label htmlFor="length">Content Length</Label>
+                <Select value={formData.length} onValueChange={(value) => setFormData(prev => ({ ...prev, length: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {lengths.map((length) => (
+                    {lengths.map(length => (
                       <SelectItem key={length.value} value={length.value}>
                         {length.label}
                       </SelectItem>
@@ -328,55 +220,42 @@ export function ContentGenerator() {
               </div>
             </div>
 
-            {profileContext && (
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="useProfile"
-                  checked={request.useProfileContext}
-                  onChange={(e) => setRequest(prev => ({ ...prev, useProfileContext: e.target.checked }))}
-                  className="rounded"
-                />
-                <label htmlFor="useProfile" className="text-sm font-medium">
-                  Use my profile for personalization
-                </label>
-              </div>
-            )}
-
             <div>
-              <label className="text-sm font-medium">Target Audience (Optional)</label>
-              <Textarea
-                value={request.targetAudience || ''}
-                onChange={(e) => setRequest(prev => ({ ...prev, targetAudience: e.target.value }))}
-                placeholder="Who is this content for? (e.g., hiring managers, LinkedIn connections, etc.)"
-                className="min-h-[60px]"
-              />
+              <Label htmlFor="model">AI Model</Label>
+              <Select value={formData.model} onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map(model => (
+                    <SelectItem key={model.value} value={model.value}>
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium">Additional Instructions (Optional)</label>
+              <Label htmlFor="customPrompt">Custom Instructions (Optional)</Label>
               <Textarea
-                value={request.additionalInstructions || ''}
-                onChange={(e) => setRequest(prev => ({ ...prev, additionalInstructions: e.target.value }))}
-                placeholder="Any specific requirements or preferences..."
-                className="min-h-[60px]"
+                id="customPrompt"
+                value={formData.customPrompt}
+                onChange={(e) => setFormData(prev => ({ ...prev, customPrompt: e.target.value }))}
+                placeholder="Add any specific instructions or requirements..."
+                rows={2}
               />
             </div>
 
-            <Button
-              onClick={handleGenerate}
-              disabled={!request.topic.trim() || isLoading || costLoading}
-              className="w-full"
-              size="lg"
-            >
-              {isLoading ? (
+            <Button onClick={handleGenerate} disabled={isGenerating || !formData.topic.trim()} className="w-full">
+              {isGenerating ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Generating...
                 </>
               ) : (
                 <>
-                  <FileText className="h-4 w-4 mr-2" />
+                  <Wand2 className="h-4 w-4 mr-2" />
                   Generate Content
                 </>
               )}
@@ -384,62 +263,58 @@ export function ContentGenerator() {
           </CardContent>
         </Card>
 
-        {/* Output Panel */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Generated Content</CardTitle>
-              {generatedContent && (
-                <div className="flex space-x-2">
-                  <Button onClick={handleCopy} variant="outline" size="sm">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button onClick={handleDownload} variant="outline" size="sm">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
+            <CardTitle>Generated Content</CardTitle>
+            <CardDescription>
+              Your AI-generated content will appear here
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {generatedContent ? (
               <div className="space-y-4">
-                <div className="bg-muted rounded-lg p-4">
+                <div className="bg-muted p-4 rounded-lg max-h-96 overflow-y-auto">
                   <pre className="whitespace-pre-wrap text-sm">{generatedContent}</pre>
                 </div>
-                {lastResponse && (
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <Badge variant="secondary">
-                      {lastResponse.usage.totalTokens} tokens
-                    </Badge>
-                    <Badge variant="secondary">
-                      {lastResponse.model}
-                    </Badge>
-                    <Badge variant="secondary">
-                      {lastResponse.metadata.style}
-                    </Badge>
-                    <Badge variant="secondary">
-                      {lastResponse.metadata.length}
-                    </Badge>
-                    {request.useProfileContext && profileContext && (
-                      <Badge variant="secondary">
-                        <User className="h-3 w-3 mr-1" />
-                        Personalized
-                      </Badge>
-                    )}
-                  </div>
-                )}
+                
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={handleSaveToLibrary} size="sm">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save to Library
+                  </Button>
+                  <Button onClick={copyToClipboard} variant="outline" size="sm">
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button onClick={downloadContent} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+
+                <div className="flex gap-1">
+                  <Badge variant="secondary">{formData.style}</Badge>
+                  <Badge variant="secondary">{formData.length}</Badge>
+                  <Badge variant="outline">{formData.model}</Badge>
+                </div>
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-12">
-                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <Wand2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Generated content will appear here</p>
-                <p className="text-sm mt-1">Configure your content settings and click Generate</p>
+                <p className="text-sm">Fill out the form and click "Generate Content" to get started</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Alert>
+        <AlertDescription>
+          All generated content is automatically saved with metadata for future reference. 
+          You can manage and organize your content in the Content Library.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Library, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function ContentCreationCard() {
@@ -15,7 +15,7 @@ export function ContentCreationCard() {
           <FileText className="h-5 w-5 mr-2" />
           Content Creation
         </CardTitle>
-        <CardDescription>Generate professional content with AI</CardDescription>
+        <CardDescription>Create and manage professional content with AI</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -24,12 +24,21 @@ export function ContentCreationCard() {
             className="w-full justify-start"
             onClick={() => navigate('/content-generator')}
           >
-            <FileText className="h-4 w-4 mr-2" />
-            Create Content
+            <Wand2 className="h-4 w-4 mr-2" />
+            AI Content Generator
+            <ExternalLink className="h-3 w-3 ml-auto" />
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start"
+            onClick={() => navigate('/content-library')}
+          >
+            <Library className="h-4 w-4 mr-2" />
+            Content Library
             <ExternalLink className="h-3 w-3 ml-auto" />
           </Button>
           <div className="text-xs text-muted-foreground">
-            Create resumes, cover letters, and other professional documents.
+            Generate, organize and manage all your professional content in one place.
           </div>
         </div>
       </CardContent>
