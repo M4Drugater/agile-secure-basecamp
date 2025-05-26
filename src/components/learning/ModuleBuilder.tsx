@@ -2,39 +2,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { 
-  Plus, 
-  X, 
-  GripVertical, 
-  FileText, 
-  Video, 
-  BookOpen, 
-  HelpCircle,
-  CheckSquare,
-  MessageSquare
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useLearningModules, CreateLearningModuleData } from '@/hooks/useLearningModules';
+import { ModuleBasicInfo, ModuleContent, ModuleSettings } from './module-builder';
 
 interface ModuleBuilderProps {
   learningPathId: string;
   onModuleCreated?: () => void;
 }
-
-const moduleTypeIcons = {
-  text: FileText,
-  video: Video,
-  interactive: BookOpen,
-  quiz: HelpCircle,
-  assignment: CheckSquare,
-  discussion: MessageSquare,
-};
 
 export function ModuleBuilder({ learningPathId, onModuleCreated }: ModuleBuilderProps) {
   const { modules, createModule, isCreating } = useLearningModules(learningPathId);
@@ -81,20 +57,6 @@ export function ModuleBuilder({ learningPathId, onModuleCreated }: ModuleBuilder
     onModuleCreated?.();
   };
 
-  const addResource = () => {
-    setResources([...resources, { title: '', url: '', type: 'link' }]);
-  };
-
-  const updateResource = (index: number, field: string, value: string) => {
-    const updated = [...resources];
-    updated[index] = { ...updated[index], [field]: value };
-    setResources(updated);
-  };
-
-  const removeResource = (index: number) => {
-    setResources(resources.filter((_, i) => i !== index));
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -111,194 +73,27 @@ export function ModuleBuilder({ learningPathId, onModuleCreated }: ModuleBuilder
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Module Title *</Label>
-                <Input
-                  id="title"
-                  value={newModule.title || ''}
-                  onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
-                  placeholder="Enter module title"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="module_type">Module Type</Label>
-                <Select 
-                  value={newModule.module_type || 'text'} 
-                  onValueChange={(value) => setNewModule({ ...newModule, module_type: value as any })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(moduleTypeIcons).map(([type, Icon]) => (
-                      <SelectItem key={type} value={type}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          <span className="capitalize">{type}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <RichTextEditor
-                content={newModule.description || ''}
-                onChange={(content) => setNewModule({ ...newModule, description: content })}
-                placeholder="Brief description of what this module covers"
-                className="min-h-[120px]"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Estimated Duration (minutes)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={newModule.estimated_duration_minutes || ''}
-                  onChange={(e) => setNewModule({ ...newModule, estimated_duration_minutes: parseInt(e.target.value) || 0 })}
-                  placeholder="15"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="order">Order Position</Label>
-                <Input
-                  id="order"
-                  type="number"
-                  value={newModule.order_index || ''}
-                  onChange={(e) => setNewModule({ ...newModule, order_index: parseInt(e.target.value) || 1 })}
-                  placeholder="1"
-                />
-              </div>
-            </div>
+          <TabsContent value="basic">
+            <ModuleBasicInfo 
+              newModule={newModule}
+              setNewModule={setNewModule}
+            />
           </TabsContent>
 
-          <TabsContent value="content" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="content">Module Content</Label>
-              <RichTextEditor
-                content={newModule.content || ''}
-                onChange={(content) => setNewModule({ ...newModule, content })}
-                placeholder="Enter the main content for this module. You can use rich formatting, add links, images, and code blocks..."
-                className="min-h-[300px]"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Resources</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addResource}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Resource
-                </Button>
-              </div>
-              
-              {resources.map((resource, index) => (
-                <Card key={index} className="p-4">
-                  <div className="flex items-start gap-4">
-                    <GripVertical className="h-5 w-5 text-muted-foreground mt-2" />
-                    <div className="flex-1 space-y-2">
-                      <Input
-                        placeholder="Resource title"
-                        value={resource.title}
-                        onChange={(e) => updateResource(index, 'title', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Resource URL"
-                        value={resource.url}
-                        onChange={(e) => updateResource(index, 'url', e.target.value)}
-                      />
-                      <Select 
-                        value={resource.type} 
-                        onValueChange={(value) => updateResource(index, 'type', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="link">Link</SelectItem>
-                          <SelectItem value="pdf">PDF</SelectItem>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="document">Document</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeResource(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+          <TabsContent value="content">
+            <ModuleContent
+              newModule={newModule}
+              setNewModule={setNewModule}
+              resources={resources}
+              setResources={setResources}
+            />
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="required">Required Module</Label>
-                  <Switch
-                    id="required"
-                    checked={newModule.is_required || false}
-                    onCheckedChange={(checked) => setNewModule({ ...newModule, is_required: checked })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="passing_score">Passing Score (%)</Label>
-                  <Input
-                    id="passing_score"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={newModule.passing_score || ''}
-                    onChange={(e) => setNewModule({ ...newModule, passing_score: parseInt(e.target.value) || 70 })}
-                    placeholder="70"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">Module Preview</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Title:</span>
-                      <span className="font-medium">{newModule.title || 'Untitled'}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Type:</span>
-                      <Badge variant="outline" className="capitalize">
-                        {newModule.module_type}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Duration:</span>
-                      <span>{newModule.estimated_duration_minutes || 0} min</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Required:</span>
-                      <Badge variant={newModule.is_required ? 'default' : 'secondary'}>
-                        {newModule.is_required ? 'Yes' : 'No'}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <TabsContent value="settings">
+            <ModuleSettings
+              newModule={newModule}
+              setNewModule={setNewModule}
+            />
           </TabsContent>
         </Tabs>
 
