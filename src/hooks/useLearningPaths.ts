@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,7 +24,7 @@ export interface LearningPath {
 }
 
 export interface CreateLearningPathData {
-  title: string;
+  title?: string;
   description?: string;
   difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   estimated_duration_hours?: number;
