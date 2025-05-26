@@ -27,15 +27,15 @@ export function LearningPreferencesSection({ form }: LearningPreferencesSectionP
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="How do you learn best?" />
+                      <SelectValue placeholder="Select learning style" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="visual">Visual Learner</SelectItem>
-                    <SelectItem value="auditory">Auditory Learner</SelectItem>
-                    <SelectItem value="kinesthetic">Hands-on Learner</SelectItem>
+                    <SelectItem value="visual">Visual</SelectItem>
+                    <SelectItem value="auditory">Auditory</SelectItem>
+                    <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
                     <SelectItem value="reading_writing">Reading/Writing</SelectItem>
-                    <SelectItem value="mixed">Mixed Approach</SelectItem>
+                    <SelectItem value="mixed">Mixed</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -52,16 +52,16 @@ export function LearningPreferencesSection({ form }: LearningPreferencesSectionP
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="How do you prefer to communicate?" />
+                      <SelectValue placeholder="Select communication style" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="direct">Direct & Concise</SelectItem>
+                    <SelectItem value="direct">Direct</SelectItem>
                     <SelectItem value="collaborative">Collaborative</SelectItem>
-                    <SelectItem value="analytical">Analytical & Data-driven</SelectItem>
-                    <SelectItem value="supportive">Supportive & Encouraging</SelectItem>
-                    <SelectItem value="formal">Formal & Structured</SelectItem>
-                    <SelectItem value="casual">Casual & Informal</SelectItem>
+                    <SelectItem value="analytical">Analytical</SelectItem>
+                    <SelectItem value="supportive">Supportive</SelectItem>
+                    <SelectItem value="formal">Formal</SelectItem>
+                    <SelectItem value="casual">Casual</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -80,16 +80,16 @@ export function LearningPreferencesSection({ form }: LearningPreferencesSectionP
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="How do you prefer feedback?" />
+                      <SelectValue placeholder="Select feedback preference" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="frequent">Frequent Check-ins</SelectItem>
-                    <SelectItem value="structured">Structured Reviews</SelectItem>
-                    <SelectItem value="informal">Informal Conversations</SelectItem>
-                    <SelectItem value="written">Written Feedback</SelectItem>
-                    <SelectItem value="verbal">Verbal Feedback</SelectItem>
-                    <SelectItem value="peer_review">Peer Reviews</SelectItem>
+                    <SelectItem value="frequent">Frequent</SelectItem>
+                    <SelectItem value="structured">Structured</SelectItem>
+                    <SelectItem value="informal">Informal</SelectItem>
+                    <SelectItem value="written">Written</SelectItem>
+                    <SelectItem value="verbal">Verbal</SelectItem>
+                    <SelectItem value="peer_review">Peer Review</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -112,10 +112,10 @@ export function LearningPreferencesSection({ form }: LearningPreferencesSectionP
                   <SelectContent>
                     <SelectItem value="remote">Remote</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
-                    <SelectItem value="office">Office-based</SelectItem>
+                    <SelectItem value="office">Office</SelectItem>
                     <SelectItem value="flexible">Flexible</SelectItem>
-                    <SelectItem value="startup">Startup Environment</SelectItem>
-                    <SelectItem value="corporate">Corporate Environment</SelectItem>
+                    <SelectItem value="startup">Startup</SelectItem>
+                    <SelectItem value="corporate">Corporate</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

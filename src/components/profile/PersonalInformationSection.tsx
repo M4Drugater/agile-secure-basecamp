@@ -4,8 +4,8 @@ import { UseFormReturn } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfileFormData } from './profileFormSchema';
 
 interface PersonalInformationSectionProps {
@@ -19,21 +19,21 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
         <CardTitle>Personal Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <FormField
-          control={form.control}
-          name="full_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Your full name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your full name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="current_position"
@@ -41,21 +41,7 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
               <FormItem>
                 <FormLabel>Current Position</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Senior Developer" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="company"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company</FormLabel>
-                <FormControl>
-                  <Input placeholder="Your current company" {...field} />
+                  <Input placeholder="e.g., Software Developer" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -63,7 +49,21 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="company"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company</FormLabel>
+                <FormControl>
+                  <Input placeholder="Company name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="industry"
@@ -91,7 +91,9 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
               </FormItem>
             )}
           />
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="experience_level"
@@ -129,17 +131,15 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
                   <Input 
                     type="number" 
                     placeholder="0" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    {...field} 
+                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="management_level"
@@ -149,7 +149,7 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select management level" />
+                      <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -158,7 +158,7 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
                     <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="senior_manager">Senior Manager</SelectItem>
                     <SelectItem value="director">Director</SelectItem>
-                    <SelectItem value="vp">Vice President</SelectItem>
+                    <SelectItem value="vp">VP</SelectItem>
                     <SelectItem value="c_level">C-Level</SelectItem>
                   </SelectContent>
                 </Select>
@@ -166,7 +166,9 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
               </FormItem>
             )}
           />
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="team_size"
@@ -177,39 +179,35 @@ export function PersonalInformationSection({ form }: PersonalInformationSectionP
                   <Input 
                     type="number" 
                     placeholder="0" 
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    {...field} 
+                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                   />
                 </FormControl>
-                <FormDescription>Number of people you manage</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={form.control}
-          name="leadership_experience"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>
-                  I have leadership experience
-                </FormLabel>
-                <FormDescription>
-                  Check if you have experience leading teams or projects
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="leadership_experience"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    Leadership Experience
+                  </FormLabel>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
       </CardContent>
     </Card>
   );
