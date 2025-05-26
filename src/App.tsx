@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FloatingHomeButton } from "@/components/ui/floating-home-button";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
@@ -30,6 +31,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <AppLayout />
