@@ -35,6 +35,9 @@ verify_jwt = true
 [functions.generate-content]
 verify_jwt = true
 
+[functions.process-knowledge-file]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
 port = 54325

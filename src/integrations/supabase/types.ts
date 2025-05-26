@@ -655,18 +655,23 @@ export type Database = {
       }
       user_knowledge_files: {
         Row: {
+          ai_key_points: string[] | null
+          ai_summary: string | null
           content: string | null
           created_at: string
           description: string | null
           embeddings: string | null
+          extraction_status: string | null
           file_name: string | null
           file_path: string | null
           file_size: number | null
           file_type: string | null
+          file_url: string | null
           id: string
           is_ai_processed: boolean | null
           key_insights: string[] | null
           metadata: Json | null
+          original_file_name: string | null
           processing_status: string | null
           summary: string | null
           tags: string[] | null
@@ -675,18 +680,23 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_key_points?: string[] | null
+          ai_summary?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
           embeddings?: string | null
+          extraction_status?: string | null
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
           is_ai_processed?: boolean | null
           key_insights?: string[] | null
           metadata?: Json | null
+          original_file_name?: string | null
           processing_status?: string | null
           summary?: string | null
           tags?: string[] | null
@@ -695,18 +705,23 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_key_points?: string[] | null
+          ai_summary?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
           embeddings?: string | null
+          extraction_status?: string | null
           file_name?: string | null
           file_path?: string | null
           file_size?: number | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
           is_ai_processed?: boolean | null
           key_insights?: string[] | null
           metadata?: Json | null
+          original_file_name?: string | null
           processing_status?: string | null
           summary?: string | null
           tags?: string[] | null

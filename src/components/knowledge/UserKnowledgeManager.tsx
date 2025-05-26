@@ -8,16 +8,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUserKnowledgeFiles, UserKnowledgeFile } from '@/hooks/useUserKnowledgeFiles';
-import { Plus, FileText, Edit, Trash2, Search, Upload } from 'lucide-react';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import { FileUploadZone } from './FileUploadZone';
+import { Plus, FileText, Edit, Trash2, Search, Upload, Loader2, Brain, Zap } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export function UserKnowledgeManager() {
   const { files, createFile, updateFile, deleteFile, isCreating } = useUserKnowledgeFiles();
+  const { uploadFile, isUploading } = useFileUpload();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFile, setEditingFile] = useState<UserKnowledgeFile | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [inputMethod, setInputMethod] = useState<'manual' | 'upload'>('manual');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -32,23 +40,68 @@ export function UserKnowledgeManager() {
                          file.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = selectedType === 'all' || 
                        (selectedType === 'processed' && file.is_ai_processed) ||
-                       (selectedType === 'unprocessed' && !file.is_ai_processed);
+                       (selectedType === 'unprocessed' && !file.is_ai_processed) ||
+                       (selectedType === 'uploaded' && file.file_url) ||
+                       (selectedType === 'manual' && !file.file_url);
     return matchesSearch && matchesType;
   }) || [];
 
-  const handleSubmit = () => {
-    const fileData = {
+  const handleSubmit = async () => {
+    let fileData: any = {
       title: formData.title,
       description: formData.description,
-      content: formData.content,
       tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
       metadata: {},
     };
 
+    // Handle file upload
+    if (inputMethod === 'upload' && selectedFile) {
+      const uploadResult = await uploadFile(selectedFile);
+      if (!uploadResult) {
+        return; // Upload failed, error already shown
+      }
+
+      fileData = {
+        ...fileData,
+        file_url: uploadResult.file_url,
+        original_file_name: uploadResult.original_file_name,
+        file_type: uploadResult.file_type,
+        file_size: uploadResult.file_size,
+        extraction_status: 'pending',
+        processing_status: 'pending',
+      };
+    } else {
+      // Manual input
+      fileData.content = formData.content;
+    }
+
     if (editingFile) {
       updateFile({ id: editingFile.id, ...fileData });
     } else {
-      createFile(fileData);
+      const newFile = createFile(fileData);
+      
+      // If it's a file upload, trigger processing
+      if (inputMethod === 'upload' && selectedFile && newFile) {
+        setTimeout(async () => {
+          try {
+            await supabase.functions.invoke('process-knowledge-file', {
+              body: {
+                fileId: (newFile as any).id,
+                fileUrl: fileData.file_url,
+                fileType: fileData.file_type,
+                fileName: fileData.original_file_name,
+              },
+            });
+          } catch (error) {
+            console.error('Error processing file:', error);
+            toast({
+              title: "Processing Error",
+              description: "File uploaded but processing failed. You can manually add content.",
+              variant: "destructive",
+            });
+          }
+        }, 1000);
+      }
     }
 
     resetForm();
@@ -63,6 +116,8 @@ export function UserKnowledgeManager() {
       tags: '',
     });
     setEditingFile(null);
+    setSelectedFile(null);
+    setInputMethod('manual');
   };
 
   const handleEdit = (file: UserKnowledgeFile) => {
@@ -73,6 +128,7 @@ export function UserKnowledgeManager() {
       content: file.content || '',
       tags: file.tags?.join(', ') || '',
     });
+    setInputMethod(file.file_url ? 'upload' : 'manual');
     setIsDialogOpen(true);
   };
 
@@ -98,25 +154,62 @@ export function UserKnowledgeManager() {
               Add Knowledge
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingFile ? 'Edit Knowledge File' : 'Add New Knowledge'}
               </DialogTitle>
               <DialogDescription>
-                Add your personal knowledge, notes, or references to your knowledge base
+                Add your personal knowledge, notes, or upload documents to your knowledge base
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Knowledge file title"
-                />
+            
+            <div className="space-y-6">
+              {!editingFile && (
+                <Tabs value={inputMethod} onValueChange={(value: any) => setInputMethod(value)}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="manual" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Manual Entry
+                    </TabsTrigger>
+                    <TabsTrigger value="upload" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      File Upload
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="upload" className="mt-4">
+                    <FileUploadZone
+                      onFileSelect={setSelectedFile}
+                      selectedFile={selectedFile}
+                      onRemoveFile={() => setSelectedFile(null)}
+                      isUploading={isUploading}
+                    />
+                  </TabsContent>
+                </Tabs>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, '') : 'Knowledge file title'}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tags">Tags (comma-separated)</Label>
+                  <Input
+                    id="tags"
+                    value={formData.tags}
+                    onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+                    placeholder="e.g., javascript, leadership, productivity"
+                  />
+                </div>
               </div>
+
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -127,32 +220,44 @@ export function UserKnowledgeManager() {
                   rows={2}
                 />
               </div>
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Your knowledge content, notes, or insights"
-                  rows={8}
-                />
-              </div>
-              <div>
-                <Label htmlFor="tags">Tags (comma-separated)</Label>
-                <Input
-                  id="tags"
-                  value={formData.tags}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
-                  placeholder="e.g., javascript, leadership, productivity"
-                />
-              </div>
+
+              {(inputMethod === 'manual' || editingFile) && (
+                <div>
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Your knowledge content, notes, or insights"
+                    rows={8}
+                  />
+                </div>
+              )}
+
+              {inputMethod === 'upload' && selectedFile && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium text-blue-900">AI Processing</span>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    After upload, your file will be automatically processed to extract text content, 
+                    generate an AI summary, and identify key insights using advanced AI analysis.
+                  </p>
+                </div>
+              )}
             </div>
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={isCreating || !formData.title}>
-                {editingFile ? 'Update' : 'Create'}
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isCreating || isUploading || !formData.title || (inputMethod === 'upload' && !selectedFile)}
+              >
+                {(isCreating || isUploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {editingFile ? 'Update' : (inputMethod === 'upload' ? 'Upload & Process' : 'Create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -175,6 +280,8 @@ export function UserKnowledgeManager() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Files</SelectItem>
+            <SelectItem value="uploaded">Uploaded Files</SelectItem>
+            <SelectItem value="manual">Manual Entries</SelectItem>
             <SelectItem value="processed">AI Processed</SelectItem>
             <SelectItem value="unprocessed">Not Processed</SelectItem>
           </SelectContent>
@@ -187,7 +294,10 @@ export function UserKnowledgeManager() {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <CardTitle className="text-lg line-clamp-2">{file.title}</CardTitle>
+                  <CardTitle className="text-lg line-clamp-2 flex items-center gap-2">
+                    {file.file_url && <Upload className="h-4 w-4 text-blue-500" />}
+                    {file.title}
+                  </CardTitle>
                   <CardDescription className="line-clamp-2">
                     {file.description}
                   </CardDescription>
@@ -212,12 +322,34 @@ export function UserKnowledgeManager() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <Badge variant={file.is_ai_processed ? "default" : "secondary"} className="text-xs">
                     {file.is_ai_processed ? "AI Processed" : "Not Processed"}
                   </Badge>
+                  {file.file_url && (
+                    <Badge variant="outline" className="text-xs">
+                      Uploaded
+                    </Badge>
+                  )}
+                  {file.processing_status === 'processing' && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Processing
+                    </Badge>
+                  )}
                 </div>
+
+                {file.ai_summary && (
+                  <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Zap className="h-3 w-3 text-blue-600" />
+                      <span className="font-medium text-blue-900">AI Summary</span>
+                    </div>
+                    <p className="line-clamp-2">{file.ai_summary}</p>
+                  </div>
+                )}
+
                 {file.tags && file.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {file.tags.slice(0, 3).map((tag, index) => (
