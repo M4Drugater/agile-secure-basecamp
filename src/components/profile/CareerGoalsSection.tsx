@@ -3,6 +3,7 @@ import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProfileFormData } from './profileFormSchema';
@@ -26,7 +27,7 @@ export function CareerGoalsSection({ form }: CareerGoalsSectionProps) {
               <FormItem>
                 <FormLabel>Target Position</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Engineering Manager" {...field} />
+                  <Input placeholder="e.g., Senior Software Engineer" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -40,7 +41,7 @@ export function CareerGoalsSection({ form }: CareerGoalsSectionProps) {
               <FormItem>
                 <FormLabel>Target Industry</FormLabel>
                 <FormControl>
-                  <Input placeholder="Industry you want to work in" {...field} />
+                  <Input placeholder="e.g., Fintech, Healthcare" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -61,13 +62,13 @@ export function CareerGoalsSection({ form }: CareerGoalsSectionProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="under_50k">Under $50k</SelectItem>
-                  <SelectItem value="50k_75k">$50k - $75k</SelectItem>
-                  <SelectItem value="75k_100k">$75k - $100k</SelectItem>
-                  <SelectItem value="100k_150k">$100k - $150k</SelectItem>
-                  <SelectItem value="150k_200k">$150k - $200k</SelectItem>
-                  <SelectItem value="200k_300k">$200k - $300k</SelectItem>
-                  <SelectItem value="over_300k">Over $300k</SelectItem>
+                  <SelectItem value="under_50k">Under $50,000</SelectItem>
+                  <SelectItem value="50k_75k">$50,000 - $75,000</SelectItem>
+                  <SelectItem value="75k_100k">$75,000 - $100,000</SelectItem>
+                  <SelectItem value="100k_150k">$100,000 - $150,000</SelectItem>
+                  <SelectItem value="150k_200k">$150,000 - $200,000</SelectItem>
+                  <SelectItem value="200k_300k">$200,000 - $300,000</SelectItem>
+                  <SelectItem value="over_300k">Over $300,000</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

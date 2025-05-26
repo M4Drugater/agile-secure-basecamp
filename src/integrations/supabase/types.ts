@@ -430,6 +430,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_profile_completeness: {
+        Args: {
+          profile_row: Database["public"]["Tables"]["user_profiles"]["Row"]
+        }
+        Returns: number
+      }
       get_monthly_cost: {
         Args: Record<PropertyKey, never>
         Returns: number

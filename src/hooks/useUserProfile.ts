@@ -47,16 +47,20 @@ export function useUserProfile() {
     queryFn: async () => {
       if (!user) return null;
 
+      console.log('Fetching profile for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
+        console.error('Error fetching profile:', error);
         throw error;
       }
 
+      console.log('Profile data:', data);
       return data;
     },
     enabled: !!user,
@@ -66,24 +70,37 @@ export function useUserProfile() {
     mutationFn: async (profileData: Partial<UserProfile>) => {
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Updating profile with data:', profileData);
+
+      // Clean the data to only include defined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(profileData).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+      );
+
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert({
           user_id: user.id,
-          ...profileData,
+          ...cleanedData,
           last_updated: new Date().toISOString()
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
+
+      console.log('Profile updated successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['userProfile', user?.id] });
+      console.log('Profile completion:', data?.profile_completeness);
       toast({
         title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        description: `Your profile has been updated successfully. ${data?.profile_completeness || 0}% complete.`,
       });
     },
     onError: (error) => {
