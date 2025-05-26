@@ -160,7 +160,7 @@ export function UserProfileForm() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="industry"
@@ -191,6 +191,33 @@ export function UserProfileForm() {
 
                 <FormField
                   control={form.control}
+                  name="experience_level"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Experience Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="entry">Entry Level</SelectItem>
+                          <SelectItem value="junior">Junior</SelectItem>
+                          <SelectItem value="mid">Mid Level</SelectItem>
+                          <SelectItem value="senior">Senior</SelectItem>
+                          <SelectItem value="lead">Lead</SelectItem>
+                          <SelectItem value="principal">Principal</SelectItem>
+                          <SelectItem value="executive">Executive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="years_of_experience"
                   render={({ field }) => (
                     <FormItem>
@@ -208,6 +235,78 @@ export function UserProfileForm() {
                   )}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="management_level"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Management Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select management level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="individual_contributor">Individual Contributor</SelectItem>
+                          <SelectItem value="team_lead">Team Lead</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="senior_manager">Senior Manager</SelectItem>
+                          <SelectItem value="director">Director</SelectItem>
+                          <SelectItem value="vp">Vice President</SelectItem>
+                          <SelectItem value="c_level">C-Level</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="team_size"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team Size</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormDescription>Number of people you manage</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="leadership_experience"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        I have leadership experience
+                      </FormLabel>
+                      <FormDescription>
+                        Check if you have experience leading teams or projects
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -259,11 +358,13 @@ export function UserProfileForm() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="50k-75k">$50k - $75k</SelectItem>
-                        <SelectItem value="75k-100k">$75k - $100k</SelectItem>
-                        <SelectItem value="100k-150k">$100k - $150k</SelectItem>
-                        <SelectItem value="150k-200k">$150k - $200k</SelectItem>
-                        <SelectItem value="200k+">$200k+</SelectItem>
+                        <SelectItem value="under_50k">Under $50k</SelectItem>
+                        <SelectItem value="50k_75k">$50k - $75k</SelectItem>
+                        <SelectItem value="75k_100k">$75k - $100k</SelectItem>
+                        <SelectItem value="100k_150k">$100k - $150k</SelectItem>
+                        <SelectItem value="150k_200k">$150k - $200k</SelectItem>
+                        <SelectItem value="200k_300k">$200k - $300k</SelectItem>
+                        <SelectItem value="over_300k">Over $300k</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -292,10 +393,11 @@ export function UserProfileForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="visual">Visual</SelectItem>
-                          <SelectItem value="auditory">Auditory</SelectItem>
-                          <SelectItem value="kinesthetic">Kinesthetic</SelectItem>
-                          <SelectItem value="reading">Reading/Writing</SelectItem>
+                          <SelectItem value="visual">Visual Learner</SelectItem>
+                          <SelectItem value="auditory">Auditory Learner</SelectItem>
+                          <SelectItem value="kinesthetic">Hands-on Learner</SelectItem>
+                          <SelectItem value="reading_writing">Reading/Writing</SelectItem>
+                          <SelectItem value="mixed">Mixed Approach</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -316,10 +418,12 @@ export function UserProfileForm() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="direct">Direct</SelectItem>
+                          <SelectItem value="direct">Direct & Concise</SelectItem>
                           <SelectItem value="collaborative">Collaborative</SelectItem>
-                          <SelectItem value="analytical">Analytical</SelectItem>
-                          <SelectItem value="supportive">Supportive</SelectItem>
+                          <SelectItem value="analytical">Analytical & Data-driven</SelectItem>
+                          <SelectItem value="supportive">Supportive & Encouraging</SelectItem>
+                          <SelectItem value="formal">Formal & Structured</SelectItem>
+                          <SelectItem value="casual">Casual & Informal</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -328,29 +432,59 @@ export function UserProfileForm() {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="feedback_preference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Feedback Preference</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="How do you prefer to receive feedback?" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="frequent">Frequent check-ins</SelectItem>
-                        <SelectItem value="structured">Structured reviews</SelectItem>
-                        <SelectItem value="informal">Informal conversations</SelectItem>
-                        <SelectItem value="written">Written feedback</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="feedback_preference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Feedback Preference</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="How do you prefer feedback?" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="frequent">Frequent Check-ins</SelectItem>
+                          <SelectItem value="structured">Structured Reviews</SelectItem>
+                          <SelectItem value="informal">Informal Conversations</SelectItem>
+                          <SelectItem value="written">Written Feedback</SelectItem>
+                          <SelectItem value="verbal">Verbal Feedback</SelectItem>
+                          <SelectItem value="peer_review">Peer Reviews</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="work_environment"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Preferred Work Environment</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select work environment" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="remote">Remote</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                          <SelectItem value="office">Office-based</SelectItem>
+                          <SelectItem value="flexible">Flexible</SelectItem>
+                          <SelectItem value="startup">Startup Environment</SelectItem>
+                          <SelectItem value="corporate">Corporate Environment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
           </Card>
 
