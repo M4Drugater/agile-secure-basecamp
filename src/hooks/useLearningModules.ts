@@ -22,6 +22,37 @@ export interface LearningModule {
   updated_at: string;
 }
 
+export interface CreateLearningModuleData {
+  learning_path_id: string;
+  title: string;
+  description?: string;
+  content?: string;
+  module_type?: 'video' | 'text' | 'interactive' | 'quiz' | 'assignment' | 'discussion';
+  order_index: number;
+  estimated_duration_minutes?: number;
+  is_required?: boolean;
+  passing_score?: number;
+  resources?: any[];
+  ai_enhanced_content?: string;
+  personalization_data?: any;
+}
+
+export interface UpdateLearningModuleData {
+  id: string;
+  learning_path_id?: string;
+  title?: string;
+  description?: string;
+  content?: string;
+  module_type?: 'video' | 'text' | 'interactive' | 'quiz' | 'assignment' | 'discussion';
+  order_index?: number;
+  estimated_duration_minutes?: number;
+  is_required?: boolean;
+  passing_score?: number;
+  resources?: any[];
+  ai_enhanced_content?: string;
+  personalization_data?: any;
+}
+
 export function useLearningModules(learningPathId?: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -50,7 +81,7 @@ export function useLearningModules(learningPathId?: string) {
   });
 
   const createModule = useMutation({
-    mutationFn: async (moduleData: Partial<LearningModule>) => {
+    mutationFn: async (moduleData: CreateLearningModuleData) => {
       const { data, error } = await supabase
         .from('learning_modules')
         .insert(moduleData)
@@ -70,7 +101,7 @@ export function useLearningModules(learningPathId?: string) {
   });
 
   const updateModule = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<LearningModule> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: UpdateLearningModuleData) => {
       const { data, error } = await supabase
         .from('learning_modules')
         .update(updates)

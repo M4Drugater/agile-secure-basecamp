@@ -24,6 +24,33 @@ export interface LearningPath {
   updated_at: string;
 }
 
+export interface CreateLearningPathData {
+  title: string;
+  description?: string;
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  estimated_duration_hours?: number;
+  prerequisites?: string[];
+  learning_objectives?: string[];
+  tags?: string[];
+  is_published?: boolean;
+  is_featured?: boolean;
+  metadata?: any;
+}
+
+export interface UpdateLearningPathData {
+  id: string;
+  title?: string;
+  description?: string;
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  estimated_duration_hours?: number;
+  prerequisites?: string[];
+  learning_objectives?: string[];
+  tags?: string[];
+  is_published?: boolean;
+  is_featured?: boolean;
+  metadata?: any;
+}
+
 export function useLearningPaths() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -48,7 +75,7 @@ export function useLearningPaths() {
   });
 
   const createPath = useMutation({
-    mutationFn: async (pathData: Partial<LearningPath>) => {
+    mutationFn: async (pathData: CreateLearningPathData) => {
       const { data, error } = await supabase
         .from('learning_paths')
         .insert({
@@ -78,7 +105,7 @@ export function useLearningPaths() {
   });
 
   const updatePath = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<LearningPath> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: UpdateLearningPathData) => {
       const { data, error } = await supabase
         .from('learning_paths')
         .update(updates)
