@@ -13,11 +13,16 @@ export interface UserKnowledgeFile {
   file_name?: string;
   file_type?: string;
   file_size?: number;
+  file_url?: string;
+  original_file_name?: string;
   tags?: string[];
   summary?: string;
   key_insights?: string[];
+  ai_summary?: string;
+  ai_key_points?: string[];
   is_ai_processed?: boolean;
   processing_status?: string;
+  extraction_status?: string;
   metadata?: any;
   created_at: string;
   updated_at: string;
@@ -57,8 +62,8 @@ export function useUserKnowledgeFiles() {
         .insert({
           user_id: user.id,
           ...fileData,
-          processing_status: 'completed',
-          is_ai_processed: false,
+          processing_status: fileData.processing_status || 'completed',
+          is_ai_processed: fileData.is_ai_processed || false,
         })
         .select()
         .single();

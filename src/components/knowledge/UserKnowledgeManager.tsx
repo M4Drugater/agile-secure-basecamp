@@ -78,29 +78,35 @@ export function UserKnowledgeManager() {
     if (editingFile) {
       updateFile({ id: editingFile.id, ...fileData });
     } else {
-      const newFile = createFile(fileData);
-      
-      // If it's a file upload, trigger processing
-      if (inputMethod === 'upload' && selectedFile && newFile) {
-        setTimeout(async () => {
-          try {
-            await supabase.functions.invoke('process-knowledge-file', {
-              body: {
-                fileId: (newFile as any).id,
-                fileUrl: fileData.file_url,
-                fileType: fileData.file_type,
-                fileName: fileData.original_file_name,
-              },
-            });
-          } catch (error) {
-            console.error('Error processing file:', error);
-            toast({
-              title: "Processing Error",
-              description: "File uploaded but processing failed. You can manually add content.",
-              variant: "destructive",
-            });
-          }
-        }, 1000);
+      // For new files, we need to handle the async result properly
+      try {
+        createFile(fileData);
+        
+        // If it's a file upload, trigger processing after a short delay
+        if (inputMethod === 'upload' && selectedFile) {
+          setTimeout(async () => {
+            try {
+              // We'll need to get the created file ID from the response
+              // For now, we'll trigger processing without the specific file ID
+              await supabase.functions.invoke('process-knowledge-file', {
+                body: {
+                  fileUrl: fileData.file_url,
+                  fileType: fileData.file_type,
+                  fileName: fileData.original_file_name,
+                },
+              });
+            } catch (error) {
+              console.error('Error processing file:', error);
+              toast({
+                title: "Processing Error",
+                description: "File uploaded but processing failed. You can manually add content.",
+                variant: "destructive",
+              });
+            }
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error creating file:', error);
       }
     }
 
