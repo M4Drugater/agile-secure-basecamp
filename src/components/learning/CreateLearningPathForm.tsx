@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -80,7 +79,15 @@ export function CreateLearningPathForm({ open, onOpenChange }: CreateLearningPat
 
   const onSubmit = (data: FormData) => {
     const createData: CreateLearningPathData = {
-      ...data,
+      title: data.title,
+      description: data.description,
+      difficulty_level: data.difficulty_level,
+      estimated_duration_hours: data.estimated_duration_hours,
+      prerequisites: data.prerequisites,
+      learning_objectives: data.learning_objectives,
+      tags: data.tags,
+      is_published: data.is_published,
+      is_featured: data.is_featured,
       metadata: {
         created_via: 'form',
         version: '1.0',
