@@ -214,7 +214,8 @@ export function AppLayout() {
                   </div>
                 </div>
               </CardContent>
-            )}
+            </Card>
+          )}
 
           {/* System Status */}
           <Card>
