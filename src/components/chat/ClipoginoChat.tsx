@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, PanelLeftOpen, PanelLeftClose, User, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { useClipoginoChat } from './useClipoginoChat';
 import { useChatHistory } from './useChatHistory';
 import { useProfileContext } from '@/hooks/useProfileContext';
@@ -20,6 +22,8 @@ import { ModelSelector } from './ModelSelector';
 import { KnowledgeRecommendations } from './KnowledgeRecommendations';
 
 export function ClipoginoChat() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { 
     messages, 
     isLoading, 
@@ -55,8 +59,16 @@ export function ClipoginoChat() {
   };
 
   const handleViewKnowledgeResource = (resource: any) => {
-    // You could implement a modal or navigation to the knowledge base here
-    console.log('View knowledge resource:', resource);
+    console.log('Viewing knowledge resource:', resource);
+    
+    // Show toast notification
+    toast({
+      title: "Navigating to Resource",
+      description: `Opening ${resource.title} in ${resource.source === 'learning_path' ? 'Learning Management' : 'Knowledge Base'}`,
+      variant: 'default',
+    });
+    
+    // Navigation is already handled in the KnowledgeRecommendations component
   };
 
   return (
