@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, FileText, Copy, Download, AlertTriangle, User } from 'lucide-react';
+import { Loader2, FileText, Copy, Download, AlertTriangle, User, ExternalLink, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCostMonitoring } from '@/hooks/useCostMonitoring';
@@ -55,6 +55,7 @@ export function ContentGenerator() {
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastResponse, setLastResponse] = useState<ContentResponse | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const contentTypes = [
     { value: 'resume', label: 'Resume Section' },
@@ -81,6 +82,9 @@ export function ContentGenerator() {
   const handleGenerate = async () => {
     if (!request.topic.trim() || !user) return;
 
+    // Clear previous errors
+    setApiError(null);
+
     // Estimate cost based on content type and length
     const estimatedCost = request.length === 'long' ? 0.05 : request.length === 'medium' ? 0.03 : 0.01;
     
@@ -98,6 +102,8 @@ export function ContentGenerator() {
         contextualInstructions = `${contextualInstructions}\n\nPersonalization Context:\n${profileContext.fullContext}`;
       }
 
+      console.log('Making request to generate-content function...');
+
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
           type: request.type,
@@ -110,7 +116,10 @@ export function ContentGenerator() {
         },
       });
 
+      console.log('Function response:', { data, error });
+
       if (error) {
+        console.error('Function error:', error);
         throw error;
       }
 
@@ -131,11 +140,19 @@ export function ContentGenerator() {
       console.error('Content generation error:', error);
       
       let errorMessage = 'Failed to generate content';
-      if (error.message?.includes('Usage limit reached')) {
-        errorMessage = 'You have reached your daily AI usage limit';
+      let isApiError = false;
+
+      if (error.message?.includes('Usage limit reached') || error.message?.includes('insufficient_quota')) {
+        errorMessage = 'OpenAI API quota exceeded. Please check your OpenAI billing and usage limits.';
+        isApiError = true;
       } else if (error.message?.includes('Cost limit exceeded')) {
         errorMessage = 'Request would exceed your usage limits';
+      } else if (error.message?.includes('non-2xx status code') || error.message?.includes('Edge Function')) {
+        errorMessage = 'OpenAI API connection error. Please verify your API key and quota.';
+        isApiError = true;
       }
+
+      setApiError(isApiError ? errorMessage : null);
 
       toast({
         title: 'Generation Error',
@@ -194,6 +211,23 @@ export function ContentGenerator() {
           </div>
         </CardHeader>
       </Card>
+
+      {/* API Error Alert */}
+      {apiError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{apiError}</span>
+            <Button variant="outline" size="sm" asChild>
+              <a href="/admin" target="_blank" rel="noopener noreferrer">
+                <Settings className="h-4 w-4 mr-2" />
+                Check Settings
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </a>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Profile Integration Notice */}
       {!profileContext && (

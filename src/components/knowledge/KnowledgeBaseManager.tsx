@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,17 +22,19 @@ export function KnowledgeBaseManager() {
     title: '',
     description: '',
     content: '',
-    document_type: 'note',
+    document_type: 'personal_note',
     tags: '',
   });
 
+  // These types must match the database enum constraint
   const documentTypes = [
-    { value: 'note', label: 'Note' },
+    { value: 'personal_note', label: 'Personal Note' },
     { value: 'article', label: 'Article' },
     { value: 'research', label: 'Research' },
     { value: 'template', label: 'Template' },
     { value: 'reference', label: 'Reference' },
     { value: 'tutorial', label: 'Tutorial' },
+    { value: 'uploaded_file', label: 'Uploaded File' },
   ];
 
   const filteredDocuments = documents?.filter(doc => {
@@ -53,6 +54,8 @@ export function KnowledgeBaseManager() {
       tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
       processing_status: 'processed' as const,
       processed_at: new Date().toISOString(),
+      privacy_level: 'private' as const,
+      is_active: true,
     };
 
     if (editingDocument) {
@@ -70,7 +73,7 @@ export function KnowledgeBaseManager() {
       title: '',
       description: '',
       content: '',
-      document_type: 'note',
+      document_type: 'personal_note',
       tags: '',
     });
     setEditingDocument(null);
