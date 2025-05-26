@@ -34,26 +34,43 @@ export function useCostMonitoring(): CostMonitoringHook {
     try {
       setIsLoading(true);
       
-      // Get user's current usage
-      const [dailyResult, monthlyResult] = await Promise.all([
-        supabase.rpc('get_user_daily_cost', { user_uuid: user.id }),
-        supabase
-          .from('ai_usage_logs')
-          .select('total_cost')
-          .eq('user_id', user.id)
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-          .eq('status', 'success')
-      ]);
+      // Get user's current daily usage using RPC function
+      const { data: dailyData, error: dailyError } = await supabase.rpc('get_user_daily_cost', { 
+        user_uuid: user.id 
+      });
 
-      // Get current limits
-      const { data: configData } = await supabase
+      if (dailyError) {
+        console.error('Error fetching daily usage:', dailyError);
+        return;
+      }
+
+      // Get monthly usage using direct query with type assertion
+      const { data: monthlyData, error: monthlyError } = await (supabase as any)
+        .from('ai_usage_logs')
+        .select('total_cost')
+        .eq('user_id', user.id)
+        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+        .eq('status', 'success');
+
+      if (monthlyError) {
+        console.error('Error fetching monthly usage:', monthlyError);
+        return;
+      }
+
+      // Get current limits using type assertion
+      const { data: configData, error: configError } = await (supabase as any)
         .from('cost_monitoring_config')
         .select('per_user_daily_limit, monthly_limit')
         .eq('is_active', true)
         .single();
 
-      const dailyUsage = parseFloat(dailyResult.data || '0');
-      const monthlyUsage = monthlyResult.data?.reduce((sum, log) => sum + parseFloat(log.total_cost), 0) || 0;
+      if (configError) {
+        console.error('Error fetching config:', configError);
+        return;
+      }
+
+      const dailyUsage = parseFloat(dailyData || '0');
+      const monthlyUsage = monthlyData?.reduce((sum: number, log: any) => sum + parseFloat(log.total_cost), 0) || 0;
       const dailyLimit = configData?.per_user_daily_limit || 5.0;
       const monthlyLimit = configData?.monthly_limit || 1000.0;
 

@@ -27,41 +27,47 @@ export function CostMonitoringDashboard() {
   const { data: metrics, isLoading, error } = useQuery({
     queryKey: ['cost-metrics'],
     queryFn: async (): Promise<CostMetrics> => {
-      // Get current limits
-      const { data: config } = await supabase
+      // Get current limits using type assertion
+      const { data: config, error: configError } = await (supabase as any)
         .from('cost_monitoring_config')
         .select('daily_limit, monthly_limit')
         .eq('is_active', true)
         .single();
 
-      // Get daily and monthly totals
-      const [dailyResult, monthlyResult] = await Promise.all([
-        supabase.rpc('get_total_daily_cost'),
-        supabase.rpc('get_monthly_cost'),
-      ]);
+      if (configError) {
+        console.error('Config error:', configError);
+      }
 
-      // Get active users in last 24h
-      const { data: activeUsersData } = await supabase
+      // Get daily and monthly totals using RPC functions
+      const { data: dailyResult, error: dailyError } = await supabase.rpc('get_total_daily_cost');
+      const { data: monthlyResult, error: monthlyError } = await supabase.rpc('get_monthly_cost');
+
+      if (dailyError) console.error('Daily cost error:', dailyError);
+      if (monthlyError) console.error('Monthly cost error:', monthlyError);
+
+      // Get active users in last 24h using type assertion
+      const { data: activeUsersData, error: usersError } = await (supabase as any)
         .from('ai_usage_logs')
         .select('user_id')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .eq('status', 'success');
 
-      const uniqueUsers = new Set(activeUsersData?.map(log => log.user_id) || []);
+      if (usersError) console.error('Users error:', usersError);
 
-      // Get top usage users for today
-      const { data: topUsageData } = await supabase
+      const uniqueUsers = new Set(activeUsersData?.map((log: any) => log.user_id) || []);
+
+      // Get top usage users for today using type assertion
+      const { data: topUsageData, error: topUsageError } = await (supabase as any)
         .from('ai_usage_logs')
-        .select(`
-          user_id,
-          total_cost
-        `)
+        .select('user_id, total_cost')
         .gte('created_at', new Date().toDateString())
         .eq('status', 'success');
 
+      if (topUsageError) console.error('Top usage error:', topUsageError);
+
       // Aggregate by user
       const userCosts = new Map<string, number>();
-      topUsageData?.forEach(log => {
+      topUsageData?.forEach((log: any) => {
         const current = userCosts.get(log.user_id) || 0;
         userCosts.set(log.user_id, current + parseFloat(log.total_cost));
       });
@@ -72,10 +78,12 @@ export function CostMonitoringDashboard() {
         .slice(0, 5)
         .map(([userId]) => userId);
 
-      const { data: usersData } = await supabase
+      const { data: usersData, error: emailError } = await supabase
         .from('profiles')
         .select('id, email')
         .in('id', topUserIds);
+
+      if (emailError) console.error('Email error:', emailError);
 
       const topUsageUsers = topUserIds.map(userId => {
         const user = usersData?.find(u => u.id === userId);
@@ -87,8 +95,8 @@ export function CostMonitoringDashboard() {
         };
       });
 
-      const dailyTotal = parseFloat(dailyResult.data || '0');
-      const monthlyTotal = parseFloat(monthlyResult.data || '0');
+      const dailyTotal = parseFloat(String(dailyResult || '0'));
+      const monthlyTotal = parseFloat(String(monthlyResult || '0'));
 
       return {
         dailyTotal,

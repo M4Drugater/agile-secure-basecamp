@@ -9,6 +9,78 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_model_pricing: {
+        Row: {
+          created_at: string
+          id: string
+          input_cost_per_token: number
+          is_active: boolean
+          model_name: string
+          output_cost_per_token: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_cost_per_token: number
+          is_active?: boolean
+          model_name: string
+          output_cost_per_token: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_cost_per_token?: number
+          is_active?: boolean
+          model_name?: string
+          output_cost_per_token?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_usage_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          input_tokens: number
+          model_name: string
+          output_tokens: number
+          request_duration: number | null
+          status: string
+          total_cost: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          input_tokens?: number
+          model_name: string
+          output_tokens?: number
+          request_duration?: number | null
+          status: string
+          total_cost?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          input_tokens?: number
+          model_name?: string
+          output_tokens?: number
+          request_duration?: number | null
+          status?: string
+          total_cost?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -42,6 +114,39 @@ export type Database = {
           resource_type?: string
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      cost_monitoring_config: {
+        Row: {
+          circuit_breaker_threshold: number
+          created_at: string
+          daily_limit: number
+          id: string
+          is_active: boolean
+          monthly_limit: number
+          per_user_daily_limit: number
+          updated_at: string
+        }
+        Insert: {
+          circuit_breaker_threshold?: number
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          is_active?: boolean
+          monthly_limit?: number
+          per_user_daily_limit?: number
+          updated_at?: string
+        }
+        Update: {
+          circuit_breaker_threshold?: number
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          is_active?: boolean
+          monthly_limit?: number
+          per_user_daily_limit?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -113,6 +218,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_monthly_cost: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_total_daily_cost: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_user_daily_cost: {
+        Args: { user_uuid: string }
+        Returns: number
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]
