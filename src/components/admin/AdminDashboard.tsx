@@ -34,13 +34,13 @@ export function AdminDashboard() {
   const { data: systemStats } = useQuery({
     queryKey: ['admin-system-stats'],
     queryFn: async () => {
-      const { data: auditCount } = await supabase
+      const { count: auditCount } = await supabase
         .from('audit_logs')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
       
-      const { data: configCount } = await supabase
+      const { count: configCount } = await supabase
         .from('system_config')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
       
       return {
         auditLogs: auditCount || 0,

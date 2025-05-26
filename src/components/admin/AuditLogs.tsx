@@ -54,10 +54,33 @@ export function AuditLogs() {
     return 'outline';
   };
 
-  const formatDetails = (details: any) => {
-    if (!details) return 'No details';
-    if (typeof details === 'string') return details;
-    return JSON.stringify(details, null, 2);
+  const formatDetails = (details: unknown): React.ReactNode => {
+    if (!details) return <span className="text-muted-foreground">No details</span>;
+    
+    if (typeof details === 'string') {
+      return <span className="text-sm">{details}</span>;
+    }
+    
+    if (typeof details === 'object' && details !== null) {
+      if (Array.isArray(details)) {
+        return (
+          <div className="text-sm">
+            {details.map((item, index) => (
+              <div key={index}>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</div>
+            ))}
+          </div>
+        );
+      }
+      
+      try {
+        const formatted = JSON.stringify(details, null, 2);
+        return <pre className="text-xs">{formatted}</pre>;
+      } catch {
+        return <span className="text-muted-foreground">Invalid object</span>;
+      }
+    }
+    
+    return <span className="text-sm">{String(details)}</span>;
   };
 
   const exportLogs = () => {
@@ -237,7 +260,7 @@ export function AuditLogs() {
                       {log.ip_address || 'Unknown'}
                     </TableCell>
                     <TableCell className="max-w-xs">
-                      <div className="truncate text-sm text-muted-foreground">
+                      <div className="truncate">
                         {formatDetails(log.details)}
                       </div>
                     </TableCell>
