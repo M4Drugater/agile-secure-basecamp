@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Shield, MessageCircle, FileText } from 'lucide-react';
+import { Shield, MessageCircle, FileText, User, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function AppNavigation() {
@@ -26,6 +26,22 @@ export function AppNavigation() {
           >
             <MessageCircle className="h-4 w-4 mr-2" />
             CLIPOGINO Chat
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="h-12 px-4"
+            onClick={() => navigate('/profile')}
+          >
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="h-12 px-4"
+            onClick={() => navigate('/knowledge-base')}
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Knowledge Base
           </Button>
           <Button 
             variant="ghost" 

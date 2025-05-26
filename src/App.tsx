@@ -9,6 +9,8 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Admin from "./pages/Admin";
 import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import ContentGeneratorPage from "./pages/ContentGenerator";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +32,16 @@ const App = () => (
             <Route path="/chat" element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/knowledge-base" element={
+              <ProtectedRoute>
+                <KnowledgeBase />
               </ProtectedRoute>
             } />
             <Route path="/content-generator" element={
