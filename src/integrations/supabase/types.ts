@@ -1426,6 +1426,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_user_conversations: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          title: string
+          created_at: string
+          updated_at: string
+          message_count: number
+        }[]
+      }
       get_user_daily_cost: {
         Args: { user_uuid: string }
         Returns: number

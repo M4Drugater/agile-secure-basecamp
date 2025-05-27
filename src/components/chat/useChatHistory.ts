@@ -24,14 +24,19 @@ export function useChatHistory() {
     
     setIsLoading(true);
     try {
+      console.log('Loading conversations for user:', user.id);
+      
       // Try using the edge function first
       const { data: functionData, error: functionError } = await supabase.functions.invoke('get-user-conversations', {
         body: { user_uuid: user.id }
       });
 
       if (!functionError && functionData) {
+        console.log('Conversations loaded via function:', functionData);
         setConversations(functionData);
       } else {
+        console.log('Function failed, trying direct database query. Error:', functionError);
+        
         // Fallback to direct table query
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('chat_conversations')
@@ -40,9 +45,10 @@ export function useChatHistory() {
           .order('updated_at', { ascending: false });
 
         if (!fallbackError && fallbackData) {
+          console.log('Conversations loaded via direct query:', fallbackData);
           setConversations(fallbackData);
         } else {
-          console.error('Error loading conversations:', fallbackError);
+          console.error('Error loading conversations via fallback:', fallbackError);
           setConversations([]);
         }
       }
@@ -59,6 +65,8 @@ export function useChatHistory() {
     if (!user) return [];
 
     try {
+      console.log('Loading messages for conversation:', conversationId);
+      
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -66,11 +74,14 @@ export function useChatHistory() {
         .order('created_at', { ascending: true });
 
       if (!error && data) {
+        console.log('Messages loaded:', data.length);
         return data.map((msg: any) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
           timestamp: new Date(msg.created_at)
         }));
+      } else {
+        console.error('Error loading messages:', error);
       }
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -90,6 +101,8 @@ export function useChatHistory() {
       const title = message.role === 'user' 
         ? message.content.slice(0, 50) + (message.content.length > 50 ? '...' : '')
         : 'New Conversation';
+
+      console.log('Creating new conversation with title:', title);
 
       const { data: newConv, error: convError } = await supabase
         .from('chat_conversations')
@@ -113,6 +126,8 @@ export function useChatHistory() {
 
     // Save the message
     try {
+      console.log('Saving message to conversation:', activeConversationId);
+      
       const { error } = await supabase
         .from('chat_messages')
         .insert({
@@ -138,6 +153,9 @@ export function useChatHistory() {
         } catch (incrementError) {
           console.warn('Could not increment message count:', incrementError);
         }
+        
+        // Refresh conversations to update message count
+        await loadConversations();
       }
 
       return activeConversationId;
@@ -152,6 +170,8 @@ export function useChatHistory() {
     if (!user) return;
     
     try {
+      console.log('Deleting conversation:', conversationId);
+      
       const { error } = await supabase
         .from('chat_conversations')
         .delete()
@@ -163,6 +183,8 @@ export function useChatHistory() {
         if (currentConversationId === conversationId) {
           setCurrentConversationId(null);
         }
+      } else {
+        console.error('Error deleting conversation:', error);
       }
     } catch (error) {
       console.error('Error deleting conversation:', error);
