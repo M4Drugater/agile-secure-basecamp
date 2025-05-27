@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useClipoginoChat } from './useClipoginoChat';
-import { useChatHistory } from './useChatHistory';
+import { useChatHistory } from './history';
 import { useProfileContext } from '@/hooks/useProfileContext';
 import { ChatHeader } from './ChatHeader';
 import { UsageWarning } from './UsageWarning';
