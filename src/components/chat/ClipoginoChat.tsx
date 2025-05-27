@@ -99,7 +99,7 @@ export function ClipoginoChat() {
 
         {/* Main Chat Area */}
         <div className="flex-1">
-          <Card className="h-[600px] flex flex-col">
+          <Card className="h-[700px] flex flex-col">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -145,9 +145,9 @@ export function ClipoginoChat() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col space-y-4">
+            <CardContent className="flex-1 flex flex-col space-y-4 min-h-0">
               <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
+                <div className="space-y-4 pb-4">
                   {messages.length === 0 && <WelcomeMessage />}
                   
                   {messages.map((message, index) => (

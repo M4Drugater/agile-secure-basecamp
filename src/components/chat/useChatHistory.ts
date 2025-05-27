@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChatMessage } from './types';
@@ -19,7 +19,7 @@ export function useChatHistory() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Load conversations list
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -58,10 +58,10 @@ export function useChatHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
-  // Load messages for a conversation
-  const loadConversationMessages = async (conversationId: string): Promise<ChatMessage[]> => {
+  // Load messages for a conversation - memoized to prevent infinite loops
+  const loadConversationMessages = useCallback(async (conversationId: string): Promise<ChatMessage[]> => {
     if (!user) return [];
 
     try {
@@ -88,7 +88,7 @@ export function useChatHistory() {
     }
     
     return [];
-  };
+  }, [user]);
 
   // Save a message to current conversation
   const saveMessage = async (message: ChatMessage, conversationId?: string) => {
@@ -195,7 +195,7 @@ export function useChatHistory() {
     if (user) {
       loadConversations();
     }
-  }, [user]);
+  }, [user, loadConversations]);
 
   return {
     conversations,
