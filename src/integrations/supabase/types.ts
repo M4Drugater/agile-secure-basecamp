@@ -1028,34 +1028,100 @@ export type Database = {
       }
       profiles: {
         Row: {
+          career_goals: string[] | null
+          certifications: string[] | null
+          communication_style: string | null
+          company: string | null
           created_at: string | null
+          current_position: string | null
+          current_skills: string[] | null
           email: string
+          experience_level: string | null
+          feedback_preference: string | null
           full_name: string | null
           id: string
+          industry: string | null
           is_active: boolean | null
           last_login: string | null
+          last_updated: string | null
+          leadership_experience: boolean | null
+          learning_priorities: string[] | null
+          learning_style: string | null
+          management_level: string | null
+          profile_completeness: number | null
           role: Database["public"]["Enums"]["user_role"]
+          skill_gaps: string[] | null
+          target_industry: string | null
+          target_position: string | null
+          target_salary_range: string | null
+          team_size: number | null
           updated_at: string | null
+          work_environment: string | null
+          years_of_experience: number | null
         }
         Insert: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
           created_at?: string | null
+          current_position?: string | null
+          current_skills?: string[] | null
           email: string
+          experience_level?: string | null
+          feedback_preference?: string | null
           full_name?: string | null
           id: string
+          industry?: string | null
           is_active?: boolean | null
           last_login?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
           updated_at?: string | null
+          work_environment?: string | null
+          years_of_experience?: number | null
         }
         Update: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
           created_at?: string | null
+          current_position?: string | null
+          current_skills?: string[] | null
           email?: string
+          experience_level?: string | null
+          feedback_preference?: string | null
           full_name?: string | null
           id?: string
+          industry?: string | null
           is_active?: boolean | null
           last_login?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
           updated_at?: string | null
+          work_environment?: string | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }
@@ -1413,9 +1479,11 @@ export type Database = {
         Returns: number
       }
       calculate_profile_completeness: {
-        Args: {
-          profile_row: Database["public"]["Tables"]["user_profiles"]["Row"]
-        }
+        Args:
+          | { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
+          | {
+              profile_row: Database["public"]["Tables"]["user_profiles"]["Row"]
+            }
         Returns: number
       }
       get_monthly_cost: {

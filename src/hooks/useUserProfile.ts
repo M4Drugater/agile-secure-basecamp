@@ -6,8 +6,13 @@ import { toast } from '@/hooks/use-toast';
 
 export interface UserProfile {
   id: string;
-  user_id: string;
+  email: string;
   full_name?: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
+  is_active?: boolean;
   current_position?: string;
   company?: string;
   industry?: string;
@@ -30,8 +35,6 @@ export interface UserProfile {
   certifications?: string[];
   profile_completeness?: number;
   last_updated?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export function useUserProfile() {
@@ -50,9 +53,9 @@ export function useUserProfile() {
       console.log('Fetching profile for user:', user.id);
       
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -78,12 +81,12 @@ export function useUserProfile() {
       );
 
       const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
+        .from('profiles')
+        .update({
           ...cleanedData,
           last_updated: new Date().toISOString()
         })
+        .eq('id', user.id)
         .select()
         .single();
 
