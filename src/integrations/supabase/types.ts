@@ -1486,6 +1486,10 @@ export type Database = {
             }
         Returns: number
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_monthly_cost: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1562,6 +1566,10 @@ export type Database = {
       increment_message_count: {
         Args: { conversation_id: string }
         Returns: number
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       ivfflat_bit_support: {
         Args: { "": unknown }
