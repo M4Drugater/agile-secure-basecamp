@@ -14,6 +14,7 @@ import { useSecureAuth } from '@/hooks/useSecureAuth';
 
 export function DashboardCards() {
   const { hasRole } = useSecureAuth();
+  const isAdmin = hasRole('admin');
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -25,7 +26,7 @@ export function DashboardCards() {
       {/* Row 2: System & Security */}
       <SystemStatusCard />
       <SecurityStatusCard />
-      <DevelopmentProgressCard />
+      <DevelopmentProgressCard isAdmin={isAdmin} />
       
       {/* Row 3: Content & Knowledge */}
       <KnowledgeBaseCard />
@@ -33,7 +34,7 @@ export function DashboardCards() {
       <LearningManagementCard />
       
       {/* Admin-only card */}
-      {hasRole('admin') && <AdminPanelCard />}
+      {isAdmin && <AdminPanelCard />}
     </div>
   );
 }
