@@ -74,7 +74,7 @@ export function LearningDashboard() {
       </div>
 
       {/* Stats Overview */}
-      <LearningPathStats />
+      <LearningPathStats learningPaths={learningPaths || []} />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content */}
@@ -91,10 +91,8 @@ export function LearningDashboard() {
 
           {/* Search and Filters */}
           <LearningPathSearch
-            searchQuery={searchQuery}
+            searchTerm={searchQuery}
             onSearchChange={setSearchQuery}
-            selectedDifficulty={selectedDifficulty}
-            onDifficultyChange={setSelectedDifficulty}
           />
 
           {/* Learning Paths */}
@@ -112,14 +110,19 @@ export function LearningDashboard() {
                 </div>
               ) : filteredPaths.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredPaths.map((path) => (
-                    <LearningPathCard
-                      key={path.id}
-                      path={path}
-                      isEnrolled={enrolledPaths.includes(path.id)}
-                      onSelect={() => setSelectedPath(path)}
-                    />
-                  ))}
+                  {filteredPaths.map((path) => {
+                    const userPathProgress = userProgress?.find(p => p.learning_path_id === path.id);
+                    return (
+                      <LearningPathCard
+                        key={path.id}
+                        path={path}
+                        userProgress={userPathProgress}
+                        onEnroll={() => console.log('Enroll in', path.id)}
+                        onContinue={() => console.log('Continue', path.id)}
+                        onView={() => setSelectedPath(path)}
+                      />
+                    );
+                  })}
                 </div>
               ) : (
                 <Card>
@@ -141,14 +144,19 @@ export function LearningDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredPaths
                     .filter(path => enrolledPaths.includes(path.id))
-                    .map((path) => (
-                      <LearningPathCard
-                        key={path.id}
-                        path={path}
-                        isEnrolled={true}
-                        onSelect={() => setSelectedPath(path)}
-                      />
-                    ))}
+                    .map((path) => {
+                      const userPathProgress = userProgress?.find(p => p.learning_path_id === path.id);
+                      return (
+                        <LearningPathCard
+                          key={path.id}
+                          path={path}
+                          userProgress={userPathProgress}
+                          onEnroll={() => console.log('Enroll in', path.id)}
+                          onContinue={() => console.log('Continue', path.id)}
+                          onView={() => setSelectedPath(path)}
+                        />
+                      );
+                    })}
                 </div>
               ) : (
                 <Card>
@@ -168,15 +176,19 @@ export function LearningDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredPaths
                     .filter(path => completedPaths.some(cp => cp.learning_path_id === path.id))
-                    .map((path) => (
-                      <LearningPathCard
-                        key={path.id}
-                        path={path}
-                        isEnrolled={true}
-                        isCompleted={true}
-                        onSelect={() => setSelectedPath(path)}
-                      />
-                    ))}
+                    .map((path) => {
+                      const userPathProgress = userProgress?.find(p => p.learning_path_id === path.id);
+                      return (
+                        <LearningPathCard
+                          key={path.id}
+                          path={path}
+                          userProgress={userPathProgress}
+                          onEnroll={() => console.log('Enroll in', path.id)}
+                          onContinue={() => console.log('Continue', path.id)}
+                          onView={() => setSelectedPath(path)}
+                        />
+                      );
+                    })}
                 </div>
               ) : (
                 <Card>
