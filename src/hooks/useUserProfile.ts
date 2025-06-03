@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useDataValidation } from './useDataValidation';
 import { useAuditLogger } from './useAuditLogger';
+import { InputSanitizer } from '@/utils/inputSanitization';
 
 export interface UserProfile {
   id: string;
@@ -42,7 +43,7 @@ export interface UserProfile {
 export function useUserProfile() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { validate, validators } = useDataValidation();
+  const { sanitizeAndValidate, validators } = useDataValidation();
   const { logAction } = useAuditLogger();
 
   const {
@@ -86,39 +87,94 @@ export function useUserProfile() {
 
       console.log('Updating profile with data:', profileData);
 
-      // Validate the profile data
+      // Enhanced validation rules with sanitization
       const validationRules = [
         {
           field: 'full_name',
-          validator: (value: string) => !value || validators.validateMinLength(value, 1),
-          message: 'Full name is required'
+          validator: (value: string) => !value || (validators.validateMinLength(value, 1) && validators.validateMaxLength(value, 100)),
+          message: 'Full name must be between 1 and 100 characters',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeText(value, { maxLength: 100, stripWhitespace: true }) : value
         },
         {
           field: 'email',
           validator: (value: string) => !value || validators.validateEmail(value),
-          message: 'Please enter a valid email address'
+          message: 'Please enter a valid email address',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeEmail(value) : value
+        },
+        {
+          field: 'current_position',
+          validator: (value: string) => !value || validators.validateMaxLength(value, 200),
+          message: 'Current position must be less than 200 characters',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeText(value, { maxLength: 200, stripWhitespace: true }) : value
+        },
+        {
+          field: 'company',
+          validator: (value: string) => !value || validators.validateMaxLength(value, 200),
+          message: 'Company name must be less than 200 characters',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeText(value, { maxLength: 200, stripWhitespace: true }) : value
+        },
+        {
+          field: 'target_position',
+          validator: (value: string) => !value || validators.validateMaxLength(value, 200),
+          message: 'Target position must be less than 200 characters',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeText(value, { maxLength: 200, stripWhitespace: true }) : value
+        },
+        {
+          field: 'target_industry',
+          validator: (value: string) => !value || validators.validateMaxLength(value, 200),
+          message: 'Target industry must be less than 200 characters',
+          sanitizer: (value: string) => value ? InputSanitizer.sanitizeText(value, { maxLength: 200, stripWhitespace: true }) : value
         },
         {
           field: 'years_of_experience',
-          validator: (value: number) => !value || validators.validateNumericRange(value, 0, 50),
-          message: 'Years of experience must be between 0 and 50'
+          validator: (value: number) => !value || validators.validateNumericRange(value, 0, 70),
+          message: 'Years of experience must be between 0 and 70'
         },
         {
           field: 'team_size',
-          validator: (value: number) => !value || validators.validateNumericRange(value, 0, 10000),
-          message: 'Team size must be a positive number'
+          validator: (value: number) => !value || validators.validateNumericRange(value, 0, 100000),
+          message: 'Team size must be a positive number less than 100,000'
         }
       ];
 
-      const isValid = await validate(profileData, validationRules);
-      if (!isValid) {
+      // Sanitize and validate the profile data
+      const result = await sanitizeAndValidate(profileData, validationRules, {
+        enableSanitization: true,
+        maxFieldLength: 1000,
+        allowHtml: false
+      });
+
+      if (!result.isValid) {
         throw new Error('Validation failed');
       }
 
-      // Clean the data to only include defined values
+      // Use sanitized data for update
       const cleanedData = Object.fromEntries(
-        Object.entries(profileData).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+        Object.entries(result.sanitizedData).filter(([_, value]) => 
+          value !== undefined && value !== null && value !== ''
+        )
       );
+
+      // Additional security checks
+      const sensitiveFields = ['role', 'is_active', 'id', 'created_at'];
+      const hasRestrictedFields = Object.keys(cleanedData).some(field => 
+        sensitiveFields.includes(field)
+      );
+
+      if (hasRestrictedFields) {
+        logAction({
+          action: 'security_violation',
+          resource_type: 'profile',
+          resource_id: user.id,
+          details: {
+            violation_type: 'attempted_restricted_field_update',
+            attempted_fields: Object.keys(cleanedData).filter(field => 
+              sensitiveFields.includes(field)
+            )
+          }
+        });
+        throw new Error('Cannot update restricted fields');
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -149,7 +205,8 @@ export function useUserProfile() {
         resource_id: user?.id,
         details: {
           profile_completeness: data?.profile_completeness,
-          fields_updated: Object.keys(data || {})
+          fields_updated: Object.keys(data || {}),
+          security_sanitized: true
         }
       });
 
@@ -168,7 +225,8 @@ export function useUserProfile() {
         resource_id: user?.id,
         details: {
           error_message: error.message,
-          error_code: error.code
+          error_code: error.code,
+          security_check: true
         }
       });
 
@@ -178,6 +236,8 @@ export function useUserProfile() {
         errorMessage = "Please enter a valid email address.";
       } else if (error.message?.includes('validation')) {
         errorMessage = "Please check your input and try again.";
+      } else if (error.message?.includes('restricted')) {
+        errorMessage = "You cannot modify restricted profile fields.";
       }
 
       toast({
