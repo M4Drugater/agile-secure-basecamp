@@ -8,7 +8,7 @@ type OrganizationUser = Database['public']['Tables']['organization_users']['Row'
   profiles?: {
     full_name: string | null;
     email: string;
-  };
+  } | null;
 };
 
 export function useOrganizationUsers(organizationId?: string) {
