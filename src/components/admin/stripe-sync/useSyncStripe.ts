@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { SyncResult } from './types';
 
 export function useSyncStripe() {
@@ -41,7 +41,7 @@ export function useSyncStripe() {
         success: false, 
         error: error.message || 'Error synchronizing with Stripe.',
         troubleshooting: {
-          stripe_key_configured: false,
+          stripe_configured: false,
           supabase_configured: true,
           common_solutions: [
             'Check that STRIPE_SECRET_KEY is configured in Supabase Edge Functions secrets',
