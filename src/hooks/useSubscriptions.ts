@@ -5,19 +5,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/integrations/supabase/types';
 
 type SubscriptionPlan = Database['public']['Tables']['subscription_plans']['Row'];
-type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row'];
+type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row'] & {
+  subscription_plan?: SubscriptionPlan;
+};
 
 export function useSubscriptionPlans() {
   return useQuery({
     queryKey: ['subscription-plans'],
     queryFn: async () => {
+      console.log('Fetching subscription plans...');
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching subscription plans:', error);
+        throw error;
+      }
+      
+      console.log('Fetched subscription plans:', data);
       return data as SubscriptionPlan[];
     },
   });
@@ -31,6 +39,7 @@ export function useUserSubscription() {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Fetching user subscription for:', user.id);
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -40,8 +49,13 @@ export function useUserSubscription() {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching user subscription:', error);
+        throw error;
+      }
+      
+      console.log('User subscription data:', data);
+      return data as UserSubscription | null;
     },
     enabled: !!user,
   });
