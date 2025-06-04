@@ -28,9 +28,9 @@ serve(async (req) => {
   }
 
   try {
-    logStep('Starting checkout session creation');
+    logStep('Starting enhanced checkout session creation');
     
-    // Verify user is authenticated
+    // Verify user authentication
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       logStep('No authorization header provided');
@@ -63,14 +63,34 @@ serve(async (req) => {
       })
     }
 
-    // Verify the price exists in Stripe and get its details
+    // Verify the plan exists in our database
+    const { data: plan, error: planError } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('id', planId)
+      .eq('is_active', true)
+      .single();
+
+    if (planError || !plan) {
+      logStep('Plan not found in database', { planId, error: planError });
+      return new Response(JSON.stringify({ 
+        error: 'Invalid plan ID',
+        details: 'The selected plan is not available'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Verify the price exists in Stripe and matches our plan
     let priceDetails;
     try {
       priceDetails = await stripe.prices.retrieve(priceId);
       logStep('Price details retrieved', { 
         id: priceDetails.id, 
         currency: priceDetails.currency, 
-        amount: priceDetails.unit_amount 
+        amount: priceDetails.unit_amount,
+        productId: priceDetails.product
       });
     } catch (error) {
       logStep('Price not found in Stripe', { priceId, error: error.message });
@@ -95,16 +115,53 @@ serve(async (req) => {
       })
     }
 
-    // Get or create Stripe customer
-    let customerId: string
+    // Verify price matches plan
+    const expectedAmount = Math.round(plan.price_monthly * 100);
+    if (priceDetails.unit_amount !== expectedAmount) {
+      logStep('Price amount mismatch', { 
+        stripe: priceDetails.unit_amount, 
+        expected: expectedAmount 
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Price mismatch',
+        details: 'The Stripe price does not match the plan price'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Check for existing active subscription
     const { data: existingSubscription } = await supabase
+      .from('user_subscriptions')
+      .select('*, subscription_plan:subscription_plans(*)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (existingSubscription) {
+      logStep('User already has active subscription', { 
+        currentPlan: existingSubscription.subscription_plan?.name 
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Active subscription exists',
+        details: `You already have an active ${existingSubscription.subscription_plan?.name} subscription`
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Get or create Stripe customer
+    let customerId: string;
+    const { data: userSubscription } = await supabase
       .from('user_subscriptions')
       .select('stripe_customer_id')
       .eq('user_id', user.id)
-      .maybeSingle()
+      .maybeSingle();
 
-    if (existingSubscription?.stripe_customer_id) {
-      customerId = existingSubscription.stripe_customer_id
+    if (userSubscription?.stripe_customer_id) {
+      customerId = userSubscription.stripe_customer_id;
       logStep('Using existing customer', { customerId });
     } else {
       const customer = await stripe.customers.create({
@@ -112,9 +169,33 @@ serve(async (req) => {
         metadata: {
           userId: user.id,
         },
-      })
-      customerId = customer.id
+      });
+      customerId = customer.id;
       logStep('Created new customer', { customerId });
+    }
+
+    // Initialize user credits if they don't exist
+    const { data: existingCredits } = await supabase
+      .from('user_credits')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!existingCredits) {
+      const { error: creditError } = await supabase
+        .from('user_credits')
+        .insert({
+          user_id: user.id,
+          total_credits: 100, // Free tier starting credits
+          used_credits_today: 0,
+          last_reset_date: new Date().toISOString().split('T')[0]
+        });
+
+      if (creditError) {
+        logStep('Error initializing user credits', { error: creditError });
+      } else {
+        logStep('Initialized user credits');
+      }
     }
 
     // Create checkout session
@@ -133,17 +214,29 @@ serve(async (req) => {
       metadata: {
         userId: user.id,
         planId: planId,
+        planName: plan.name,
+        creditsPerMonth: plan.credits_per_month.toString(),
       },
-      locale: 'es', // Spanish locale since you're implementing in Spanish
-    })
+      locale: 'en', // Using English since the UI is in English
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
+      customer_update: {
+        address: 'auto',
+        name: 'auto'
+      }
+    });
 
     logStep('Checkout session created successfully', { 
       sessionId: session.id, 
       currency: priceDetails.currency,
-      amount: priceDetails.unit_amount 
+      amount: priceDetails.unit_amount,
+      planName: plan.name
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      url: session.url,
+      sessionId: session.id
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
