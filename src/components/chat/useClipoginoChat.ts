@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,8 +72,37 @@ export function useClipoginoChat() {
       const recommendations = await getKnowledgeRecommendations(userMessage.content);
       setKnowledgeRecommendations(recommendations);
       
-      // Combine profile context with knowledge context
-      let fullContext = profileContext?.fullContext || '';
+      // Build profile context string from profile data
+      let fullContext = '';
+      if (profileContext.data) {
+        const profile = profileContext.data;
+        fullContext = `User Profile Context:
+- Name: ${profile.full_name || 'Not specified'}
+- Position: ${profile.current_position || 'Not specified'}
+- Company: ${profile.company || 'Not specified'}
+- Industry: ${profile.industry || 'Not specified'}
+- Experience Level: ${profile.experience_level || 'Not specified'}
+- Years of Experience: ${profile.years_of_experience || 'Not specified'}
+- Management Level: ${profile.management_level || 'Not specified'}
+- Team Size: ${profile.team_size || 'Not specified'}
+- Leadership Experience: ${profile.leadership_experience ? 'Yes' : 'No'}
+- Target Position: ${profile.target_position || 'Not specified'}
+- Target Industry: ${profile.target_industry || 'Not specified'}
+- Target Salary Range: ${profile.target_salary_range || 'Not specified'}
+- Learning Style: ${profile.learning_style || 'Not specified'}
+- Communication Style: ${profile.communication_style || 'Not specified'}
+- Feedback Preference: ${profile.feedback_preference || 'Not specified'}
+- Work Environment: ${profile.work_environment || 'Not specified'}
+- Career Goals: ${profile.career_goals?.join(', ') || 'Not specified'}
+- Current Skills: ${profile.current_skills?.join(', ') || 'Not specified'}
+- Skill Gaps: ${profile.skill_gaps?.join(', ') || 'Not specified'}
+- Learning Priorities: ${profile.learning_priorities?.join(', ') || 'Not specified'}
+- Certifications: ${profile.certifications?.join(', ') || 'Not specified'}
+
+`;
+      }
+      
+      // Add knowledge context if available
       if (knowledgeContext) {
         fullContext += knowledgeContext;
       }
@@ -80,7 +110,7 @@ export function useClipoginoChat() {
       console.log('Sending message to CLIPOGINO with enhanced context:', {
         messageLength: userMessage.content.length,
         historyLength: messages.length,
-        hasProfileContext: !!profileContext,
+        hasProfileContext: !!profileContext.data,
         hasKnowledgeContext: !!knowledgeContext,
         knowledgeContextLength: knowledgeContext.length,
         recommendationsCount: recommendations.length,
@@ -117,7 +147,7 @@ export function useClipoginoChat() {
       await refreshUsage();
 
       const contextInfo = [];
-      if (profileContext) contextInfo.push('personalization');
+      if (profileContext.data) contextInfo.push('personalization');
       if (knowledgeContext) contextInfo.push('knowledge context');
       
       toast({
@@ -179,7 +209,7 @@ export function useClipoginoChat() {
     sendMessage,
     startNewConversation,
     selectConversation,
-    hasProfileContext: !!profileContext,
+    hasProfileContext: !!profileContext.data,
     knowledgeRecommendations,
   };
 }

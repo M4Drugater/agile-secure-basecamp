@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Users, Activity, BarChart3, Shield } from 'lucide-react';
-import { MetricsCard } from './MetricsCard';
+import { MetricsCard } from './dashboard/MetricsCard';
 
 interface UserStats {
   total: number;
