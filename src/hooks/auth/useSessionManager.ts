@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Database } from '@/integrations/supabase/types';
@@ -13,6 +13,7 @@ interface UseSessionManagerProps {
   setIsValidated: (validated: boolean) => void;
   setIsLoading: (loading: boolean) => void;
   setupAuthStateListener: () => any;
+  authError?: string | null;
 }
 
 export function useSessionManager({
@@ -21,36 +22,50 @@ export function useSessionManager({
   validateSession,
   setIsValidated,
   setIsLoading,
-  setupAuthStateListener
+  setupAuthStateListener,
+  authError
 }: UseSessionManagerProps) {
-  const performValidation = async () => {
+  
+  const performValidation = useCallback(async () => {
     if (!user) {
       setIsValidated(false);
       setIsLoading(false);
       return;
     }
 
-    const { isValid, shouldSignOut } = await validateSession();
+    try {
+      const { isValid, shouldSignOut } = await validateSession();
 
-    if (shouldSignOut) {
-      await supabase.auth.signOut();
+      if (shouldSignOut) {
+        await supabase.auth.signOut();
+        setIsValidated(false);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsValidated(isValid);
+    } catch (error) {
+      console.error('Session validation failed:', error);
       setIsValidated(false);
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    setIsValidated(isValid);
-    setIsLoading(false);
-  };
+  }, [user, validateSession, setIsValidated, setIsLoading]);
 
   useEffect(() => {
-    performValidation();
+    // Only perform validation if there's no auth error
+    if (!authError) {
+      performValidation();
+    } else {
+      setIsLoading(false);
+      setIsValidated(false);
+    }
 
     // Set up auth state change listener for real-time session validation
     const subscription = setupAuthStateListener();
 
-    return () => subscription.unsubscribe();
-  }, [user, profile]);
+    return () => subscription?.unsubscribe?.();
+  }, [user, profile, authError, performValidation, setupAuthStateListener]);
 
   return {
     performValidation

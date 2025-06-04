@@ -1,6 +1,6 @@
 
 import { useSecurityEvents } from './auth/useSecurityEvents';
-import { useSessionValidation } from './auth/useSessionValidation';
+import { useOptimizedSessionValidation } from './auth/useOptimizedSessionValidation';
 import { useCSRFProtection } from './auth/useCSRFProtection';
 import { useAuthState } from './auth/useAuthState';
 import { useRoleAccess } from './auth/useRoleAccess';
@@ -27,7 +27,9 @@ export function useSecureAuth() {
     setIsValidated,
     isLoading,
     setIsLoading,
-    setupAuthStateListener
+    authError,
+    setupAuthStateListener,
+    refreshProfile
   } = useAuthState({
     logSecurityEvent,
     clearSecurityEvents,
@@ -41,7 +43,7 @@ export function useSecureAuth() {
     validateSession, 
     resetSessionStartTime, 
     setNewSessionStartTime 
-  } = useSessionValidation({ user, profile, logSecurityEvent });
+  } = useOptimizedSessionValidation({ user, profile, logSecurityEvent });
 
   const { hasRole } = useRoleAccess(profile);
 
@@ -51,7 +53,8 @@ export function useSecureAuth() {
     validateSession,
     setIsValidated,
     setIsLoading,
-    setupAuthStateListener
+    setupAuthStateListener,
+    authError
   });
 
   return {
@@ -62,6 +65,8 @@ export function useSecureAuth() {
     csrfToken,
     securityEvents,
     detectSuspiciousActivity,
-    hasRole
+    hasRole,
+    authError,
+    refreshProfile
   };
 }
