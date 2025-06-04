@@ -10,10 +10,10 @@ import { KnowledgeBaseCard } from './cards/KnowledgeBaseCard';
 import { ContentCreationCard } from './cards/ContentCreationCard';
 import { LearningManagementCard } from './cards/LearningManagementCard';
 import { AdminPanelCard } from './cards/AdminPanelCard';
-import { useSecureAuth } from '@/hooks/useSecureAuth';
+import { useSimplifiedAuthContext } from '@/contexts/SimplifiedAuthContext';
 
 export function DashboardCards() {
-  const { hasRole } = useSecureAuth();
+  const { hasRole } = useSimplifiedAuthContext();
   const isAdmin = hasRole('admin');
 
   return (
