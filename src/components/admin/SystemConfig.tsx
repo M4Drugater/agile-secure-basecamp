@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Settings, Plus, Edit } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { StripeSync } from './StripeSync';
 
 type SystemConfig = Database['public']['Tables']['system_config']['Row'];
 type SystemConfigInsert = Database['public']['Tables']['system_config']['Insert'];
@@ -131,6 +131,10 @@ export function SystemConfig() {
 
   return (
     <div className="space-y-6">
+      {/* Stripe & Credit System Sync Section */}
+      <StripeSync />
+
+      {/* Existing System Configuration */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
