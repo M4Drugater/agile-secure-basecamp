@@ -9,6 +9,9 @@ export type ContentItem = Database['public']['Tables']['content_items']['Row'];
 export type ContentItemInsert = Database['public']['Tables']['content_items']['Insert'];
 export type ContentItemUpdate = Database['public']['Tables']['content_items']['Update'];
 
+// Export the CreateContentItem type that's missing
+export type CreateContentItem = Omit<ContentItemInsert, 'user_id' | 'organization_id'>;
+
 export function useContentItems() {
   const { user } = useAuth();
   const { currentOrganization } = useOrganizations();
@@ -29,7 +32,7 @@ export function useContentItems() {
   });
 
   const createContentItem = useMutation({
-    mutationFn: async (contentData: Omit<ContentItemInsert, 'user_id' | 'organization_id'>) => {
+    mutationFn: async (contentData: CreateContentItem) => {
       const { data, error } = await supabase
         .from('content_items')
         .insert({

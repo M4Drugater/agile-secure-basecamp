@@ -18,13 +18,15 @@ export function useOrganizationUsers(organizationId?: string) {
   const { data: organizationUsers, isLoading } = useQuery({
     queryKey: ['organization-users', organizationId],
     queryFn: async () => {
+      if (!organizationId) return [];
+
       const { data, error } = await supabase
         .from('organization_users')
         .select(`
           *,
-          profiles!inner(full_name, email)
+          profiles(full_name, email)
         `)
-        .eq('organization_id', organizationId!)
+        .eq('organization_id', organizationId)
         .eq('is_active', true)
         .order('joined_at', { ascending: false });
 
@@ -36,6 +38,8 @@ export function useOrganizationUsers(organizationId?: string) {
 
   const updateUserRole = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      if (!organizationId) throw new Error('Organization ID is required');
+
       const { data, error } = await supabase
         .from('organization_users')
         .update({ role })
@@ -54,6 +58,8 @@ export function useOrganizationUsers(organizationId?: string) {
 
   const removeUser = useMutation({
     mutationFn: async (userId: string) => {
+      if (!organizationId) throw new Error('Organization ID is required');
+
       const { data, error } = await supabase
         .from('organization_users')
         .update({ is_active: false })

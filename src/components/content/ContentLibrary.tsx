@@ -14,14 +14,14 @@ export function ContentLibrary() {
   const [showEditor, setShowEditor] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
 
-  const filteredItems = contentItems.filter(item => {
+  const filteredItems = contentItems?.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType = selectedType === 'all' || item.content_type === selectedType;
     const matchesStatus = selectedStatus === 'all' || item.status === selectedStatus;
     return matchesSearch && matchesType && matchesStatus;
-  });
+  }) || [];
 
   const handleEdit = (item: ContentItem) => {
     setEditingItem(item);
@@ -76,10 +76,10 @@ export function ContentLibrary() {
       <ContentLibraryGrid
         items={filteredItems}
         isLoading={isLoading}
-        hasContentItems={contentItems.length > 0}
+        hasContentItems={(contentItems?.length || 0) > 0}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onDuplicate={(item) => duplicateContentItem.mutate(item)}
+        onDuplicate={(item) => duplicateContentItem.mutate(item.id)}
         onToggleFavorite={handleToggleFavorite}
         onCreateContent={handleCreateContent}
       />
