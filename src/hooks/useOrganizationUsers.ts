@@ -24,7 +24,7 @@ export function useOrganizationUsers(organizationId?: string) {
         .from('organization_users')
         .select(`
           *,
-          profiles(full_name, email)
+          profiles!organization_users_user_id_fkey(full_name, email)
         `)
         .eq('organization_id', organizationId)
         .eq('is_active', true)
