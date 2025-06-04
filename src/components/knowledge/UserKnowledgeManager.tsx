@@ -112,20 +112,8 @@ export function UserKnowledgeManager() {
       )}
 
       <UserKnowledgeDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        formData={formData}
-        editingFile={editingFile}
-        selectedFile={selectedFile}
-        inputMethod={inputMethod}
-        documentType={documentType}
-        onFormUpdate={updateFormField}
-        onFileSelect={setSelectedFile}
-        onRemoveFile={() => setSelectedFile(null)}
-        onInputMethodChange={setInputMethod}
-        onDocumentTypeChange={setDocumentType}
-        onSubmit={handleSubmit}
-        onReset={resetForm}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
       />
     </div>
   );
