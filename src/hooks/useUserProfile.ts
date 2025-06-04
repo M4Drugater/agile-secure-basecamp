@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSecureAuthContext } from '@/components/auth/SecureAuthProvider';
 import { toast } from '@/hooks/use-toast';
 import { useDataValidation } from './useDataValidation';
 import { useAuditLogger } from './useAuditLogger';
@@ -41,7 +41,7 @@ export interface UserProfile {
 }
 
 export function useUserProfile() {
-  const { user } = useAuth();
+  const { user } = useSecureAuthContext();
   const queryClient = useQueryClient();
   const { sanitizeAndValidate, validators } = useDataValidation();
   const { logAction } = useAuditLogger();
@@ -73,7 +73,6 @@ export function useUserProfile() {
     },
     enabled: !!user,
     retry: (failureCount, error: any) => {
-      // Don't retry on authentication errors
       if (error?.code === 'PGRST301' || error?.message?.includes('JWT')) {
         return false;
       }
@@ -137,7 +136,6 @@ export function useUserProfile() {
         }
       ];
 
-      // Sanitize and validate the profile data
       const result = await sanitizeAndValidate(profileData, validationRules, {
         enableSanitization: true,
         maxFieldLength: 1000,
@@ -148,7 +146,6 @@ export function useUserProfile() {
         throw new Error('Validation failed');
       }
 
-      // Use sanitized data for update
       const cleanedData = Object.fromEntries(
         Object.entries(result.sanitizedData).filter(([_, value]) => 
           value !== undefined && value !== null && value !== ''
@@ -198,7 +195,6 @@ export function useUserProfile() {
       queryClient.invalidateQueries({ queryKey: ['userProfile', user?.id] });
       console.log('Profile completion:', data?.profile_completeness);
       
-      // Log the profile update action
       logAction({
         action: 'profile_updated',
         resource_type: 'profile',
@@ -218,7 +214,6 @@ export function useUserProfile() {
     onError: (error: any) => {
       console.error('Profile update error:', error);
       
-      // Log the failed update attempt
       logAction({
         action: 'profile_update_failed',
         resource_type: 'profile',

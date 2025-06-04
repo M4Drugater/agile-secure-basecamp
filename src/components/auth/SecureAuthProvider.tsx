@@ -1,9 +1,8 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useSecureAuth } from '@/hooks/useSecureAuth';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorReportingService } from '@/utils/errorBoundary';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 
@@ -17,6 +16,8 @@ interface SecureAuthContextType {
   detectSuspiciousActivity: () => any;
   authError: string | null;
   refreshProfile: () => Promise<any>;
+  validateSession: () => Promise<{ isValid: boolean; shouldSignOut: boolean }>;
+  csrfToken: string;
 }
 
 const SecureAuthContext = createContext<SecureAuthContextType | null>(null);
@@ -30,7 +31,7 @@ export function useSecureAuthContext() {
 }
 
 function AuthErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
-  useEffect(() => {
+  React.useEffect(() => {
     ErrorReportingService.reportError(error, { componentStack: '' }, undefined, window.location.pathname);
   }, [error]);
 
@@ -61,45 +62,12 @@ interface SecureAuthProviderProps {
 
 export function SecureAuthProvider({ children }: SecureAuthProviderProps) {
   const auth = useSecureAuth();
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    // Wait for initial auth state to stabilize
-    const timer = setTimeout(() => {
-      setIsInitialized(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading state during initialization
-  if (!isInitialized || (auth.isLoading && !auth.authError)) {
+  // Simple loading state - no complex initialization logic
+  if (auth.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  // Show auth error if present
-  if (auth.authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Alert className="max-w-md" variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="mt-2">
-            <div className="space-y-2">
-              <p className="font-semibold">Authentication Issue</p>
-              <p className="text-sm">{auth.authError}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-2 px-3 py-1 bg-destructive text-destructive-foreground rounded text-sm hover:bg-destructive/90"
-              >
-                Reload Page
-              </button>
-            </div>
-          </AlertDescription>
-        </Alert>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
   }

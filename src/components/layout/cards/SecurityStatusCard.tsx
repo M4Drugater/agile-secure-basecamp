@@ -2,10 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, CheckCircle, Lock, Database } from 'lucide-react';
-import { useSecureAuth } from '@/hooks/useSecureAuth';
+import { useSecureAuthContext } from '@/components/auth/SecureAuthProvider';
 
 export function SecurityStatusCard() {
-  const { isAuthenticated, profile, hasRole } = useSecureAuth();
+  const { isAuthenticated, profile, hasRole } = useSecureAuthContext();
 
   const securityFeatures = [
     {

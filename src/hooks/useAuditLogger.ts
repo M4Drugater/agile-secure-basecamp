@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecureAuth } from './useSecureAuth';
+import { useSecureAuthContext } from '@/components/auth/SecureAuthProvider';
 
 interface AuditLogEntry {
   action: string;
@@ -11,7 +11,7 @@ interface AuditLogEntry {
 }
 
 export function useAuditLogger() {
-  const { user } = useSecureAuth();
+  const { user } = useSecureAuthContext();
 
   const logAction = useCallback(async (entry: AuditLogEntry) => {
     if (!user) return;
@@ -25,7 +25,7 @@ export function useAuditLogger() {
           resource_type: entry.resource_type,
           resource_id: entry.resource_id,
           details: entry.details || {},
-          ip_address: null, // Could be populated client-side if needed
+          ip_address: null,
           user_agent: navigator.userAgent,
         });
 
