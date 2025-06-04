@@ -1,233 +1,219 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileUploadZone } from './FileUploadZone';
-import { useUserKnowledgeFiles } from '@/hooks/useUserKnowledgeFiles';
-import { useFileUpload } from '@/hooks/useFileUpload';
-import { KnowledgeFormData } from '@/hooks/useUserKnowledgeForm';
-import { FileText, Upload, Loader2, Brain, BookOpen, Database, Download } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-
-export type DocumentType = 'personal' | 'system' | 'resource';
+import { Badge } from '@/components/ui/badge';
+import { Save, X, FileText, Type } from 'lucide-react';
+import { EnhancedFileUpload } from './EnhancedFileUpload';
+import { useUserKnowledgeForm } from '@/hooks/useUserKnowledgeForm';
+import { useEnhancedFileUpload } from '@/hooks/useEnhancedFileUpload';
+import { useMultiTierKnowledge } from '@/hooks/useMultiTierKnowledge';
 
 interface UserKnowledgeDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  formData: KnowledgeFormData;
-  editingFile: any;
-  selectedFile: File | null;
-  inputMethod: 'manual' | 'upload';
-  documentType: DocumentType;
-  onFormUpdate: (field: keyof KnowledgeFormData, value: string) => void;
-  onFileSelect: (file: File) => void;
-  onRemoveFile: () => void;
-  onInputMethodChange: (method: 'manual' | 'upload') => void;
-  onDocumentTypeChange: (type: DocumentType) => void;
-  onSubmit: () => void;
-  onReset: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function UserKnowledgeDialog({
-  isOpen,
-  onClose,
-  formData,
-  editingFile,
-  selectedFile,
-  inputMethod,
-  documentType,
-  onFormUpdate,
-  onFileSelect,
-  onRemoveFile,
-  onInputMethodChange,
-  onDocumentTypeChange,
-  onSubmit,
-  onReset,
-}: UserKnowledgeDialogProps) {
-  const { isCreating } = useUserKnowledgeFiles();
-  const { isUploading } = useFileUpload();
+export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogProps) {
+  const {
+    formData,
+    selectedFile,
+    inputMethod,
+    setSelectedFile,
+    setInputMethod,
+    resetForm,
+    updateFormField,
+  } = useUserKnowledgeForm();
 
-  const handleClose = () => {
-    onReset();
-    onClose();
-  };
+  const {
+    uploadAndProcessFile,
+    isUploading,
+    uploadProgress,
+  } = useEnhancedFileUpload();
 
-  const handleSubmit = () => {
-    onSubmit();
-  };
+  const {
+    createDocument,
+    isCreating,
+  } = useMultiTierKnowledge();
 
-  const isSubmitDisabled = isCreating || isUploading || !formData.title || (inputMethod === 'upload' && !selectedFile);
+  const handleSave = async () => {
+    if (!formData.title.trim()) {
+      return;
+    }
 
-  const getDocumentTypeConfig = (type: DocumentType) => {
-    switch (type) {
-      case 'personal':
-        return {
-          icon: BookOpen,
-          title: 'Personal Knowledge',
-          description: 'Your personal notes, insights, and learning materials',
-          color: 'text-blue-600'
+    try {
+      let finalFormData = { ...formData };
+
+      // If uploading a file, process it first
+      if (inputMethod === 'upload' && selectedFile) {
+        const uploadResult = await uploadAndProcessFile(selectedFile);
+        if (!uploadResult) {
+          return; // Upload failed
+        }
+
+        // Enhance form data with AI analysis
+        if (uploadResult.ai_analysis) {
+          finalFormData = {
+            ...finalFormData,
+            description: finalFormData.description || uploadResult.ai_analysis.summary || '',
+            content: uploadResult.extracted_content || '',
+            tags: finalFormData.tags || uploadResult.ai_analysis.key_points?.join(', ') || '',
+          };
+        }
+
+        // Add file information to metadata
+        finalFormData.metadata = {
+          ...finalFormData.metadata,
+          fileUrl: uploadResult.file_url,
+          originalFileName: uploadResult.original_file_name,
+          fileType: uploadResult.file_type,
+          fileSize: uploadResult.file_size,
+          aiAnalysis: uploadResult.ai_analysis,
         };
-      case 'system':
-        return {
-          icon: Database,
-          title: 'System Knowledge',
-          description: 'Organizational frameworks and methodologies',
-          color: 'text-green-600'
-        };
-      case 'resource':
-        return {
-          icon: Download,
-          title: 'Downloadable Resource',
-          description: 'Templates, guides, and downloadable materials',
-          color: 'text-purple-600'
-        };
+      }
+
+      await createDocument('personal', finalFormData, selectedFile, inputMethod);
+      
+      handleClose();
+    } catch (error) {
+      console.error('Error saving knowledge:', error);
     }
   };
 
-  const currentConfig = getDocumentTypeConfig(documentType);
-  const IconComponent = currentConfig.icon;
+  const handleClose = () => {
+    resetForm();
+    onOpenChange(false);
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    // Auto-populate title from filename if not set
+    if (!formData.title) {
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+      updateFormField('title', nameWithoutExt);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <IconComponent className={`h-5 w-5 ${currentConfig.color}`} />
-            {editingFile ? 'Edit Knowledge File' : `Add ${currentConfig.title}`}
-          </DialogTitle>
+          <DialogTitle>Add Knowledge Item</DialogTitle>
           <DialogDescription>
-            {currentConfig.description}
+            Add information to your personal knowledge base. Choose between manual entry or file upload.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="space-y-6">
-          {!editingFile && (
-            <>
-              <div className="space-y-4">
-                <Label>Document Type</Label>
-                <Select value={documentType} onValueChange={onDocumentTypeChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-blue-600" />
-                        Personal Knowledge
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="system">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-4 w-4 text-green-600" />
-                        System Knowledge
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="resource">
-                      <div className="flex items-center gap-2">
-                        <Download className="h-4 w-4 text-purple-600" />
-                        Downloadable Resource
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <Tabs value={inputMethod} onValueChange={(value: any) => onInputMethodChange(value)}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="manual" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Manual Entry
-                  </TabsTrigger>
-                  <TabsTrigger value="upload" className="flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    File Upload
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="upload" className="mt-4">
-                  <FileUploadZone
-                    onFileSelect={onFileSelect}
-                    selectedFile={selectedFile}
-                    onRemoveFile={onRemoveFile}
-                    isUploading={isUploading}
-                  />
-                </TabsContent>
-              </Tabs>
-            </>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => onFormUpdate('title', e.target.value)}
-                placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, '') : 'Knowledge file title'}
-              />
-            </div>
-            <div>
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
-              <Input
-                id="tags"
-                value={formData.tags}
-                onChange={(e) => onFormUpdate('tags', e.target.value)}
-                placeholder="e.g., javascript, leadership, productivity"
-              />
-            </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => updateFormField('title', e.target.value)}
+              placeholder="Enter a descriptive title..."
+            />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => onFormUpdate('description', e.target.value)}
-              placeholder="Brief description of the knowledge"
+              onChange={(e) => updateFormField('description', e.target.value)}
+              placeholder="Brief description of this knowledge item..."
               rows={2}
             />
           </div>
 
-          {(inputMethod === 'manual' || editingFile) && (
-            <div>
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={formData.content}
-                onChange={(e) => onFormUpdate('content', e.target.value)}
-                placeholder="Your knowledge content, notes, or insights"
-                rows={8}
-              />
-            </div>
-          )}
+          <Tabs value={inputMethod} onValueChange={(value) => setInputMethod(value as 'manual' | 'upload')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="manual" className="flex items-center gap-2">
+                <Type className="h-4 w-4" />
+                Manual Entry
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                File Upload
+              </TabsTrigger>
+            </TabsList>
 
-          {inputMethod === 'upload' && selectedFile && (
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Brain className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-900">AI Processing</span>
+            <TabsContent value="manual" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  value={formData.content}
+                  onChange={(e) => updateFormField('content', e.target.value)}
+                  placeholder="Enter your knowledge content here..."
+                  rows={8}
+                />
               </div>
-              <p className="text-sm text-blue-700">
-                After upload, your file will be automatically processed to extract text content, 
-                generate an AI summary, and identify key insights using advanced AI analysis.
-              </p>
-            </div>
-          )}
+            </TabsContent>
+
+            <TabsContent value="upload" className="space-y-4">
+              <EnhancedFileUpload
+                onFileSelect={handleFileSelect}
+                selectedFile={selectedFile}
+                onRemoveFile={handleRemoveFile}
+                isUploading={isUploading}
+                uploadProgress={uploadProgress}
+              />
+              
+              {selectedFile && (
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">AI Processing Available</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    This file will be processed with AI to extract content, generate summaries, and identify key insights automatically.
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+
+          <div className="space-y-2">
+            <Label htmlFor="tags">Tags</Label>
+            <Input
+              id="tags"
+              value={formData.tags}
+              onChange={(e) => updateFormField('tags', e.target.value)}
+              placeholder="Enter tags separated by commas..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Separate multiple tags with commas (e.g., "career, development, skills")
+            </p>
+          </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
+            <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitDisabled}>
-            {(isCreating || isUploading) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {editingFile ? 'Update' : (inputMethod === 'upload' ? 'Upload & Process' : 'Create')}
+          <Button 
+            onClick={handleSave} 
+            disabled={!formData.title.trim() || isCreating || isUploading}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isCreating || isUploading ? 'Processing...' : 'Save Knowledge'}
           </Button>
         </DialogFooter>
       </DialogContent>

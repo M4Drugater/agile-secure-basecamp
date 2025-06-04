@@ -20,13 +20,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
       )}
       <div
-        className={`max-w-[70%] rounded-lg p-3 ${
+        className={`max-w-[85%] rounded-lg p-3 ${
           message.role === 'user'
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted'
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere leading-relaxed">
+          {message.content}
+        </p>
         <p className="text-xs opacity-70 mt-1">
           {message.timestamp.toLocaleTimeString()}
         </p>
