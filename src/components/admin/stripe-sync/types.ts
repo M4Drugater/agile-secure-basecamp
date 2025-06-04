@@ -2,23 +2,22 @@
 export interface SyncResult {
   success: boolean;
   message?: string;
-  details?: {
-    plans_created?: number;
-    users_initialized?: number;
+  results?: {
+    products_created?: number;
+    prices_created?: number;
+    database_updated?: number;
+    users_credits_initialized?: number;
+    errors?: string[];
     stripe_products?: {
-      pro?: { product_id: string; price_id: string; amount_eur: number };
-      enterprise?: { product_id: string; price_id: string; amount_eur: number };
-    };
-    configuration?: {
-      stripe_connected?: boolean;
-      database_updated?: boolean;
-      credits_initialized?: boolean;
-      ai_pricing_updated?: boolean;
+      [key: string]: {
+        price_id: string;
+        amount_eur: number;
+      };
     };
   };
   error?: string;
   troubleshooting?: {
-    stripe_key_configured?: boolean;
+    stripe_configured?: boolean;
     supabase_configured?: boolean;
     common_solutions?: string[];
   };

@@ -15,9 +15,9 @@ export function useSyncStripe() {
     setSyncResult(null);
     
     try {
-      console.log('Starting comprehensive Stripe synchronization...');
+      console.log('Starting Stripe product synchronization...');
       
-      const { data, error } = await supabase.functions.invoke('initialize-test-data');
+      const { data, error } = await supabase.functions.invoke('sync-stripe-products');
       
       if (error) {
         throw error;
@@ -30,7 +30,7 @@ export function useSyncStripe() {
         setLastSync(new Date().toLocaleString('en-US'));
         toast({
           title: 'Synchronization Successful',
-          description: `Successfully configured ${data.details?.plans_created || 0} plans and initialized ${data.details?.users_initialized || 0} user accounts.`,
+          description: `Created ${data.results?.products_created || 0} products and ${data.results?.prices_created || 0} prices. Updated ${data.results?.database_updated || 0} plans in database.`,
         });
       } else {
         throw new Error(data.error || 'Synchronization failed');
@@ -46,7 +46,8 @@ export function useSyncStripe() {
           common_solutions: [
             'Check that STRIPE_SECRET_KEY is configured in Supabase Edge Functions secrets',
             'Verify your Stripe account is activated',
-            'Ensure your Stripe API key has the required permissions'
+            'Ensure your Stripe API key has the required permissions',
+            'Make sure you are using the correct environment (test/live) consistently'
           ]
         }
       };

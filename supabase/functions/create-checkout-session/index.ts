@@ -28,13 +28,21 @@ serve(async (req) => {
   }
 
   try {
-    logStep('Starting enhanced checkout session creation');
+    logStep('Starting checkout session creation');
     
+    // Verify Stripe key
+    if (!Deno.env.get('STRIPE_SECRET_KEY')) {
+      throw new Error('Stripe not configured. Please set STRIPE_SECRET_KEY in edge function secrets.');
+    }
+
     // Verify user authentication
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       logStep('No authorization header provided');
-      return new Response(JSON.stringify({ error: 'No authorization header provided' }), { 
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required',
+        details: 'Please log in to create a checkout session'
+      }), { 
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -45,7 +53,10 @@ serve(async (req) => {
     
     if (authError || !user) {
       logStep('Authentication error', { error: authError });
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed',
+        details: 'Invalid or expired session. Please log in again.'
+      }), { 
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -57,13 +68,16 @@ serve(async (req) => {
     logStep('Request data', { priceId, planId });
 
     if (!priceId || !planId) {
-      return new Response(JSON.stringify({ error: 'Missing priceId or planId' }), {
+      return new Response(JSON.stringify({ 
+        error: 'Missing required data',
+        details: 'Both priceId and planId are required'
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // Verify the plan exists in our database
+    // Verify the plan exists and is active
     const { data: plan, error: planError } = await supabase
       .from('subscription_plans')
       .select('*')
@@ -74,15 +88,15 @@ serve(async (req) => {
     if (planError || !plan) {
       logStep('Plan not found in database', { planId, error: planError });
       return new Response(JSON.stringify({ 
-        error: 'Invalid plan ID',
-        details: 'The selected plan is not available'
+        error: 'Invalid subscription plan',
+        details: 'The selected plan is not available or has been discontinued'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // Verify the price exists in Stripe and matches our plan
+    // Verify the price exists in Stripe
     let priceDetails;
     try {
       priceDetails = await stripe.prices.retrieve(priceId);
@@ -90,13 +104,18 @@ serve(async (req) => {
         id: priceDetails.id, 
         currency: priceDetails.currency, 
         amount: priceDetails.unit_amount,
-        productId: priceDetails.product
+        active: priceDetails.active
       });
+
+      if (!priceDetails.active) {
+        throw new Error('Price is not active in Stripe');
+      }
     } catch (error) {
-      logStep('Price not found in Stripe', { priceId, error: error.message });
+      logStep('Price verification failed', { priceId, error: error.message });
       return new Response(JSON.stringify({ 
-        error: 'Invalid price ID',
-        details: `Price ${priceId} not found in your Stripe account`
+        error: 'Invalid price configuration',
+        details: `The price ${priceId} is not available. Please try again or contact support.`,
+        troubleshooting: 'Run the Stripe sync to ensure all products and prices are properly configured.'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -115,16 +134,17 @@ serve(async (req) => {
       })
     }
 
-    // Verify price matches plan
+    // Verify price matches plan (with some tolerance for rounding)
     const expectedAmount = Math.round(plan.price_monthly * 100);
-    if (priceDetails.unit_amount !== expectedAmount) {
+    if (Math.abs(priceDetails.unit_amount - expectedAmount) > 1) {
       logStep('Price amount mismatch', { 
         stripe: priceDetails.unit_amount, 
         expected: expectedAmount 
       });
       return new Response(JSON.stringify({ 
         error: 'Price mismatch',
-        details: 'The Stripe price does not match the plan price'
+        details: 'The Stripe price does not match the plan price. Please run the Stripe sync.',
+        troubleshooting: 'Use the admin panel to sync Stripe products and prices.'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -145,7 +165,8 @@ serve(async (req) => {
       });
       return new Response(JSON.stringify({ 
         error: 'Active subscription exists',
-        details: `You already have an active ${existingSubscription.subscription_plan?.name} subscription`
+        details: `You already have an active ${existingSubscription.subscription_plan?.name} subscription`,
+        action: 'manage_existing'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -161,14 +182,23 @@ serve(async (req) => {
       .maybeSingle();
 
     if (userSubscription?.stripe_customer_id) {
-      customerId = userSubscription.stripe_customer_id;
-      logStep('Using existing customer', { customerId });
+      // Verify customer exists in Stripe
+      try {
+        await stripe.customers.retrieve(userSubscription.stripe_customer_id);
+        customerId = userSubscription.stripe_customer_id;
+        logStep('Using existing customer', { customerId });
+      } catch (error) {
+        logStep('Customer not found in Stripe, creating new one', { oldCustomerId: userSubscription.stripe_customer_id });
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+      }
     } else {
       const customer = await stripe.customers.create({
         email: user.email,
-        metadata: {
-          userId: user.id,
-        },
+        metadata: { userId: user.id },
       });
       customerId = customer.id;
       logStep('Created new customer', { customerId });
@@ -186,7 +216,7 @@ serve(async (req) => {
         .from('user_credits')
         .insert({
           user_id: user.id,
-          total_credits: 100, // Free tier starting credits
+          total_credits: 100,
           used_credits_today: 0,
           last_reset_date: new Date().toISOString().split('T')[0]
         });
@@ -217,12 +247,19 @@ serve(async (req) => {
         planName: plan.name,
         creditsPerMonth: plan.credits_per_month.toString(),
       },
-      locale: 'en', // Using English since the UI is in English
+      locale: 'en',
       allow_promotion_codes: true,
       billing_address_collection: 'required',
       customer_update: {
         address: 'auto',
         name: 'auto'
+      },
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          planId: planId,
+          planName: plan.name,
+        }
       }
     });
 
@@ -242,9 +279,11 @@ serve(async (req) => {
   } catch (error) {
     logStep('ERROR creating checkout session', { message: error.message });
     console.error('Full error:', error);
+    
     return new Response(JSON.stringify({ 
-      error: error.message,
-      details: 'Please check your Stripe configuration and try again'
+      error: 'Checkout session creation failed',
+      details: error.message,
+      troubleshooting: 'Please check your Stripe configuration and try again. If the problem persists, contact support.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
