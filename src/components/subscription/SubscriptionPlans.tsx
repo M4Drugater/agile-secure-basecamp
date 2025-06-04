@@ -15,15 +15,31 @@ export function SubscriptionPlans() {
 
   const handleSubscribe = async (plan: any) => {
     try {
-      // For now, use a test price ID - this will be configured properly later
-      const testPriceId = plan.price_monthly === 0 ? 'price_test_free' : 
-                          plan.price_monthly === 9 ? 'price_test_basic' :
-                          plan.price_monthly === 29 ? 'price_test_premium' : 'price_test_enterprise';
+      // Skip free plan
+      if (plan.price_monthly === 0) {
+        toast({
+          title: 'Free Plan',
+          description: 'You are already on the free plan!',
+        });
+        return;
+      }
+
+      // Use the real Stripe price ID from the database
+      const priceId = plan.stripe_price_id_monthly;
       
-      console.log('Subscribing to plan:', plan.name, 'with price ID:', testPriceId);
+      if (!priceId) {
+        toast({
+          title: 'Error',
+          description: 'Plan configuration error. Please contact support.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      console.log('Subscribing to plan:', plan.name, 'with price ID:', priceId);
       
       const { url } = await createCheckout.mutateAsync({
-        priceId: testPriceId,
+        priceId: priceId,
         planId: plan.id,
       });
       
