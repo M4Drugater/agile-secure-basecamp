@@ -2,13 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Coins, TrendingUp, Calendar } from 'lucide-react';
-import { useCreditStatus } from '@/hooks/useCredits';
 import { Badge } from '@/components/ui/badge';
+import { Coins, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useCreditStatus } from '@/hooks/useCredits';
 
 export function CreditUsageCard() {
-  const { data: creditStatus, isLoading } = useCreditStatus();
+  const { data: creditStatus, isLoading, error } = useCreditStatus();
 
   if (isLoading) {
     return (
@@ -16,87 +15,93 @@ export function CreditUsageCard() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Coins className="w-5 h-5 mr-2" />
-            Loading...
+            Credit Usage
           </CardTitle>
         </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-muted-foreground">
+            Loading credit information...
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
-  if (!creditStatus) return null;
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Coins className="w-5 h-5 mr-2" />
+            Credit Usage
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-destructive">
+            Error loading credit information
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const dailyPercentage = (creditStatus.used_today / creditStatus.daily_limit) * 100;
-  const remainingCredits = creditStatus.total_credits;
-  const remainingToday = Math.max(0, creditStatus.daily_limit - creditStatus.used_today);
+  const usagePercentage = creditStatus ? (creditStatus.used_today / creditStatus.daily_limit) * 100 : 0;
+  const isRunningLow = usagePercentage > 80;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Coins className="w-5 h-5 mr-2" />
-            Credit Usage
-          </div>
-          <Badge variant={creditStatus.subscription_status === 'active' ? 'default' : 'secondary'}>
-            {creditStatus.plan_name}
-          </Badge>
+        <CardTitle className="flex items-center">
+          <Coins className="w-5 h-5 mr-2" />
+          Credit Usage
         </CardTitle>
-        <CardDescription>
-          Monitor your AI credit consumption
-        </CardDescription>
+        <CardDescription>Monitor your AI credit consumption</CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        {/* Total Credits */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Total Credits</span>
-            <span className="text-2xl font-bold text-primary">
-              {remainingCredits.toLocaleString()}
-            </span>
-          </div>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Total Credits</div>
+          <Badge variant="outline">{creditStatus?.plan_name || 'Free'}</Badge>
         </div>
-
-        {/* Daily Usage */}
+        
+        <div className="text-3xl font-bold">
+          {creditStatus?.total_credits?.toLocaleString() || 0}
+        </div>
+        
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium flex items-center">
-              <Calendar className="w-4 h-4 mr-1" />
-              Today's Usage
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {creditStatus.used_today} / {creditStatus.daily_limit}
-            </span>
+          <div className="flex items-center justify-between text-sm">
+            <span>Today's Usage</span>
+            <span>{creditStatus?.used_today || 0} / {creditStatus?.daily_limit || 10}</span>
           </div>
-          <Progress value={dailyPercentage} className="h-2" />
+          <Progress value={usagePercentage} className="h-2" />
           <div className="text-xs text-muted-foreground">
-            {remainingToday} credits remaining today
+            {creditStatus?.daily_limit - creditStatus?.used_today} credits remaining today
           </div>
         </div>
-
-        {/* Usage Stats */}
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-lg font-semibold">{creditStatus.used_today}</div>
-            <div className="text-xs text-muted-foreground">Used Today</div>
-          </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-lg font-semibold">{creditStatus.daily_limit}</div>
-            <div className="text-xs text-muted-foreground">Daily Limit</div>
-          </div>
-        </div>
-
-        {/* Warning for low credits */}
-        {(remainingCredits < 50 || remainingToday < 5) && (
-          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+        
+        {isRunningLow && (
+          <div className="flex items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-orange-600 mr-2" />
             <div className="text-sm text-orange-800">
-              {remainingCredits < 50 ? 
-                'Running low on credits. Consider upgrading your plan.' :
-                'Daily limit almost reached. Resets at midnight.'
-              }
+              Running low on credits. Consider upgrading your plan.
             </div>
           </div>
         )}
+        
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-primary">
+              {creditStatus?.used_today || 0}
+            </div>
+            <div className="text-xs text-muted-foreground">Used Today</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-semibold text-green-600">
+              {creditStatus?.daily_limit || 10}
+            </div>
+            <div className="text-xs text-muted-foreground">Daily Limit</div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

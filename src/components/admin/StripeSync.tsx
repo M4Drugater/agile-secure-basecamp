@@ -25,16 +25,16 @@ export function StripeSync() {
       
       console.log('Sync response:', data);
       
-      setLastSync(new Date().toLocaleString('es-ES'));
+      setLastSync(new Date().toLocaleString('en-US'));
       toast({
-        title: 'Sincronización Exitosa',
-        description: `Se han sincronizado ${data.plans?.length || 0} planes con Stripe en EUR.`,
+        title: 'Sync Successful',
+        description: `Successfully synced ${data.plans?.length || 0} plans with Stripe in EUR.`,
       });
     } catch (error) {
       console.error('Sync error:', error);
       toast({
-        title: 'Error de Sincronización',
-        description: error.message || 'Error al sincronizar con Stripe.',
+        title: 'Sync Error',
+        description: error.message || 'Error synchronizing with Stripe.',
         variant: 'destructive',
       });
     } finally {
@@ -47,19 +47,19 @@ export function StripeSync() {
       <CardHeader>
         <CardTitle className="flex items-center">
           <Euro className="w-5 h-5 mr-2" />
-          Sincronización con Stripe
+          Stripe Synchronization
         </CardTitle>
         <CardDescription>
-          Sincroniza los planes de suscripción con tus productos de Stripe en EUR
+          Sync subscription plans with your Stripe products in EUR
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium">Estado de Sincronización</div>
+            <div className="text-sm font-medium">Sync Status</div>
             <div className="text-sm text-muted-foreground">
-              {lastSync ? `Última sincronización: ${lastSync}` : 'Nunca sincronizado'}
+              {lastSync ? `Last sync: ${lastSync}` : 'Never synced'}
             </div>
           </div>
           <Badge variant="outline" className="flex items-center">
@@ -70,7 +70,7 @@ export function StripeSync() {
         
         <div className="space-y-2">
           <div className="text-sm">
-            <strong>Productos configurados:</strong>
+            <strong>Configured Products:</strong>
           </div>
           <ul className="text-sm text-muted-foreground space-y-1">
             <li>• Pro (prod_RRxuCJBN3M2XL5)</li>
@@ -86,18 +86,18 @@ export function StripeSync() {
           {isLoading ? (
             <>
               <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Sincronizando...
+              Syncing...
             </>
           ) : (
             <>
               <RefreshCw className="w-4 h-4 mr-2" />
-              Sincronizar con Stripe
+              Sync with Stripe
             </>
           )}
         </Button>
         
         <div className="text-xs text-muted-foreground">
-          Esta acción actualizará los planes de suscripción con los precios actuales de Stripe en EUR.
+          This action will update subscription plans with current Stripe prices in EUR.
         </div>
       </CardContent>
     </Card>

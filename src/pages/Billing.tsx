@@ -17,9 +17,9 @@ export default function Billing() {
     <UniversalLayout>
       <div className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Facturación y Suscripción</h1>
+          <h1 className="text-3xl font-bold">Billing & Subscription</h1>
           <p className="text-muted-foreground mt-2">
-            Gestiona tu suscripción, ve el uso y actualiza los métodos de pago
+            Manage your subscription, view usage, and update payment methods
           </p>
         </div>
 
@@ -39,24 +39,24 @@ export default function Billing() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="plans" className="flex items-center">
                 <Package className="w-4 h-4 mr-2" />
-                Planes
+                Plans
               </TabsTrigger>
               <TabsTrigger value="usage" className="flex items-center">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Historial de Uso
+                Usage History
               </TabsTrigger>
               <TabsTrigger value="billing" className="flex items-center">
                 <CreditCard className="w-4 h-4 mr-2" />
-                Historial de Facturación
+                Billing History
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="plans">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Planes de Suscripción</h3>
+                  <h3 className="text-lg font-semibold">Subscription Plans</h3>
                   <p className="text-muted-foreground">
-                    Elige el plan que mejor se adapte a tus necesidades
+                    Choose the plan that best fits your needs
                   </p>
                 </div>
                 <SubscriptionPlans />
@@ -66,13 +66,13 @@ export default function Billing() {
             <TabsContent value="usage">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Historial de Uso de Créditos</h3>
+                  <h3 className="text-lg font-semibold">Credit Usage History</h3>
                   <p className="text-muted-foreground">
-                    Rastrea tu consumo de créditos de IA a lo largo del tiempo
+                    Track your AI credit consumption over time
                   </p>
                 </div>
                 <div className="text-center py-8 text-muted-foreground">
-                  Historial de uso próximamente...
+                  Usage history coming soon...
                 </div>
               </div>
             </TabsContent>
@@ -80,13 +80,13 @@ export default function Billing() {
             <TabsContent value="billing">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Historial de Pagos</h3>
+                  <h3 className="text-lg font-semibold">Payment History</h3>
                   <p className="text-muted-foreground">
-                    Ve tus facturas y pagos anteriores
+                    View your past invoices and payments
                   </p>
                 </div>
                 <div className="text-center py-8 text-muted-foreground">
-                  Historial de pagos próximamente...
+                  Payment history coming soon...
                 </div>
               </div>
             </TabsContent>

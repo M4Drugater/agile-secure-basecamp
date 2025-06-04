@@ -3,23 +3,25 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CreditCard, Settings } from 'lucide-react';
+import { CreditCard, Calendar, Users, ExternalLink } from 'lucide-react';
 import { useUserSubscription, useCreatePortalSession } from '@/hooks/useSubscriptions';
 import { useToast } from '@/components/ui/use-toast';
 
 export function SubscriptionManagement() {
-  const { data: subscription, isLoading } = useUserSubscription();
-  const createPortal = useCreatePortalSession();
+  const { data: subscription, isLoading, error } = useUserSubscription();
+  const createPortalSession = useCreatePortalSession();
   const { toast } = useToast();
 
   const handleManageSubscription = async () => {
     try {
-      const { url } = await createPortal.mutateAsync();
-      window.location.href = url;
+      console.log('Opening customer portal...');
+      const { url } = await createPortalSession.mutateAsync();
+      window.open(url, '_blank');
     } catch (error) {
+      console.error('Portal error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to open billing portal. Please try again.',
+        description: 'Unable to open subscription management. Please try again.',
         variant: 'destructive',
       });
     }
@@ -29,92 +31,105 @@ export function SubscriptionManagement() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Loading subscription...</CardTitle>
+          <CardTitle className="flex items-center">
+            <CreditCard className="w-5 h-5 mr-2" />
+            Subscription Status
+          </CardTitle>
         </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-muted-foreground">
+            Loading subscription information...
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
-  if (!subscription) {
+  if (error) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <CreditCard className="w-5 h-5 mr-2" />
-            No Active Subscription
+            Subscription Status
           </CardTitle>
-          <CardDescription>
-            You're currently on the free plan
-          </CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="text-center py-4 text-destructive">
+            Error loading subscription information
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'canceled': return 'destructive';
-      case 'past_due': return 'destructive';
-      default: return 'secondary';
-    }
-  };
+  const hasActiveSubscription = subscription?.status === 'active';
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
-            <CreditCard className="w-5 h-5 mr-2" />
-            Current Subscription
-          </div>
-          <Badge variant={getStatusColor(subscription.status)}>
-            {subscription.status}
-          </Badge>
+        <CardTitle className="flex items-center">
+          <CreditCard className="w-5 h-5 mr-2" />
+          {hasActiveSubscription ? 'Active Subscription' : 'No Active Subscription'}
         </CardTitle>
         <CardDescription>
-          Manage your subscription and billing
+          {hasActiveSubscription 
+            ? 'Manage your current subscription' 
+            : "You're currently on the free plan"
+          }
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="text-sm text-muted-foreground">Plan</div>
-            <div className="font-medium">{subscription.subscription_plan?.name}</div>
-          </div>
-          
-          <div>
-            <div className="text-sm text-muted-foreground">Price</div>
-            <div className="font-medium">
-              ${subscription.subscription_plan?.price_monthly}/month
+        {hasActiveSubscription ? (
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">{subscription.subscription_plan?.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {subscription.subscription_plan?.description}
+                </div>
+              </div>
+              <Badge variant="default">Active</Badge>
             </div>
-          </div>
-        </div>
-
-        {subscription.current_period_end && (
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center">
-              <Calendar className="w-4 h-4 mr-2" />
-              <span className="text-sm">
-                {subscription.cancel_at_period_end ? 'Cancels on' : 'Renews on'}
-              </span>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="font-medium">Monthly Price</div>
+                  <div className="text-muted-foreground">
+                    €{subscription.subscription_plan?.price_monthly}/month
+                  </div>
+                </div>
+                <div className="text-sm">
+                  <div className="font-medium">Credits per Month</div>
+                  <div className="text-muted-foreground">
+                    {subscription.subscription_plan?.credits_per_month?.toLocaleString()}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-sm font-medium">
-              {new Date(subscription.current_period_end).toLocaleDateString()}
+            
+            <Button 
+              onClick={handleManageSubscription}
+              disabled={createPortalSession.isPending}
+              className="w-full"
+              variant="outline"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Manage Subscription
+            </Button>
+          </>
+        ) : (
+          <div className="text-center py-4">
+            <div className="text-sm text-muted-foreground mb-4">
+              Upgrade to a paid plan to unlock more features and credits
             </div>
+            <Button className="w-full" onClick={() => window.location.hash = '#plans'}>
+              View Plans
+            </Button>
           </div>
         )}
-
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleManageSubscription}
-          disabled={createPortal.isPending}
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          Manage Subscription
-        </Button>
       </CardContent>
     </Card>
   );

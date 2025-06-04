@@ -94,38 +94,38 @@ serve(async (req) => {
     const plans = [
       {
         name: 'Free',
-        description: 'Perfect for trying out the platform',
+        description: 'Perfect for getting started',
         price_monthly: 0,
         price_yearly: 0,
         credits_per_month: 100,
         max_daily_credits: 10,
-        features: ['Basic AI chat', 'Limited content generation', 'Community support'],
+        features: ['Basic AI Chat', 'Limited Content Generation', 'Community Support'],
         stripe_price_id_monthly: null,
         stripe_price_id_yearly: null,
         is_active: true,
         is_featured: false
       },
       {
-        name: proProduct.name,
-        description: proProduct.description || 'Professional plan for growing needs',
+        name: 'Pro',
+        description: 'For professionals and teams',
         price_monthly: (proMonthlyPrice.unit_amount || 0) / 100, // Convert from cents to euros
         price_yearly: null, // Will be updated when yearly price is found
-        credits_per_month: 5000,
-        max_daily_credits: 200,
-        features: ['Advanced AI chat', 'Unlimited content generation', 'Priority support', 'Advanced analytics'],
+        credits_per_month: 1000,
+        max_daily_credits: 50,
+        features: ['Unlimited AI Chat', 'Advanced Content Generation', 'Full Analytics', 'Priority Support', 'Knowledge Base Upload'],
         stripe_price_id_monthly: proMonthlyPrice.id,
         stripe_price_id_yearly: null,
         is_active: true,
         is_featured: true
       },
       {
-        name: leadershipProduct.name,
-        description: leadershipProduct.description || 'Leadership development for executives',
+        name: 'Enterprise',
+        description: 'For large organizations',
         price_monthly: (leadershipMonthlyPrice.unit_amount || 0) / 100, // Convert from cents to euros
         price_yearly: null, // Will be updated when yearly price is found
-        credits_per_month: 20000,
-        max_daily_credits: 1000,
-        features: ['Premium AI models', 'Custom leadership content', 'Dedicated support', 'Executive coaching', 'Team management tools'],
+        credits_per_month: 5000,
+        max_daily_credits: 200,
+        features: ['Everything in Pro', 'Advanced AI Models', 'Custom Integrations', 'Dedicated Support', 'Advanced Analytics', 'Team Management'],
         stripe_price_id_monthly: leadershipMonthlyPrice.id,
         stripe_price_id_yearly: null,
         is_active: true,
@@ -151,7 +151,7 @@ serve(async (req) => {
       currency: 'EUR',
       stripeProducts: {
         pro: { productId: proProduct.id, priceId: proMonthlyPrice.id, amount: proMonthlyPrice.unit_amount },
-        leadership: { productId: leadershipProduct.id, priceId: leadershipMonthlyPrice.id, amount: leadershipMonthlyPrice.unit_amount }
+        enterprise: { productId: leadershipProduct.id, priceId: leadershipMonthlyPrice.id, amount: leadershipMonthlyPrice.unit_amount }
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

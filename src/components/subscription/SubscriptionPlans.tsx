@@ -18,8 +18,8 @@ export function SubscriptionPlans() {
       // Skip free plan
       if (plan.price_monthly === 0) {
         toast({
-          title: 'Plan Gratuito',
-          description: '¡Ya estás en el plan gratuito!',
+          title: 'Free Plan',
+          description: 'You are already on the free plan!',
         });
         return;
       }
@@ -29,8 +29,8 @@ export function SubscriptionPlans() {
       
       if (!priceId) {
         toast({
-          title: 'Error',
-          description: 'Error en la configuración del plan. Por favor contacta con soporte.',
+          title: 'Configuration Error',
+          description: 'Plan configuration error. Please contact support.',
           variant: 'destructive',
         });
         return;
@@ -49,14 +49,14 @@ export function SubscriptionPlans() {
       console.error('Subscription error:', error);
       toast({
         title: 'Error',
-        description: 'Error al crear la sesión de pago. Por favor intenta de nuevo.',
+        description: error.message || 'Error creating payment session. Please try again.',
         variant: 'destructive',
       });
     }
   };
 
   if (isLoading) {
-    return <div>Cargando planes de suscripción...</div>;
+    return <div>Loading subscription plans...</div>;
   }
 
   if (error) {
@@ -64,7 +64,10 @@ export function SubscriptionPlans() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
-          <p className="text-destructive">Error al cargar los planes de suscripción</p>
+          <p className="text-destructive">Error loading subscription plans</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Please try refreshing the page or contact support if the problem persists.
+          </p>
         </div>
       </div>
     );
@@ -81,14 +84,14 @@ export function SubscriptionPlans() {
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground">
                   <Star className="w-3 h-3 mr-1" />
-                  Más Popular
+                  Most Popular
                 </Badge>
               </div>
             )}
             
             {isCurrentPlan && (
               <div className="absolute -top-3 right-4">
-                <Badge variant="secondary">Plan Actual</Badge>
+                <Badge variant="secondary">Current Plan</Badge>
               </div>
             )}
             
@@ -97,14 +100,14 @@ export function SubscriptionPlans() {
               <CardDescription>{plan.description}</CardDescription>
               <div className="mt-4">
                 <div className="text-4xl font-bold">
-                  {plan.price_monthly === 0 ? 'Gratis' : `€${plan.price_monthly}`}
+                  {plan.price_monthly === 0 ? 'Free' : `€${plan.price_monthly}`}
                   {plan.price_monthly > 0 && (
-                    <span className="text-lg font-normal text-muted-foreground">/mes</span>
+                    <span className="text-lg font-normal text-muted-foreground">/month</span>
                   )}
                 </div>
                 {plan.price_yearly && (
                   <div className="text-sm text-muted-foreground">
-                    o €{plan.price_yearly}/año (ahorra 17%)
+                    or €{plan.price_yearly}/year (save 17%)
                   </div>
                 )}
               </div>
@@ -114,10 +117,10 @@ export function SubscriptionPlans() {
               <div className="space-y-4">
                 <div className="text-center">
                   <div className="text-2xl font-semibold text-primary">
-                    {plan.credits_per_month.toLocaleString()} créditos/mes
+                    {plan.credits_per_month.toLocaleString()} credits/month
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {plan.max_daily_credits} créditos por día
+                    {plan.max_daily_credits} credits per day
                   </div>
                 </div>
                 
@@ -136,7 +139,7 @@ export function SubscriptionPlans() {
                   onClick={() => handleSubscribe(plan)}
                   disabled={createCheckout.isPending || isCurrentPlan}
                 >
-                  {isCurrentPlan ? 'Plan Actual' : 'Suscribirse Ahora'}
+                  {isCurrentPlan ? 'Current Plan' : 'Subscribe Now'}
                 </Button>
               </div>
             </CardContent>
