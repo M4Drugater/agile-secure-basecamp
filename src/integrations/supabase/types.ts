@@ -1810,6 +1810,10 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      user_has_org_access: {
+        Args: { org_id: string; required_role?: string }
+        Returns: boolean
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
