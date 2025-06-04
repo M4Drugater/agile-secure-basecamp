@@ -4,9 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 
-type OrganizationUser = Database['public']['Tables']['organization_users']['Row'];
-type OrganizationUserInsert = Database['public']['Tables']['organization_users']['Insert'];
-type OrganizationUserUpdate = Database['public']['Tables']['organization_users']['Update'];
+type OrganizationUser = Database['public']['Tables']['organization_users']['Row'] & {
+  profiles?: {
+    full_name: string | null;
+    email: string;
+  };
+};
 
 export function useOrganizationUsers(organizationId?: string) {
   const { user } = useAuth();
@@ -19,14 +22,14 @@ export function useOrganizationUsers(organizationId?: string) {
         .from('organization_users')
         .select(`
           *,
-          profiles:user_id(full_name, email)
+          profiles!inner(full_name, email)
         `)
         .eq('organization_id', organizationId!)
         .eq('is_active', true)
         .order('joined_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as OrganizationUser[];
     },
     enabled: !!organizationId && !!user,
   });
