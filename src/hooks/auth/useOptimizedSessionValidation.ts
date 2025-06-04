@@ -11,6 +11,12 @@ interface UseOptimizedSessionValidationProps {
   logSecurityEvent: (event: SecurityEvent) => void;
 }
 
+interface ValidationCache {
+  isValid: boolean;
+  shouldSignOut: boolean;
+  timestamp: number;
+}
+
 export function useOptimizedSessionValidation({ 
   user, 
   profile, 
@@ -18,7 +24,7 @@ export function useOptimizedSessionValidation({
 }: UseOptimizedSessionValidationProps) {
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const lastValidationRef = useRef<number>(0);
-  const validationCacheRef = useRef<{ isValid: boolean; timestamp: number } | null>(null);
+  const validationCacheRef = useRef<ValidationCache | null>(null);
 
   // Cache validation results for 30 seconds to reduce redundant checks
   const VALIDATION_CACHE_DURATION = 30 * 1000; // 30 seconds
@@ -39,7 +45,10 @@ export function useOptimizedSessionValidation({
     // Check cached validation result
     if (validationCacheRef.current && 
         now - validationCacheRef.current.timestamp < VALIDATION_CACHE_DURATION) {
-      return { isValid: validationCacheRef.current.isValid, shouldSignOut: false };
+      return { 
+        isValid: validationCacheRef.current.isValid, 
+        shouldSignOut: validationCacheRef.current.shouldSignOut 
+      };
     }
 
     try {
@@ -60,7 +69,9 @@ export function useOptimizedSessionValidation({
           variant: "destructive",
         });
         
-        return { isValid: false, shouldSignOut: true };
+        const result = { isValid: false, shouldSignOut: true };
+        validationCacheRef.current = { ...result, timestamp: now };
+        return result;
       }
 
       // Update last validation time
@@ -77,7 +88,8 @@ export function useOptimizedSessionValidation({
         });
 
         console.warn('Invalid session detected:', error);
-        validationCacheRef.current = { isValid: false, timestamp: now };
+        const result = { isValid: false, shouldSignOut: true };
+        validationCacheRef.current = { ...result, timestamp: now };
         
         toast({
           title: "Session expired",
@@ -85,7 +97,7 @@ export function useOptimizedSessionValidation({
           variant: "destructive",
         });
         
-        return { isValid: false, shouldSignOut: true };
+        return result;
       }
 
       // Handle session expiration and auto-refresh logic
@@ -163,7 +175,8 @@ export function useOptimizedSessionValidation({
           details: { reason: 'account_deactivated', userId: user.id }
         });
 
-        validationCacheRef.current = { isValid: false, timestamp: now };
+        const result = { isValid: false, shouldSignOut: true };
+        validationCacheRef.current = { ...result, timestamp: now };
         
         toast({
           title: "Account deactivated",
@@ -171,11 +184,12 @@ export function useOptimizedSessionValidation({
           variant: "destructive",
         });
         
-        return { isValid: false, shouldSignOut: true };
+        return result;
       }
 
       // Cache successful validation
-      validationCacheRef.current = { isValid: true, timestamp: now };
+      const result = { isValid: true, shouldSignOut: false };
+      validationCacheRef.current = { ...result, timestamp: now };
 
       logSecurityEvent({
         type: 'login_attempt',
@@ -183,7 +197,7 @@ export function useOptimizedSessionValidation({
         details: { status: 'success', userId: user.id }
       });
 
-      return { isValid: true, shouldSignOut: false };
+      return result;
     } catch (error) {
       logSecurityEvent({
         type: 'failed_login',
@@ -192,8 +206,9 @@ export function useOptimizedSessionValidation({
       });
 
       console.error('Session validation error:', error);
-      validationCacheRef.current = { isValid: false, timestamp: now };
-      return { isValid: false, shouldSignOut: false };
+      const result = { isValid: false, shouldSignOut: false };
+      validationCacheRef.current = { ...result, timestamp: now };
+      return result;
     }
   }, [user, profile, sessionStartTime, logSecurityEvent]);
 
