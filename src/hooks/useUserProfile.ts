@@ -6,7 +6,8 @@ import { toast } from '@/hooks/use-toast';
 
 export interface UserProfile {
   id: string;
-  user_id: string;
+  user_id?: string; // For backward compatibility, but we use id as the main identifier
+  email: string;
   full_name?: string;
   current_position?: string;
   company?: string;
@@ -50,9 +51,9 @@ export function useUserProfile() {
       console.log('Fetching profile for user:', user.id);
       
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -78,12 +79,13 @@ export function useUserProfile() {
       );
 
       const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
+        .from('profiles')
+        .update({
           ...cleanedData,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
+        .eq('id', user.id)
         .select()
         .single();
 

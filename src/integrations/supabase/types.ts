@@ -1028,34 +1028,100 @@ export type Database = {
       }
       profiles: {
         Row: {
+          career_goals: string[] | null
+          certifications: string[] | null
+          communication_style: string | null
+          company: string | null
           created_at: string | null
+          current_position: string | null
+          current_skills: string[] | null
           email: string
+          experience_level: string | null
+          feedback_preference: string | null
           full_name: string | null
           id: string
+          industry: string | null
           is_active: boolean | null
           last_login: string | null
+          last_updated: string | null
+          leadership_experience: boolean | null
+          learning_priorities: string[] | null
+          learning_style: string | null
+          management_level: string | null
+          profile_completeness: number | null
           role: Database["public"]["Enums"]["user_role"]
+          skill_gaps: string[] | null
+          target_industry: string | null
+          target_position: string | null
+          target_salary_range: string | null
+          team_size: number | null
           updated_at: string | null
+          work_environment: string | null
+          years_of_experience: number | null
         }
         Insert: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
           created_at?: string | null
+          current_position?: string | null
+          current_skills?: string[] | null
           email: string
+          experience_level?: string | null
+          feedback_preference?: string | null
           full_name?: string | null
           id: string
+          industry?: string | null
           is_active?: boolean | null
           last_login?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
           updated_at?: string | null
+          work_environment?: string | null
+          years_of_experience?: number | null
         }
         Update: {
+          career_goals?: string[] | null
+          certifications?: string[] | null
+          communication_style?: string | null
+          company?: string | null
           created_at?: string | null
+          current_position?: string | null
+          current_skills?: string[] | null
           email?: string
+          experience_level?: string | null
+          feedback_preference?: string | null
           full_name?: string | null
           id?: string
+          industry?: string | null
           is_active?: boolean | null
           last_login?: string | null
+          last_updated?: string | null
+          leadership_experience?: boolean | null
+          learning_priorities?: string[] | null
+          learning_style?: string | null
+          management_level?: string | null
+          profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
+          skill_gaps?: string[] | null
+          target_industry?: string | null
+          target_position?: string | null
+          target_salary_range?: string | null
+          team_size?: number | null
           updated_at?: string | null
+          work_environment?: string | null
+          years_of_experience?: number | null
         }
         Relationships: []
       }
@@ -1309,96 +1375,6 @@ export type Database = {
           },
         ]
       }
-      user_profiles: {
-        Row: {
-          career_goals: string[] | null
-          certifications: string[] | null
-          communication_style: string | null
-          company: string | null
-          created_at: string
-          current_position: string | null
-          current_skills: string[] | null
-          experience_level: string | null
-          feedback_preference: string | null
-          full_name: string | null
-          id: string
-          industry: string | null
-          last_updated: string | null
-          leadership_experience: boolean | null
-          learning_priorities: string[] | null
-          learning_style: string | null
-          management_level: string | null
-          profile_completeness: number | null
-          skill_gaps: string[] | null
-          target_industry: string | null
-          target_position: string | null
-          target_salary_range: string | null
-          team_size: number | null
-          updated_at: string
-          user_id: string
-          work_environment: string | null
-          years_of_experience: number | null
-        }
-        Insert: {
-          career_goals?: string[] | null
-          certifications?: string[] | null
-          communication_style?: string | null
-          company?: string | null
-          created_at?: string
-          current_position?: string | null
-          current_skills?: string[] | null
-          experience_level?: string | null
-          feedback_preference?: string | null
-          full_name?: string | null
-          id?: string
-          industry?: string | null
-          last_updated?: string | null
-          leadership_experience?: boolean | null
-          learning_priorities?: string[] | null
-          learning_style?: string | null
-          management_level?: string | null
-          profile_completeness?: number | null
-          skill_gaps?: string[] | null
-          target_industry?: string | null
-          target_position?: string | null
-          target_salary_range?: string | null
-          team_size?: number | null
-          updated_at?: string
-          user_id: string
-          work_environment?: string | null
-          years_of_experience?: number | null
-        }
-        Update: {
-          career_goals?: string[] | null
-          certifications?: string[] | null
-          communication_style?: string | null
-          company?: string | null
-          created_at?: string
-          current_position?: string | null
-          current_skills?: string[] | null
-          experience_level?: string | null
-          feedback_preference?: string | null
-          full_name?: string | null
-          id?: string
-          industry?: string | null
-          last_updated?: string | null
-          leadership_experience?: boolean | null
-          learning_priorities?: string[] | null
-          learning_style?: string | null
-          management_level?: string | null
-          profile_completeness?: number | null
-          skill_gaps?: string[] | null
-          target_industry?: string | null
-          target_position?: string | null
-          target_salary_range?: string | null
-          team_size?: number | null
-          updated_at?: string
-          user_id?: string
-          work_environment?: string | null
-          years_of_experience?: number | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -1413,10 +1389,12 @@ export type Database = {
         Returns: number
       }
       calculate_profile_completeness: {
-        Args: {
-          profile_row: Database["public"]["Tables"]["user_profiles"]["Row"]
-        }
+        Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: number
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       get_monthly_cost: {
         Args: Record<PropertyKey, never>
@@ -1425,6 +1403,16 @@ export type Database = {
       get_total_daily_cost: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      get_user_conversations: {
+        Args: { user_uuid: string }
+        Returns: {
+          id: string
+          title: string
+          created_at: string
+          updated_at: string
+          message_count: number
+        }[]
       }
       get_user_daily_cost: {
         Args: { user_uuid: string }
@@ -1484,6 +1472,10 @@ export type Database = {
       increment_message_count: {
         Args: { conversation_id: string }
         Returns: number
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       ivfflat_bit_support: {
         Args: { "": unknown }
