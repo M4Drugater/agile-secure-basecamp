@@ -3,18 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOrganizations } from '@/hooks/useOrganizations';
 
 export type ContentItem = Database['public']['Tables']['content_items']['Row'];
 export type ContentItemInsert = Database['public']['Tables']['content_items']['Insert'];
 export type ContentItemUpdate = Database['public']['Tables']['content_items']['Update'];
 
 // Export the CreateContentItem type that's missing
-export type CreateContentItem = Omit<ContentItemInsert, 'user_id' | 'organization_id'>;
+export type CreateContentItem = Omit<ContentItemInsert, 'user_id'>;
 
 export function useContentItems() {
   const { user } = useAuth();
-  const { currentOrganization } = useOrganizations();
   const queryClient = useQueryClient();
 
   const { data: contentItems, isLoading } = useQuery({
@@ -38,7 +36,6 @@ export function useContentItems() {
         .insert({
           ...contentData,
           user_id: user?.id!,
-          organization_id: currentOrganization?.id || null,
         })
         .select()
         .single();
@@ -100,7 +97,6 @@ export function useContentItems() {
           content_type: original.content_type,
           tags: original.tags,
           user_id: user?.id!,
-          organization_id: currentOrganization?.id || null,
         })
         .select()
         .single();
