@@ -1,0 +1,83 @@
+
+import React from 'react';
+import { UniversalLayout } from '@/components/layout/UniversalLayout';
+import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans';
+import { SubscriptionManagement } from '@/components/subscription/SubscriptionManagement';
+import { CreditUsageCard } from '@/components/subscription/CreditUsageCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CreditCard, BarChart3, Package } from 'lucide-react';
+
+export default function Billing() {
+  return (
+    <UniversalLayout 
+      title="Billing & Subscription"
+      description="Manage your subscription, view usage, and update payment methods"
+    >
+      <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-6">
+          <CreditUsageCard />
+          <SubscriptionManagement />
+        </div>
+
+        <Tabs defaultValue="plans" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="plans" className="flex items-center">
+              <Package className="w-4 h-4 mr-2" />
+              Plans
+            </TabsTrigger>
+            <TabsTrigger value="usage" className="flex items-center">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Usage History
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Billing History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="plans">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Subscription Plans</h3>
+                <p className="text-muted-foreground">
+                  Choose the plan that best fits your needs
+                </p>
+              </div>
+              <SubscriptionPlans />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="usage">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Credit Usage History</h3>
+                <p className="text-muted-foreground">
+                  Track your AI credit consumption over time
+                </p>
+              </div>
+              {/* Credit usage history component would go here */}
+              <div className="text-center py-8 text-muted-foreground">
+                Usage history coming soon...
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="billing">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold">Payment History</h3>
+                <p className="text-muted-foreground">
+                  View your past invoices and payments
+                </p>
+              </div>
+              {/* Payment history component would go here */}
+              <div className="text-center py-8 text-muted-foreground">
+                Payment history coming soon...
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </UniversalLayout>
+  );
+}

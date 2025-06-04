@@ -15,6 +15,7 @@ import ContentLibrary from "./pages/ContentLibrary";
 import ContentAnalytics from "./pages/ContentAnalytics";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import LearningManagement from "./pages/LearningManagement";
+import Billing from "./pages/Billing";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +43,7 @@ function App() {
               <Route path="/content-analytics" element={<ProtectedRoute><ContentAnalytics /></ProtectedRoute>} />
               <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
               <Route path="/learning" element={<ProtectedRoute><LearningManagement /></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />

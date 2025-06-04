@@ -520,6 +520,39 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          related_function: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          related_function?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          related_function?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       downloadable_resources: {
         Row: {
           category: string
@@ -1026,6 +1059,48 @@ export type Database = {
           },
         ]
       }
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          status: string
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           career_goals: string[] | null
@@ -1125,6 +1200,57 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          credits_per_month: number
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          max_daily_credits: number
+          name: string
+          price_monthly: number
+          price_yearly: number | null
+          stripe_price_id_monthly: string | null
+          stripe_price_id_yearly: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits_per_month?: number
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_daily_credits?: number
+          name: string
+          price_monthly: number
+          price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits_per_month?: number
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          max_daily_credits?: number
+          name?: string
+          price_monthly?: number
+          price_yearly?: number | null
+          stripe_price_id_monthly?: string | null
+          stripe_price_id_yearly?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_config: {
         Row: {
           description: string | null
@@ -1215,6 +1341,36 @@ export type Database = {
           title?: string
           updated_at?: string
           usage_count?: number | null
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          created_at: string
+          id: string
+          last_reset_date: string | null
+          total_credits: number
+          updated_at: string
+          used_credits_today: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_reset_date?: string | null
+          total_credits?: number
+          updated_at?: string
+          used_credits_today?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_reset_date?: string | null
+          total_credits?: number
+          updated_at?: string
+          used_credits_today?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -1375,11 +1531,69 @@ export type Database = {
           },
         ]
       }
+      user_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_plan_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_plan_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_plan_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_subscription_plan_id_fkey"
+            columns: ["subscription_plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      add_credits: {
+        Args: {
+          user_uuid: string
+          credits_to_add: number
+          description_text?: string
+        }
+        Returns: undefined
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
@@ -1391,6 +1605,15 @@ export type Database = {
       calculate_profile_completeness: {
         Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: number
+      }
+      consume_credits: {
+        Args: {
+          user_uuid: string
+          credits_to_consume: number
+          function_name: string
+          description_text?: string
+        }
+        Returns: boolean
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -1412,6 +1635,16 @@ export type Database = {
           created_at: string
           updated_at: string
           message_count: number
+        }[]
+      }
+      get_user_credit_status: {
+        Args: { user_uuid: string }
+        Returns: {
+          total_credits: number
+          used_today: number
+          daily_limit: number
+          subscription_status: string
+          plan_name: string
         }[]
       }
       get_user_daily_cost: {
@@ -1504,6 +1737,10 @@ export type Database = {
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: unknown
+      }
+      reset_daily_credits: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       sparsevec_out: {
         Args: { "": unknown }
