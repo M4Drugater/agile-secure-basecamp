@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecureAuthContext } from '@/components/auth/SecureAuthProvider';
+import { useSimplifiedAuthContext } from '@/contexts/SimplifiedAuthContext';
 
 interface AuditLogEntry {
   action: string;
@@ -11,7 +11,7 @@ interface AuditLogEntry {
 }
 
 export function useAuditLogger() {
-  const { user } = useSecureAuthContext();
+  const { user } = useSimplifiedAuthContext();
 
   const logAction = useCallback(async (entry: AuditLogEntry) => {
     if (!user) return;

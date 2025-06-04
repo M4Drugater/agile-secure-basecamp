@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useSecureAuthContext } from '@/components/auth/SecureAuthProvider';
+import { useSimplifiedAuthContext } from '@/contexts/SimplifiedAuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useDataValidation } from './useDataValidation';
 import { useAuditLogger } from './useAuditLogger';
@@ -41,7 +41,7 @@ export interface UserProfile {
 }
 
 export function useUserProfile() {
-  const { user } = useSecureAuthContext();
+  const { user } = useSimplifiedAuthContext();
   const queryClient = useQueryClient();
   const { sanitizeAndValidate, validators } = useDataValidation();
   const { logAction } = useAuditLogger();
