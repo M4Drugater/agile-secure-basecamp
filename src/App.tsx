@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { FloatingHomeButton } from "@/components/ui/floating-home-button";
+import { UniversalLayout } from "@/components/layout/UniversalLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Landing from "./pages/Landing";
 import Admin from "./pages/Admin";
@@ -20,6 +21,13 @@ import LearningManagement from "./pages/LearningManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Wrapper component for pages that need UniversalLayout
+const UniversalLayoutWrapper = ({ children }: { children: React.ReactNode }) => (
+  <UniversalLayout>
+    {children}
+  </UniversalLayout>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -37,22 +45,30 @@ const App = () => (
             } />
             <Route path="/chat" element={
               <ProtectedRoute>
-                <Chat />
+                <UniversalLayoutWrapper>
+                  <Chat />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
               <ProtectedRoute>
-                <Profile />
+                <UniversalLayoutWrapper>
+                  <Profile />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/knowledge-base" element={
               <ProtectedRoute>
-                <KnowledgeBase />
+                <UniversalLayoutWrapper>
+                  <KnowledgeBase />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/content-generator" element={
               <ProtectedRoute>
-                <ContentGeneratorPage />
+                <UniversalLayoutWrapper>
+                  <ContentGeneratorPage />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/content-library" element={
@@ -62,21 +78,31 @@ const App = () => (
             } />
             <Route path="/content-analytics" element={
               <ProtectedRoute>
-                <ContentAnalyticsPage />
+                <UniversalLayoutWrapper>
+                  <ContentAnalyticsPage />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/learning" element={
               <ProtectedRoute>
-                <LearningManagement />
+                <UniversalLayoutWrapper>
+                  <LearningManagement />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             <Route path="/admin" element={
               <ProtectedRoute>
-                <Admin />
+                <UniversalLayoutWrapper>
+                  <Admin />
+                </UniversalLayoutWrapper>
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={
+              <UniversalLayoutWrapper>
+                <NotFound />
+              </UniversalLayoutWrapper>
+            } />
           </Routes>
           <FloatingHomeButton />
         </AuthProvider>

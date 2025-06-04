@@ -3,10 +3,11 @@ import React from 'react';
 import { AppHeader } from './AppHeader';
 import { AppNavigation } from './AppNavigation';
 import { DashboardCards } from './DashboardCards';
+import { UniversalLayout } from './UniversalLayout';
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+    <UniversalLayout className="bg-gradient-to-br from-background via-muted/30 to-background">
       <AppHeader />
       
       <div className="flex">
@@ -26,6 +27,6 @@ export function AppLayout() {
           <DashboardCards />
         </main>
       </div>
-    </div>
+    </UniversalLayout>
   );
 }
