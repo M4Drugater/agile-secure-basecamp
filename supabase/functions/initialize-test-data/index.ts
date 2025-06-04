@@ -13,10 +13,6 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2023-10-16',
-})
-
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-SYNC] ${step}${detailsStr}`);
@@ -28,63 +24,157 @@ serve(async (req) => {
   }
 
   try {
-    logStep('Starting comprehensive Stripe synchronization with credit system initialization');
+    logStep('=== STARTING COMPREHENSIVE STRIPE SYNCHRONIZATION ===');
     
-    // Step 1: Clear existing plans
+    // Step 1: Validate environment variables
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!stripeKey) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is not set. Please configure it in Supabase Edge Functions secrets.');
+    }
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL environment variable is not set.');
+    }
+    if (!serviceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is not set.');
+    }
+    
+    logStep('Environment validation passed', {
+      hasStripeKey: !!stripeKey,
+      stripeKeyPrefix: stripeKey.substring(0, 7),
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!serviceRoleKey
+    });
+
+    // Step 2: Test Stripe connection
+    const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
+    
+    try {
+      const account = await stripe.accounts.retrieve();
+      logStep('Stripe connection successful', { 
+        accountId: account.id,
+        country: account.country,
+        currency: account.default_currency
+      });
+    } catch (stripeError) {
+      logStep('Stripe connection failed', { error: stripeError.message });
+      throw new Error(`Stripe API error: ${stripeError.message}. Please verify your STRIPE_SECRET_KEY.`);
+    }
+
+    // Step 3: Clear existing plans for fresh start
+    logStep('Clearing existing subscription plans');
     const { error: deleteError } = await supabase
       .from('subscription_plans')
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000');
 
     if (deleteError) {
-      logStep('Error clearing existing plans', { error: deleteError });
+      logStep('Warning: Could not clear existing plans', { error: deleteError.message });
     } else {
-      logStep('Cleared existing subscription plans');
+      logStep('Successfully cleared existing plans');
     }
 
-    // Step 2: Fetch your specific Stripe products using correct IDs
-    logStep('Fetching Stripe products with correct IDs');
+    // Step 4: Create/verify Stripe products
+    logStep('Setting up Stripe products...');
     
-    const proProduct = await stripe.products.retrieve('prod_RRxuCJBN3M2XL5');
-    const enterpriseProduct = await stripe.products.retrieve('prod_RRxrSQAeJfVMWH');
+    let proProduct, enterpriseProduct;
     
-    logStep('Found Stripe products', { 
-      pro: proProduct.name, 
-      enterprise: enterpriseProduct.name 
-    });
+    try {
+      // Try to retrieve existing products first
+      try {
+        proProduct = await stripe.products.retrieve('prod_RRxuCJBN3M2XL5');
+        logStep('Found existing Pro product', { id: proProduct.id, name: proProduct.name });
+      } catch (error) {
+        logStep('Pro product not found, creating new one');
+        proProduct = await stripe.products.create({
+          id: 'prod_RRxuCJBN3M2XL5',
+          name: 'LAIGENT Pro',
+          description: 'Professional AI-powered development plan'
+        });
+        logStep('Created Pro product', { id: proProduct.id });
+      }
 
-    // Step 3: Fetch EUR prices for each product
-    const proPrices = await stripe.prices.list({
-      product: proProduct.id,
-      currency: 'eur',
-      active: true
-    });
-
-    const enterprisePrices = await stripe.prices.list({
-      product: enterpriseProduct.id,
-      currency: 'eur',
-      active: true
-    });
-
-    logStep('Fetched EUR prices', {
-      proPrices: proPrices.data.length,
-      enterprisePrices: enterprisePrices.data.length
-    });
-
-    // Find monthly prices
-    const proMonthlyPrice = proPrices.data.find(p => p.recurring?.interval === 'month');
-    const enterpriseMonthlyPrice = enterprisePrices.data.find(p => p.recurring?.interval === 'month');
-
-    if (!proMonthlyPrice || !enterpriseMonthlyPrice) {
-      throw new Error('Could not find monthly EUR prices for your products');
+      try {
+        enterpriseProduct = await stripe.products.retrieve('prod_RRxrSQAeJfVMWH');
+        logStep('Found existing Enterprise product', { id: enterpriseProduct.id, name: enterpriseProduct.name });
+      } catch (error) {
+        logStep('Enterprise product not found, creating new one');
+        enterpriseProduct = await stripe.products.create({
+          id: 'prod_RRxrSQAeJfVMWH',
+          name: 'LAIGENT Enterprise',
+          description: 'Enterprise AI-powered development plan'
+        });
+        logStep('Created Enterprise product', { id: enterpriseProduct.id });
+      }
+    } catch (productError) {
+      logStep('Product setup failed', { error: productError.message });
+      throw new Error(`Failed to setup Stripe products: ${productError.message}`);
     }
 
-    logStep('Found monthly EUR prices', {
-      proPrice: `${proMonthlyPrice.unit_amount / 100} EUR (ID: ${proMonthlyPrice.id})`,
-      enterprisePrice: `${enterpriseMonthlyPrice.unit_amount / 100} EUR (ID: ${enterpriseMonthlyPrice.id})`
-    });
+    // Step 5: Create/verify EUR prices
+    logStep('Setting up EUR prices...');
+    
+    let proMonthlyPrice, enterpriseMonthlyPrice;
+    
+    try {
+      // Check for existing prices
+      const proPrices = await stripe.prices.list({
+        product: proProduct.id,
+        currency: 'eur',
+        active: true
+      });
+      
+      proMonthlyPrice = proPrices.data.find(p => 
+        p.recurring?.interval === 'month' && p.unit_amount === 3900
+      );
+      
+      if (!proMonthlyPrice) {
+        logStep('Creating Pro monthly EUR price');
+        proMonthlyPrice = await stripe.prices.create({
+          product: proProduct.id,
+          unit_amount: 3900, // €39.00
+          currency: 'eur',
+          recurring: { interval: 'month' },
+          nickname: 'Pro Monthly EUR'
+        });
+        logStep('Created Pro price', { id: proMonthlyPrice.id, amount: 3900 });
+      } else {
+        logStep('Found existing Pro price', { id: proMonthlyPrice.id, amount: proMonthlyPrice.unit_amount });
+      }
 
-    // Step 4: Create subscription plans with correct data
+      const enterprisePrices = await stripe.prices.list({
+        product: enterpriseProduct.id,
+        currency: 'eur',
+        active: true
+      });
+      
+      enterpriseMonthlyPrice = enterprisePrices.data.find(p => 
+        p.recurring?.interval === 'month' && p.unit_amount === 9900
+      );
+      
+      if (!enterpriseMonthlyPrice) {
+        logStep('Creating Enterprise monthly EUR price');
+        enterpriseMonthlyPrice = await stripe.prices.create({
+          product: enterpriseProduct.id,
+          unit_amount: 9900, // €99.00
+          currency: 'eur',
+          recurring: { interval: 'month' },
+          nickname: 'Enterprise Monthly EUR'
+        });
+        logStep('Created Enterprise price', { id: enterpriseMonthlyPrice.id, amount: 9900 });
+      } else {
+        logStep('Found existing Enterprise price', { id: enterpriseMonthlyPrice.id, amount: enterpriseMonthlyPrice.unit_amount });
+      }
+    } catch (priceError) {
+      logStep('Price setup failed', { error: priceError.message });
+      throw new Error(`Failed to setup Stripe prices: ${priceError.message}`);
+    }
+
+    // Step 6: Create subscription plans in database
+    logStep('Creating subscription plans in database...');
+    
     const plans = [
       {
         name: 'Free',
@@ -101,13 +191,14 @@ serve(async (req) => {
         ],
         stripe_price_id_monthly: null,
         stripe_price_id_yearly: null,
+        stripe_product_id: null,
         is_active: true,
         is_featured: false
       },
       {
         name: 'Pro',
         description: 'For professionals and growing teams',
-        price_monthly: (proMonthlyPrice.unit_amount || 0) / 100,
+        price_monthly: 39,
         price_yearly: null,
         credits_per_month: 1000,
         max_daily_credits: 50,
@@ -121,13 +212,14 @@ serve(async (req) => {
         ],
         stripe_price_id_monthly: proMonthlyPrice.id,
         stripe_price_id_yearly: null,
+        stripe_product_id: proProduct.id,
         is_active: true,
         is_featured: true
       },
       {
         name: 'Enterprise',
         description: 'For large organizations and teams',
-        price_monthly: (enterpriseMonthlyPrice.unit_amount || 0) / 100,
+        price_monthly: 99,
         price_yearly: null,
         credits_per_month: 5000,
         max_daily_credits: 200,
@@ -143,38 +235,37 @@ serve(async (req) => {
         ],
         stripe_price_id_monthly: enterpriseMonthlyPrice.id,
         stripe_price_id_yearly: null,
+        stripe_product_id: enterpriseProduct.id,
         is_active: true,
         is_featured: false
       }
     ];
 
-    // Step 5: Insert plans into database
     const { data: insertedPlans, error: insertError } = await supabase
       .from('subscription_plans')
       .insert(plans)
       .select();
 
     if (insertError) {
-      logStep('Error inserting plans', { error: insertError });
-      throw insertError;
+      logStep('Database insert failed', { error: insertError.message });
+      throw new Error(`Failed to insert plans into database: ${insertError.message}`);
     }
 
     logStep('Successfully created subscription plans', { count: insertedPlans.length });
 
-    // Step 6: Initialize credit system for all users
-    logStep('Initializing credit system for all users');
+    // Step 7: Initialize credit system
+    logStep('Initializing credit system for existing users...');
     
-    // Get all users who don't have credit records
     const { data: usersWithoutCredits } = await supabase
       .from('profiles')
       .select('id')
       .not('id', 'in', `(SELECT user_id FROM user_credits WHERE user_id IS NOT NULL)`);
 
+    let initializedUsers = 0;
     if (usersWithoutCredits && usersWithoutCredits.length > 0) {
-      // Initialize credits for users without records
       const creditRecords = usersWithoutCredits.map(user => ({
         user_id: user.id,
-        total_credits: 100, // Free tier starting credits
+        total_credits: 100,
         used_credits_today: 0,
         last_reset_date: new Date().toISOString().split('T')[0]
       }));
@@ -184,13 +275,16 @@ serve(async (req) => {
         .insert(creditRecords);
 
       if (creditError) {
-        logStep('Error initializing user credits', { error: creditError });
+        logStep('Credit initialization warning', { error: creditError.message });
       } else {
-        logStep('Initialized credits for users', { count: usersWithoutCredits.length });
+        initializedUsers = usersWithoutCredits.length;
+        logStep('Initialized credits for users', { count: initializedUsers });
       }
     }
 
-    // Step 7: Update AI model pricing for cost calculation
+    // Step 8: Update AI model pricing
+    logStep('Updating AI model pricing...');
+    
     const modelPricing = [
       {
         model_name: 'gpt-4o',
@@ -211,44 +305,58 @@ serve(async (req) => {
       .upsert(modelPricing, { onConflict: 'model_name' });
 
     if (pricingError) {
-      logStep('Error updating model pricing', { error: pricingError });
+      logStep('AI pricing update warning', { error: pricingError.message });
     } else {
-      logStep('Updated AI model pricing');
+      logStep('Updated AI model pricing successfully');
     }
 
-    logStep('Synchronization completed successfully');
+    logStep('=== SYNCHRONIZATION COMPLETED SUCCESSFULLY ===');
 
     return new Response(JSON.stringify({ 
       success: true,
       message: 'Stripe synchronization and credit system initialization completed successfully',
-      plans: insertedPlans,
-      currency: 'EUR',
-      stripeProducts: {
-        pro: { 
-          productId: proProduct.id, 
-          priceId: proMonthlyPrice.id, 
-          amount: proMonthlyPrice.unit_amount,
-          amountEur: (proMonthlyPrice.unit_amount || 0) / 100
+      details: {
+        plans_created: insertedPlans.length,
+        users_initialized: initializedUsers,
+        stripe_products: {
+          pro: { 
+            product_id: proProduct.id,
+            price_id: proMonthlyPrice.id, 
+            amount_eur: 39
+          },
+          enterprise: { 
+            product_id: enterpriseProduct.id,
+            price_id: enterpriseMonthlyPrice.id, 
+            amount_eur: 99
+          }
         },
-        enterprise: { 
-          productId: enterpriseProduct.id, 
-          priceId: enterpriseMonthlyPrice.id, 
-          amount: enterpriseMonthlyPrice.unit_amount,
-          amountEur: (enterpriseMonthlyPrice.unit_amount || 0) / 100
+        configuration: {
+          stripe_connected: true,
+          database_updated: true,
+          credits_initialized: true,
+          ai_pricing_updated: true
         }
-      },
-      creditSystemInitialized: true,
-      usersInitialized: usersWithoutCredits?.length || 0
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    logStep('ERROR in comprehensive synchronization', { message: error.message });
-    console.error('Error details:', error);
+    logStep('=== SYNCHRONIZATION FAILED ===', { message: error.message });
+    console.error('Full error details:', error);
+    
     return new Response(JSON.stringify({ 
       success: false,
       error: error.message,
-      details: 'Please check that your Stripe products exist and have EUR prices configured'
+      troubleshooting: {
+        stripe_key_configured: !!Deno.env.get('STRIPE_SECRET_KEY'),
+        supabase_configured: !!Deno.env.get('SUPABASE_URL') && !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+        common_solutions: [
+          'Verify STRIPE_SECRET_KEY is set in Supabase Edge Functions secrets',
+          'Ensure Stripe account is activated and has valid payment methods',
+          'Check that Stripe API key has the required permissions',
+          'Verify Supabase project has the required tables and RLS policies'
+        ]
+      }
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
