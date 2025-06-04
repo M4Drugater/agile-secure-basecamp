@@ -2,19 +2,16 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { RateLimiter } from '@/utils/inputSanitization';
 import { SecurityEvent } from './types';
+import { SessionValidationCache } from './utils/validationCache';
+import { SessionExpirationHandler } from './utils/sessionExpirationHandler';
+import { ProfileValidator } from './utils/profileValidator';
+import { SessionValidationRateLimit } from './utils/sessionValidationRateLimit';
 
 interface UseOptimizedSessionValidationProps {
   user: any;
   profile: any;
   logSecurityEvent: (event: SecurityEvent) => void;
-}
-
-interface ValidationCache {
-  isValid: boolean;
-  shouldSignOut: boolean;
-  timestamp: number;
 }
 
 export function useOptimizedSessionValidation({ 
@@ -23,60 +20,40 @@ export function useOptimizedSessionValidation({
   logSecurityEvent 
 }: UseOptimizedSessionValidationProps) {
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
-  const lastValidationRef = useRef<number>(0);
-  const validationCacheRef = useRef<ValidationCache | null>(null);
-
-  // Cache validation results for 30 seconds to reduce redundant checks
-  const VALIDATION_CACHE_DURATION = 30 * 1000; // 30 seconds
-  const MIN_VALIDATION_INTERVAL = 10 * 1000; // 10 seconds minimum between validations
+  
+  // Utility instances
+  const validationCacheRef = useRef(new SessionValidationCache());
+  const expirationHandlerRef = useRef(new SessionExpirationHandler());
+  const profileValidatorRef = useRef(new ProfileValidator());
+  const rateLimitRef = useRef(new SessionValidationRateLimit());
 
   const validateSession = useCallback(async (): Promise<{ isValid: boolean; shouldSignOut: boolean }> => {
     if (!user) {
       return { isValid: false, shouldSignOut: false };
     }
 
-    const now = Date.now();
-
-    // Check if we've validated too recently
-    if (now - lastValidationRef.current < MIN_VALIDATION_INTERVAL) {
-      return validationCacheRef.current || { isValid: true, shouldSignOut: false };
+    // Check rate limiting
+    const rateLimitCheck = rateLimitRef.current.checkRateLimit(user.id, logSecurityEvent);
+    
+    if (!rateLimitCheck.allowed) {
+      if (rateLimitCheck.shouldCache) {
+        // Return cached result if available
+        const cached = validationCacheRef.current.get('session_validation');
+        return cached || { isValid: true, shouldSignOut: false };
+      }
+      return { isValid: false, shouldSignOut: true };
     }
 
     // Check cached validation result
-    if (validationCacheRef.current && 
-        now - validationCacheRef.current.timestamp < VALIDATION_CACHE_DURATION) {
+    const cachedResult = validationCacheRef.current.get('session_validation');
+    if (cachedResult) {
       return { 
-        isValid: validationCacheRef.current.isValid, 
-        shouldSignOut: validationCacheRef.current.shouldSignOut 
+        isValid: cachedResult.isValid, 
+        shouldSignOut: cachedResult.shouldSignOut 
       };
     }
 
     try {
-      // Rate limiting check
-      const rateLimitKey = `session_check_${user.id}`;
-      const rateLimit = RateLimiter.checkRateLimit(rateLimitKey, 5, 60000); // 5 attempts per minute
-
-      if (!rateLimit.allowed) {
-        logSecurityEvent({
-          type: 'suspicious_activity',
-          timestamp: new Date(),
-          details: { reason: 'excessive_session_checks', userId: user.id }
-        });
-        
-        toast({
-          title: "Security Alert",
-          description: "Too many session validation attempts. Please wait before trying again.",
-          variant: "destructive",
-        });
-        
-        const result = { isValid: false, shouldSignOut: true };
-        validationCacheRef.current = { ...result, timestamp: now };
-        return result;
-      }
-
-      // Update last validation time
-      lastValidationRef.current = now;
-
       // Verify the session is still valid
       const { data: session, error } = await supabase.auth.getSession();
       
@@ -89,7 +66,7 @@ export function useOptimizedSessionValidation({
 
         console.warn('Invalid session detected:', error);
         const result = { isValid: false, shouldSignOut: true };
-        validationCacheRef.current = { ...result, timestamp: now };
+        validationCacheRef.current.set(result);
         
         toast({
           title: "Session expired",
@@ -100,96 +77,33 @@ export function useOptimizedSessionValidation({
         return result;
       }
 
-      // Handle session expiration and auto-refresh logic
-      const sessionExpiresAt = session.session.expires_at;
-      if (sessionExpiresAt) {
-        const expirationTime = sessionExpiresAt * 1000;
-        const currentTime = Date.now();
-        const timeUntilExpiry = expirationTime - currentTime;
-        
-        // Set session start time if not already set
-        if (!sessionStartTime) {
-          setSessionStartTime(currentTime);
-        }
-        
-        const minimumActiveTime = 10 * 60 * 1000; // 10 minutes
-        const warningThreshold = 15 * 60 * 1000; // 15 minutes
-        const maxActiveTime = 12 * 60 * 60 * 1000; // 12 hours
-        const sessionActiveTime = sessionStartTime ? currentTime - sessionStartTime : 0;
-        
-        // Show warnings only when appropriate
-        const shouldShowWarning = (
-          (timeUntilExpiry < warningThreshold && sessionActiveTime > minimumActiveTime) ||
-          (sessionActiveTime > maxActiveTime && timeUntilExpiry > 60 * 60 * 1000)
-        );
-        
-        if (shouldShowWarning) {
-          const warningType = timeUntilExpiry < warningThreshold ? 'session_near_expiry' : 'session_too_long';
-          
-          logSecurityEvent({
-            type: 'suspicious_activity',
-            timestamp: new Date(),
-            details: { 
-              reason: warningType, 
-              timeUntilExpiry, 
-              sessionActiveTime
-            }
-          });
-
-          const message = warningType === 'session_near_expiry' 
-            ? `Your session will expire in ${Math.round(timeUntilExpiry / (60 * 1000))} minutes. Please save your work.`
-            : "Your session has been active for a long time. Consider signing out and back in for security.";
-
-          // Only show toast if this is a new warning (not cached)
-          if (!validationCacheRef.current || !validationCacheRef.current.isValid) {
-            toast({
-              title: "Session Warning",
-              description: message,
-              variant: "destructive",
-            });
-          }
-        }
-        
-        // Auto-refresh token if expiring within 30 minutes and session is active
-        if (timeUntilExpiry < 30 * 60 * 1000 && sessionActiveTime > minimumActiveTime) {
-          try {
-            const { error: refreshError } = await supabase.auth.refreshSession();
-            if (!refreshError) {
-              logSecurityEvent({
-                type: 'token_refresh',
-                timestamp: new Date(),
-                details: { reason: 'auto_refresh', timeUntilExpiry }
-              });
-            }
-          } catch (refreshError) {
-            console.warn('Failed to refresh session:', refreshError);
-          }
-        }
+      // Set session start time if not already set
+      if (!sessionStartTime) {
+        setSessionStartTime(Date.now());
       }
 
-      // Validate profile status
-      if (profile && profile.is_active === false) {
-        logSecurityEvent({
-          type: 'failed_login',
-          timestamp: new Date(),
-          details: { reason: 'account_deactivated', userId: user.id }
-        });
+      // Handle session expiration and auto-refresh logic
+      await expirationHandlerRef.current.handleSessionExpiration(
+        session.session,
+        sessionStartTime,
+        logSecurityEvent
+      );
 
-        const result = { isValid: false, shouldSignOut: true };
-        validationCacheRef.current = { ...result, timestamp: now };
-        
-        toast({
-          title: "Account deactivated",
-          description: "Your account has been deactivated. Please contact support.",
-          variant: "destructive",
-        });
-        
-        return result;
+      // Validate profile status
+      const profileValidation = profileValidatorRef.current.validateProfile(
+        profile,
+        user,
+        logSecurityEvent
+      );
+
+      if (!profileValidation.isValid) {
+        validationCacheRef.current.set(profileValidation);
+        return profileValidation;
       }
 
       // Cache successful validation
       const result = { isValid: true, shouldSignOut: false };
-      validationCacheRef.current = { ...result, timestamp: now };
+      validationCacheRef.current.set(result);
 
       logSecurityEvent({
         type: 'login_attempt',
@@ -207,19 +121,19 @@ export function useOptimizedSessionValidation({
 
       console.error('Session validation error:', error);
       const result = { isValid: false, shouldSignOut: false };
-      validationCacheRef.current = { ...result, timestamp: now };
+      validationCacheRef.current.set(result);
       return result;
     }
   }, [user, profile, sessionStartTime, logSecurityEvent]);
 
   const resetSessionStartTime = useCallback(() => {
     setSessionStartTime(null);
-    validationCacheRef.current = null; // Clear validation cache
+    validationCacheRef.current.clear();
   }, []);
 
   const setNewSessionStartTime = useCallback(() => {
     setSessionStartTime(Date.now());
-    validationCacheRef.current = null; // Clear validation cache
+    validationCacheRef.current.clear();
   }, []);
 
   return {
