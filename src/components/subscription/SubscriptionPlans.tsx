@@ -3,286 +3,154 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Check, Star, AlertCircle, Loader2, ChevronDown, Settings, RefreshCw } from 'lucide-react';
-import { useSubscriptionPlans, useCreateCheckoutSession, useUserSubscription } from '@/hooks/useSubscriptions';
-import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Check, CreditCard } from 'lucide-react';
+import { useSubscriptionPlans, useUserSubscription, useCreateCheckoutSession } from '@/hooks/useSubscriptions';
+import { useToast } from '@/hooks/use-toast';
 
 export function SubscriptionPlans() {
-  const { data: plans, isLoading, error, refetch } = useSubscriptionPlans();
-  const { data: currentSubscription } = useUserSubscription();
-  const createCheckout = useCreateCheckoutSession();
+  const { data: plans, isLoading: plansLoading } = useSubscriptionPlans();
+  const { data: userSubscription, isLoading: subscriptionLoading } = useUserSubscription();
+  const createCheckoutSession = useCreateCheckoutSession();
   const { toast } = useToast();
-  const [showDebug, setShowDebug] = React.useState(false);
 
-  const handleSubscribe = async (plan: any) => {
-    try {
-      // Skip free plan
-      if (plan.price_monthly === 0) {
-        toast({
-          title: 'Free Plan',
-          description: 'You are already on the free plan!',
-        });
-        return;
-      }
-
-      // Check if user already has this plan
-      if (currentSubscription?.subscription_plan_id === plan.id) {
-        toast({
-          title: 'Current Plan',
-          description: `You are already subscribed to the ${plan.name} plan.`,
-        });
-        return;
-      }
-
-      // Use the real Stripe price ID from the database
-      const priceId = plan.stripe_price_id_monthly;
-      
-      if (!priceId) {
-        toast({
-          title: 'Configuration Error',
-          description: 'Plan pricing is not configured. Please ask an admin to sync with Stripe.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      console.log('Subscribing to plan:', plan.name, 'with price ID:', priceId);
-      
-      const { url } = await createCheckout.mutateAsync({
-        priceId: priceId,
-        planId: plan.id,
-      });
-      
-      // Open in new tab to avoid losing the current page
-      window.open(url, '_blank');
-      
-      toast({
-        title: 'Redirecting to Checkout',
-        description: 'Opening Stripe checkout in a new tab...',
-      });
-    } catch (error) {
-      console.error('Subscription error:', error);
+  const handleSubscribe = async (planId: string, priceId: string | null) => {
+    if (!priceId) {
       toast({
         title: 'Error',
-        description: error.message || 'Error creating payment session. Please try again.',
+        description: 'This plan is not available for subscription.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { url } = await createCheckoutSession.mutateAsync({
+        priceId,
+        planId,
+      });
+      
+      if (url) {
+        window.open(url, '_blank');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create checkout session. Please try again.',
         variant: 'destructive',
       });
     }
   };
 
-  const handleRefreshPlans = () => {
-    refetch();
-    toast({
-      title: 'Refreshing Plans',
-      description: 'Fetching latest subscription plan data...',
-    });
-  };
-
-  if (isLoading) {
+  if (plansLoading || subscriptionLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-          <p>Loading subscription plans...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p><strong>Error loading subscription plans:</strong> {error.message}</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleRefreshPlans}>
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Retry
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowDebug(!showDebug)}>
-                  <Settings className="w-4 h-4 mr-1" />
-                  Debug
-                </Button>
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-
-        {showDebug && (
-          <Alert>
-            <AlertDescription>
-              <div className="space-y-2 text-xs">
-                <p><strong>Troubleshooting steps:</strong></p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Ask an admin to sync with Stripe using the admin panel</li>
-                  <li>Verify Stripe secret key is configured in Supabase Edge Functions</li>
-                  <li>Check that subscription plans exist in the database</li>
-                  <li>Ensure Stripe products and prices are properly configured</li>
-                </ol>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }
 
   if (!plans || plans.length === 0) {
     return (
-      <div className="space-y-4">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-2">
-              <p><strong>No subscription plans available</strong></p>
-              <p>The subscription system needs to be initialized by an administrator.</p>
-              <Button variant="outline" size="sm" onClick={handleRefreshPlans}>
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Check Again
-              </Button>
-            </div>
-          </AlertDescription>
-        </div>
+      <div className="text-center p-8">
+        <p className="text-muted-foreground">No subscription plans available.</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Configuration status */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {plans.length} plans available
-        </div>
-        <Button variant="ghost" size="sm" onClick={handleRefreshPlans}>
-          <RefreshCw className="w-4 h-4 mr-1" />
-          Refresh
-        </Button>
-      </div>
+  const currentPlanId = userSubscription?.subscription_plan?.id;
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {plans.map((plan) => {
-          const isCurrentPlan = currentSubscription?.subscription_plan_id === plan.id;
-          const hasValidStripePrice = plan.stripe_price_id_monthly || plan.price_monthly === 0;
-          
-          return (
-            <Card key={plan.id} className={`relative ${plan.is_featured ? 'border-primary ring-2 ring-primary/20' : ''}`}>
-              {plan.is_featured && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground">
-                    <Star className="w-3 h-3 mr-1" />
-                    Most Popular
-                  </Badge>
+  return (
+    <div className="grid md:grid-cols-3 gap-6">
+      {plans.map((plan) => {
+        const isCurrentPlan = currentPlanId === plan.id;
+        const isFree = plan.price_monthly === 0;
+        
+        return (
+          <Card key={plan.id} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''} ${plan.is_featured ? 'border-primary' : ''}`}>
+            {plan.is_featured && (
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+              </div>
+            )}
+            
+            {isCurrentPlan && (
+              <div className="absolute -top-3 right-4">
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  Your Plan
+                </Badge>
+              </div>
+            )}
+
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">{plan.name}</CardTitle>
+              <CardDescription>{plan.description}</CardDescription>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">
+                  {isFree ? 'Free' : `€${plan.price_monthly}`}
+                </span>
+                {!isFree && <span className="text-muted-foreground">/month</span>}
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Credits per month</span>
+                  <span className="font-medium">{plan.credits_per_month.toLocaleString()}</span>
                 </div>
-              )}
-              
-              {isCurrentPlan && (
-                <div className="absolute -top-3 right-4">
-                  <Badge variant="secondary">Current Plan</Badge>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Daily limit</span>
+                  <span className="font-medium">{plan.max_daily_credits}</span>
                 </div>
-              )}
-              
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                <div className="mt-4">
-                  <div className="text-4xl font-bold">
-                    {plan.price_monthly === 0 ? 'Free' : `€${plan.price_monthly}`}
-                    {plan.price_monthly > 0 && (
-                      <span className="text-lg font-normal text-muted-foreground">/month</span>
-                    )}
-                  </div>
-                  {plan.price_yearly && (
-                    <div className="text-sm text-muted-foreground">
-                      or €{plan.price_yearly}/year (save 17%)
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-semibold text-primary">
-                      {plan.credits_per_month?.toLocaleString() || 0} credits/month
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {plan.max_daily_credits || 0} credits per day
-                    </div>
-                  </div>
-                  
-                  <ul className="space-y-2">
-                    {(plan.features as string[])?.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  {!hasValidStripePrice && plan.price_monthly > 0 && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="w-4 h-4" />
-                      <AlertDescription>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">Configuration Required</p>
-                          <p className="text-xs">This plan needs to be synchronized with Stripe.</p>
-                        </div>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="font-medium">Features:</h4>
+                <ul className="space-y-1">
+                  {Array.isArray(plan.features) && plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-4">
+                {isCurrentPlan ? (
+                  <Button disabled className="w-full">
+                    <Check className="w-4 h-4 mr-2" />
+                    Current Plan
+                  </Button>
+                ) : isFree ? (
+                  <Button disabled className="w-full" variant="outline">
+                    Default Plan
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => handleSubscribe(plan.id, plan.stripe_price_id_monthly)}
+                    disabled={createCheckoutSession.isPending || !plan.stripe_price_id_monthly}
                     className="w-full"
-                    variant={plan.is_featured ? 'default' : 'outline'}
-                    onClick={() => handleSubscribe(plan)}
-                    disabled={createCheckout.isPending || isCurrentPlan || (!hasValidStripePrice && plan.price_monthly > 0)}
                   >
-                    {createCheckout.isPending ? (
+                    {createCheckoutSession.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Processing...
                       </>
-                    ) : isCurrentPlan ? (
-                      'Current Plan'
-                    ) : !hasValidStripePrice && plan.price_monthly > 0 ? (
-                      'Not Available'
-                    ) : plan.price_monthly === 0 ? (
-                      'Current Plan (Free)'
                     ) : (
-                      'Subscribe Now'
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Subscribe
+                      </>
                     )}
                   </Button>
-
-                  {/* Debug info for non-working plans */}
-                  {!hasValidStripePrice && plan.price_monthly > 0 && (
-                    <Collapsible>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full p-1 h-auto text-xs">
-                          <Settings className="w-3 h-3 mr-1" />
-                          Debug Info
-                          <ChevronDown className="w-3 h-3 ml-1" />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="text-xs text-muted-foreground space-y-1 mt-2 p-2 bg-muted rounded">
-                          <div>Plan ID: {plan.id}</div>
-                          <div>Stripe Price ID: {plan.stripe_price_id_monthly || 'Not set'}</div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
