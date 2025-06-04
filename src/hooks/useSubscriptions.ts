@@ -58,11 +58,18 @@ export function useCreateCheckoutSession() {
       priceId: string; 
       planId: string; 
     }) => {
+      console.log('Creating checkout session with:', { priceId, planId });
+      
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: { priceId, planId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout session error:', error);
+        throw error;
+      }
+      
+      console.log('Checkout session created:', data);
       return data;
     },
     onSuccess: () => {
@@ -74,9 +81,16 @@ export function useCreateCheckoutSession() {
 export function useCreatePortalSession() {
   return useMutation({
     mutationFn: async () => {
+      console.log('Creating portal session...');
+      
       const { data, error } = await supabase.functions.invoke('create-portal-session');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Portal session error:', error);
+        throw error;
+      }
+      
+      console.log('Portal session created:', data);
       return data;
     },
   });

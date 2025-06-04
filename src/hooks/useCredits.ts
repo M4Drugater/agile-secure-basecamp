@@ -19,14 +19,35 @@ export function useCreditStatus() {
     queryFn: async (): Promise<CreditStatus> => {
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Fetching credit status for user:', user.id);
+
       const { data, error } = await supabase
         .rpc('get_user_credit_status', { user_uuid: user.id });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Credit status error:', error);
+        throw error;
+      }
+
+      // Ensure we return a valid object even if data is empty
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.log('No credit status found, returning defaults');
+        return {
+          total_credits: 0,
+          used_today: 0,
+          daily_limit: 10,
+          subscription_status: 'inactive',
+          plan_name: 'Free'
+        };
+      }
+
+      console.log('Credit status data:', data[0]);
       return data[0] as CreditStatus;
     },
     enabled: !!user,
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 
@@ -43,9 +64,12 @@ export function useConsumeCredits() {
       functionName: string;
       description?: string;
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .rpc('consume_credits', {
-          user_uuid: (await supabase.auth.getUser()).data.user?.id!,
+          user_uuid: user.id,
           credits_to_consume: credits,
           function_name: functionName,
           description_text: description
@@ -76,7 +100,7 @@ export function useCreditTransactions() {
         .limit(50);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user,
   });
