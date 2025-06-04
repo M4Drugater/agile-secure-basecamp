@@ -91,16 +91,14 @@ export function useSecureAuth() {
         return;
       }
 
-      // Check session age (force re-auth after 24 hours)
-      // Use expires_at instead of created_at as it's available in the Session type
+      // Check session expiration time
       const sessionExpiresAt = session.session.expires_at;
       if (sessionExpiresAt) {
         const expirationTime = sessionExpiresAt * 1000; // Convert to milliseconds
         const currentTime = Date.now();
         const timeUntilExpiry = expirationTime - currentTime;
-        const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
 
-        // If session expires in less than an hour or has been active for too long, force refresh
+        // If session expires in less than an hour, warn user
         if (timeUntilExpiry < 60 * 60 * 1000) { // Less than 1 hour until expiry
           logSecurityEvent({
             type: 'suspicious_activity',
