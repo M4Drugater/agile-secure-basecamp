@@ -15,7 +15,7 @@ export function useSyncStripe() {
     setSyncResult(null);
     
     try {
-      console.log('Starting Stripe product synchronization...');
+      console.log('Starting Stripe system repair and synchronization...');
       
       const { data, error } = await supabase.functions.invoke('sync-stripe-products');
       
@@ -23,38 +23,38 @@ export function useSyncStripe() {
         throw error;
       }
       
-      console.log('Sync response:', data);
+      console.log('Repair and sync response:', data);
       setSyncResult(data);
       
       if (data.success) {
-        setLastSync(new Date().toLocaleString('en-US'));
+        setLastSync(new Date().toLocaleString('es-ES'));
         toast({
-          title: 'Synchronization Successful',
-          description: `Created ${data.results?.products_created || 0} products and ${data.results?.prices_created || 0} prices. Updated ${data.results?.database_updated || 0} plans in database.`,
+          title: 'Sistema Stripe Reparado',
+          description: `Se han creado ${data.results?.products_created || 0} productos, ${data.results?.prices_created || 0} precios, y actualizado ${data.results?.database_updated || 0} planes en la base de datos.`,
         });
       } else {
-        throw new Error(data.error || 'Synchronization failed');
+        throw new Error(data.error || 'La reparación del sistema Stripe falló');
       }
     } catch (error) {
-      console.error('Sync error:', error);
+      console.error('Repair error:', error);
       const errorResult: SyncResult = { 
         success: false, 
-        error: error.message || 'Error synchronizing with Stripe.',
+        error: error.message || 'Error reparando el sistema Stripe.',
         troubleshooting: {
           stripe_configured: false,
           supabase_configured: true,
           common_solutions: [
-            'Check that STRIPE_SECRET_KEY is configured in Supabase Edge Functions secrets',
-            'Verify your Stripe account is activated',
-            'Ensure your Stripe API key has the required permissions',
-            'Make sure you are using the correct environment (test/live) consistently'
+            'Verifica que STRIPE_SECRET_KEY esté configurado en los secretos de Supabase Edge Functions',
+            'Confirma que tu cuenta de Stripe esté activada',
+            'Asegúrate de que tu clave API de Stripe tenga los permisos necesarios',
+            'Confirma que estés usando el entorno correcto (test/live) de forma consistente'
           ]
         }
       };
       setSyncResult(errorResult);
       toast({
-        title: 'Sync Error',
-        description: error.message || 'Error synchronizing with Stripe.',
+        title: 'Error en la Reparación',
+        description: error.message || 'Error reparando el sistema Stripe.',
         variant: 'destructive',
       });
     } finally {

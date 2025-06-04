@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Wrench } from 'lucide-react';
 
 interface SyncButtonProps {
   isLoading: boolean;
@@ -14,16 +14,17 @@ export function SyncButton({ isLoading, onSync }: SyncButtonProps) {
       onClick={onSync} 
       disabled={isLoading}
       className="w-full"
+      variant="default"
     >
       {isLoading ? (
         <>
           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-          Synchronizing...
+          Reparando Sistema Stripe...
         </>
       ) : (
         <>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Sync with Stripe & Initialize System
+          <Wrench className="w-4 h-4 mr-2" />
+          Reparar y Sincronizar Stripe
         </>
       )}
     </Button>

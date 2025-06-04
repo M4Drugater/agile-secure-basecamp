@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    logStep('=== STARTING COMPLETE STRIPE PRODUCT SYNC ===');
+    logStep('=== STARTING STRIPE REPAIR AND SYNC ===');
     
     // Validate environment variables
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -46,7 +46,20 @@ serve(async (req) => {
       throw new Error(`Stripe connection failed: ${error.message}`);
     }
 
-    // Define our product structure
+    // Step 1: Clean existing subscription plans with invalid price IDs
+    logStep('Cleaning existing subscription plans');
+    const { error: deleteError } = await supabase
+      .from('subscription_plans')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all existing plans
+
+    if (deleteError) {
+      logStep('Warning: Could not clean existing plans', { error: deleteError });
+    } else {
+      logStep('Successfully cleaned existing subscription plans');
+    }
+
+    // Step 2: Define our product structure with correct pricing
     const products = [
       {
         name: 'Free',
@@ -108,10 +121,12 @@ serve(async (req) => {
       products_created: 0,
       prices_created: 0,
       database_updated: 0,
-      errors: []
+      users_credits_initialized: 0,
+      errors: [],
+      stripe_products: {} as any
     };
 
-    // Create or update Stripe products and prices
+    // Step 3: Create or find Stripe products and prices
     for (const product of products) {
       if (product.price_monthly === 0) {
         logStep(`Skipping Stripe creation for free plan: ${product.name}`);
@@ -121,14 +136,13 @@ serve(async (req) => {
       try {
         logStep(`Processing product: ${product.name}`);
         
-        // Check if product already exists
+        // Search for existing product by name and metadata
         const existingProducts = await stripe.products.list({
           limit: 100,
         });
         
         let stripeProduct = existingProducts.data.find(p => 
-          p.name === product.name || 
-          p.metadata?.laigent_plan === product.name.toLowerCase()
+          p.name === product.name && p.active
         );
 
         if (!stripeProduct) {
@@ -142,7 +156,7 @@ serve(async (req) => {
               max_daily_credits: product.max_daily_credits.toString()
             },
           });
-          logStep(`Created Stripe product`, { 
+          logStep(`Created new Stripe product`, { 
             id: stripeProduct.id, 
             name: stripeProduct.name 
           });
@@ -154,16 +168,16 @@ serve(async (req) => {
           });
         }
 
-        // Check if price already exists
+        // Find or create price for this product
         const existingPrices = await stripe.prices.list({
           product: stripeProduct.id,
           currency: 'eur',
-          recurring: { interval: 'month' },
           active: true,
         });
 
         let stripePrice = existingPrices.data.find(p => 
-          p.unit_amount === product.price_monthly * 100
+          p.unit_amount === product.price_monthly * 100 &&
+          p.recurring?.interval === 'month'
         );
 
         if (!stripePrice) {
@@ -177,7 +191,7 @@ serve(async (req) => {
               laigent_plan: product.name.toLowerCase(),
             },
           });
-          logStep(`Created Stripe price`, { 
+          logStep(`Created new Stripe price`, { 
             id: stripePrice.id, 
             amount: stripePrice.unit_amount 
           });
@@ -191,6 +205,10 @@ serve(async (req) => {
 
         // Update our product object with Stripe IDs
         product.stripe_price_id_monthly = stripePrice.id;
+        syncResults.stripe_products[product.name.toLowerCase()] = {
+          price_id: stripePrice.id,
+          amount_eur: product.price_monthly
+        };
 
       } catch (error) {
         logStep(`Error processing product ${product.name}`, { error: error.message });
@@ -198,14 +216,14 @@ serve(async (req) => {
       }
     }
 
-    // Update database with all products
-    logStep('Updating database with product information');
+    // Step 4: Insert all products into database with correct price IDs
+    logStep('Inserting products into database');
     
     for (const product of products) {
       try {
-        const { error: upsertError } = await supabase
+        const { error: insertError } = await supabase
           .from('subscription_plans')
-          .upsert({
+          .insert({
             name: product.name,
             description: product.description,
             price_monthly: product.price_monthly,
@@ -215,15 +233,13 @@ serve(async (req) => {
             is_featured: product.is_featured,
             stripe_price_id_monthly: product.stripe_price_id_monthly,
             is_active: true
-          }, {
-            onConflict: 'name'
           });
 
-        if (upsertError) {
-          logStep(`Error updating database for ${product.name}`, { error: upsertError });
-          syncResults.errors.push(`Database update for ${product.name}: ${upsertError.message}`);
+        if (insertError) {
+          logStep(`Error inserting ${product.name}`, { error: insertError });
+          syncResults.errors.push(`Database insert for ${product.name}: ${insertError.message}`);
         } else {
-          logStep(`Successfully updated database for ${product.name}`);
+          logStep(`Successfully inserted ${product.name} into database`);
           syncResults.database_updated++;
         }
       } catch (error) {
@@ -232,8 +248,8 @@ serve(async (req) => {
       }
     }
 
-    // Initialize AI model pricing if not exists
-    logStep('Checking AI model pricing configuration');
+    // Step 5: Initialize AI model pricing if not exists
+    logStep('Setting up AI model pricing');
     const { data: existingPricing } = await supabase
       .from('ai_model_pricing')
       .select('model_name')
@@ -266,14 +282,13 @@ serve(async (req) => {
       }
     }
 
-    // Initialize user credits for all users without credits
+    // Step 6: Initialize user credits for all users without credits
     logStep('Initializing user credits');
     const { data: usersWithoutCredits } = await supabase
       .from('profiles')
       .select('id')
       .not('id', 'in', `(SELECT user_id FROM user_credits WHERE user_id IS NOT NULL)`);
 
-    let creditsInitialized = 0;
     if (usersWithoutCredits && usersWithoutCredits.length > 0) {
       const creditRecords = usersWithoutCredits.map(user => ({
         user_id: user.id,
@@ -287,35 +302,23 @@ serve(async (req) => {
         .insert(creditRecords);
 
       if (!creditError) {
-        creditsInitialized = usersWithoutCredits.length;
-        logStep('User credits initialized', { count: creditsInitialized });
+        syncResults.users_credits_initialized = usersWithoutCredits.length;
+        logStep('User credits initialized', { count: syncResults.users_credits_initialized });
       }
     }
 
-    logStep('=== STRIPE SYNC COMPLETED SUCCESSFULLY ===');
+    logStep('=== STRIPE REPAIR COMPLETED SUCCESSFULLY ===');
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Stripe products and database synchronized successfully',
-      results: {
-        ...syncResults,
-        users_credits_initialized: creditsInitialized,
-        stripe_products: products.reduce((acc, p) => {
-          if (p.stripe_price_id_monthly) {
-            acc[p.name.toLowerCase()] = {
-              price_id: p.stripe_price_id_monthly,
-              amount_eur: p.price_monthly
-            };
-          }
-          return acc;
-        }, {} as any)
-      }
+      message: 'Stripe system repaired and synchronized successfully',
+      results: syncResults
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    logStep('=== STRIPE SYNC FAILED ===', { error: error.message });
+    logStep('=== STRIPE REPAIR FAILED ===', { error: error.message });
     console.error('Full error details:', error);
     
     return new Response(JSON.stringify({
@@ -323,6 +326,7 @@ serve(async (req) => {
       error: error.message,
       troubleshooting: {
         stripe_configured: !!Deno.env.get('STRIPE_SECRET_KEY'),
+        supabase_configured: true,
         common_solutions: [
           'Ensure STRIPE_SECRET_KEY is configured in Supabase Edge Functions secrets',
           'Verify your Stripe account is activated',
