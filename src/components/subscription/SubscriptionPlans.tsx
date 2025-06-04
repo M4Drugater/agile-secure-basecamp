@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -273,7 +272,6 @@ export function SubscriptionPlans() {
                         <div className="text-xs text-muted-foreground space-y-1 mt-2 p-2 bg-muted rounded">
                           <div>Plan ID: {plan.id}</div>
                           <div>Stripe Price ID: {plan.stripe_price_id_monthly || 'Not set'}</div>
-                          <div>Stripe Product ID: {plan.stripe_product_id || 'Not set'}</div>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
