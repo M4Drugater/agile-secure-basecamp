@@ -18,6 +18,7 @@ export function useSecureAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
 
   // Generate and store CSRF token on mount
   useEffect(() => {
@@ -91,26 +92,74 @@ export function useSecureAuth() {
         return;
       }
 
-      // Check session expiration time
+      // Improved session expiration handling
       const sessionExpiresAt = session.session.expires_at;
       if (sessionExpiresAt) {
         const expirationTime = sessionExpiresAt * 1000; // Convert to milliseconds
         const currentTime = Date.now();
         const timeUntilExpiry = expirationTime - currentTime;
-
-        // If session expires in less than an hour, warn user
-        if (timeUntilExpiry < 60 * 60 * 1000) { // Less than 1 hour until expiry
+        
+        // Set session start time if not already set (for new sessions)
+        if (!sessionStartTime) {
+          setSessionStartTime(currentTime);
+        }
+        
+        // Only show warning if:
+        // 1. Session expires in less than 15 minutes (reduced from 1 hour)
+        // 2. Session has been active for at least 10 minutes (prevents immediate warnings)
+        // 3. More than 1 hour until expiry but session has been active for more than 12 hours
+        const minimumActiveTime = 10 * 60 * 1000; // 10 minutes
+        const warningThreshold = 15 * 60 * 1000; // 15 minutes
+        const maxActiveTime = 12 * 60 * 60 * 1000; // 12 hours
+        const sessionActiveTime = sessionStartTime ? currentTime - sessionStartTime : 0;
+        
+        const shouldShowWarning = (
+          (timeUntilExpiry < warningThreshold && sessionActiveTime > minimumActiveTime) ||
+          (sessionActiveTime > maxActiveTime && timeUntilExpiry > 60 * 60 * 1000)
+        );
+        
+        if (shouldShowWarning) {
+          const warningType = timeUntilExpiry < warningThreshold ? 'session_near_expiry' : 'session_too_long';
+          
           logSecurityEvent({
             type: 'suspicious_activity',
             timestamp: new Date(),
-            details: { reason: 'session_near_expiry', timeUntilExpiry }
+            details: { 
+              reason: warningType, 
+              timeUntilExpiry, 
+              sessionActiveTime,
+              warningThreshold,
+              minimumActiveTime
+            }
           });
 
+          const message = warningType === 'session_near_expiry' 
+            ? `Your session will expire in ${Math.round(timeUntilExpiry / (60 * 1000))} minutes. Please save your work.`
+            : "Your session has been active for a long time. Consider signing out and back in for security.";
+
           toast({
-            title: "Session expiring soon",
-            description: "Your session will expire soon. Please save your work.",
+            title: "Session Warning",
+            description: message,
             variant: "destructive",
           });
+        }
+        
+        // Auto-refresh token if expiring within 30 minutes and session is active
+        if (timeUntilExpiry < 30 * 60 * 1000 && sessionActiveTime > minimumActiveTime) {
+          console.log('Attempting to refresh session token...');
+          try {
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            if (!refreshError) {
+              console.log('Session token refreshed successfully');
+              logSecurityEvent({
+                type: 'token_refresh',
+                timestamp: new Date(),
+                details: { reason: 'auto_refresh', timeUntilExpiry }
+              });
+            }
+          } catch (refreshError) {
+            console.warn('Failed to refresh session:', refreshError);
+          }
         }
       }
 
@@ -201,6 +250,7 @@ export function useSecureAuth() {
         if (event === 'SIGNED_OUT') {
           setIsValidated(false);
           setSecurityEvents([]);
+          setSessionStartTime(null);
           SecurityHeaders.storeCSRFToken(''); // Clear CSRF token
         } else if (event === 'TOKEN_REFRESHED') {
           logSecurityEvent({
@@ -214,6 +264,9 @@ export function useSecureAuth() {
           const newToken = SecurityHeaders.generateCSRFToken();
           SecurityHeaders.storeCSRFToken(newToken);
           setCsrfToken(newToken);
+          
+          // Set session start time for new login
+          setSessionStartTime(Date.now());
           
           logSecurityEvent({
             type: 'login_attempt',
