@@ -92,25 +92,28 @@ export function useSecureAuth() {
       }
 
       // Check session age (force re-auth after 24 hours)
-      const sessionAge = Date.now() - new Date(session.session.created_at).getTime();
-      const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+      // Use expires_at instead of created_at as it's available in the Session type
+      const sessionExpiresAt = session.session.expires_at;
+      if (sessionExpiresAt) {
+        const expirationTime = sessionExpiresAt * 1000; // Convert to milliseconds
+        const currentTime = Date.now();
+        const timeUntilExpiry = expirationTime - currentTime;
+        const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
 
-      if (sessionAge > maxSessionAge) {
-        logSecurityEvent({
-          type: 'suspicious_activity',
-          timestamp: new Date(),
-          details: { reason: 'session_too_old', sessionAge }
-        });
+        // If session expires in less than an hour or has been active for too long, force refresh
+        if (timeUntilExpiry < 60 * 60 * 1000) { // Less than 1 hour until expiry
+          logSecurityEvent({
+            type: 'suspicious_activity',
+            timestamp: new Date(),
+            details: { reason: 'session_near_expiry', timeUntilExpiry }
+          });
 
-        toast({
-          title: "Session expired",
-          description: "Your session has expired for security reasons. Please sign in again.",
-          variant: "destructive",
-        });
-        await supabase.auth.signOut();
-        setIsValidated(false);
-        setIsLoading(false);
-        return;
+          toast({
+            title: "Session expiring soon",
+            description: "Your session will expire soon. Please save your work.",
+            variant: "destructive",
+          });
+        }
       }
 
       // Check if profile exists and is active

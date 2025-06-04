@@ -24,7 +24,9 @@ export class InputSanitizer {
       RETURN_DOM_FRAGMENT: false,
     };
 
-    let sanitized = DOMPurify.sanitize(input, config) as string;
+    // DOMPurify returns TrustedHTML, convert to string explicitly
+    const sanitizedHtml = DOMPurify.sanitize(input, config);
+    let sanitized = String(sanitizedHtml);
 
     if (options.maxLength && sanitized.length > options.maxLength) {
       sanitized = sanitized.substring(0, options.maxLength);
