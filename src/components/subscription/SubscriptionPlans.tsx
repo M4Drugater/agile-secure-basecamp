@@ -66,6 +66,9 @@ export function SubscriptionPlans() {
         const isCurrentPlan = currentPlanId === plan.id;
         const isFree = plan.price_monthly === 0;
         
+        // Safely handle features - ensure it's an array of strings
+        const features = Array.isArray(plan.features) ? plan.features as string[] : [];
+        
         return (
           <Card key={plan.id} className={`relative ${isCurrentPlan ? 'ring-2 ring-primary' : ''} ${plan.is_featured ? 'border-primary' : ''}`}>
             {plan.is_featured && (
@@ -108,7 +111,7 @@ export function SubscriptionPlans() {
               <div className="space-y-2">
                 <h4 className="font-medium">Features:</h4>
                 <ul className="space-y-1">
-                  {Array.isArray(plan.features) && plan.features.map((feature, index) => (
+                  {features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                       <span>{feature}</span>
