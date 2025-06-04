@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
-import { OrganizationSwitcher } from '@/components/organization/OrganizationSwitcher';
 
 export function AppHeader() {
   const { user, signOut, profile } = useAuth();
@@ -37,7 +36,6 @@ export function AppHeader() {
                 LAIGENT
               </h1>
             </div>
-            <OrganizationSwitcher />
           </div>
 
           <div className="flex items-center space-x-4">
@@ -66,10 +64,6 @@ export function AppHeader() {
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/organization')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Organization</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

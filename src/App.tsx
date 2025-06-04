@@ -16,7 +16,6 @@ import ContentAnalytics from "./pages/ContentAnalytics";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import LearningManagement from "./pages/LearningManagement";
 import Admin from "./pages/Admin";
-import Organization from "./pages/Organization";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +42,6 @@ function App() {
               <Route path="/content-analytics" element={<ProtectedRoute><ContentAnalytics /></ProtectedRoute>} />
               <Route path="/knowledge-base" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
               <Route path="/learning" element={<ProtectedRoute><LearningManagement /></ProtectedRoute>} />
-              <Route path="/organization" element={<ProtectedRoute><Organization /></ProtectedRoute>} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><Admin /></ProtectedRoute>} />
