@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Plus, Trash2, Calendar } from 'lucide-react';
-import { useChatHistory, ChatConversation } from './history';
+import { useChatHistory, ChatConversation } from './useChatHistory';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ConversationSidebarProps {

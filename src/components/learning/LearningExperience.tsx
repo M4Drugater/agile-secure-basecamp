@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -17,13 +16,10 @@ import {
   Video,
   HelpCircle,
   CheckSquare,
-  MessageSquare,
-  Sparkles,
-  Brain
+  MessageSquare
 } from 'lucide-react';
 import { useLearningModules } from '@/hooks/useLearningModules';
 import { useLearningProgress } from '@/hooks/useLearningProgress';
-import { AdaptiveDifficultyIndicator, AIRecommendationsPanel } from './ai-enhancements';
 
 interface LearningExperienceProps {
   learningPathId: string;
@@ -44,7 +40,6 @@ export function LearningExperience({ learningPathId, onComplete }: LearningExper
   const { userProgress, updateModuleProgress } = useLearningProgress();
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [isModuleComplete, setIsModuleComplete] = useState(false);
-  const [activeTab, setActiveTab] = useState('content');
 
   const currentModule = modules?.[currentModuleIndex];
   const moduleProgress = userProgress?.find(p => p.learning_path_id === learningPathId);
@@ -157,7 +152,7 @@ export function LearningExperience({ learningPathId, onComplete }: LearningExper
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Module Navigation Sidebar */}
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -221,75 +216,52 @@ export function LearningExperience({ learningPathId, onComplete }: LearningExper
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="content">Content</TabsTrigger>
-                <TabsTrigger value="ai-insights">
-                  <Brain className="h-4 w-4 mr-1" />
-                  AI Insights
-                </TabsTrigger>
-              </TabsList>
+            {/* Module Description */}
+            {currentModule?.description && (
+              <div>
+                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-muted-foreground">{currentModule.description}</p>
+              </div>
+            )}
 
-              <TabsContent value="content" className="space-y-6">
-                {/* Module Description */}
-                {currentModule?.description && (
-                  <div>
-                    <h4 className="font-medium mb-2">Description</h4>
-                    <p className="text-muted-foreground">{currentModule.description}</p>
-                  </div>
+            <Separator />
+
+            {/* Module Content */}
+            <div className="prose max-w-none">
+              <h4 className="font-medium mb-4">Content</h4>
+              <div className="bg-muted/50 rounded-lg p-6">
+                {currentModule?.content ? (
+                  <div className="whitespace-pre-wrap">{currentModule.content}</div>
+                ) : (
+                  <p className="text-muted-foreground italic">No content available for this module.</p>
                 )}
+              </div>
+            </div>
 
-                <Separator />
-
-                {/* Module Content */}
-                <div className="prose max-w-none">
-                  <h4 className="font-medium mb-4">Content</h4>
-                  <div className="bg-muted/50 rounded-lg p-6">
-                    {currentModule?.content ? (
-                      <div className="whitespace-pre-wrap">{currentModule.content}</div>
-                    ) : (
-                      <p className="text-muted-foreground italic">No content available for this module.</p>
-                    )}
-                  </div>
+            {/* Resources */}
+            {currentModule?.resources && Array.isArray(currentModule.resources) && currentModule.resources.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-3">Resources</h4>
+                <div className="space-y-2">
+                  {currentModule.resources.map((resource: any, index: number) => (
+                    <Card key={index} className="p-3">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{resource.title}</div>
+                          <div className="text-xs text-muted-foreground capitalize">{resource.type}</div>
+                        </div>
+                        <Button size="sm" variant="outline" asChild>
+                          <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                            Open
+                          </a>
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-
-                {/* Resources */}
-                {currentModule?.resources && Array.isArray(currentModule.resources) && currentModule.resources.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-3">Resources</h4>
-                    <div className="space-y-2">
-                      {currentModule.resources.map((resource: any, index: number) => (
-                        <Card key={index} className="p-3">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{resource.title}</div>
-                              <div className="text-xs text-muted-foreground capitalize">{resource.type}</div>
-                            </div>
-                            <Button size="sm" variant="outline" asChild>
-                              <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                                Open
-                              </a>
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="ai-insights" className="space-y-6">
-                <AdaptiveDifficultyIndicator
-                  learningPathId={learningPathId}
-                  moduleId={currentModule?.id}
-                  onDifficultyAdjust={(adjustment) => {
-                    console.log('Difficulty adjustment suggested:', adjustment);
-                    // Handle difficulty adjustment
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
 
             {/* Navigation */}
             <div className="flex items-center justify-between pt-6 border-t">
@@ -321,17 +293,6 @@ export function LearningExperience({ learningPathId, onComplete }: LearningExper
             </div>
           </CardContent>
         </Card>
-
-        {/* AI Recommendations Panel */}
-        <div className="lg:col-span-1">
-          <AIRecommendationsPanel 
-            learningPathId={learningPathId}
-            onRecommendationSelect={(recommendation) => {
-              console.log('Selected recommendation:', recommendation);
-              // Handle recommendation selection
-            }}
-          />
-        </div>
       </div>
     </div>
   );

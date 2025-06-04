@@ -11,7 +11,7 @@ export function AppNavigation() {
   const { user } = useAuth();
 
   const navigationItems = [
-    { icon: Home, label: 'Dashboard', path: '/dashboard' },
+    { icon: Home, label: 'Dashboard', path: '/' },
     { icon: MessageSquare, label: 'AI Chat', path: '/chat' },
     { icon: FileText, label: 'Content Generator', path: '/content-generator' },
     { icon: Library, label: 'Content Library', path: '/content-library' },
@@ -27,30 +27,18 @@ export function AppNavigation() {
   }
 
   return (
-    <nav className="flex flex-col space-y-1">
-      {navigationItems.map(({ icon: Icon, label, path }) => {
-        const isActive = location.pathname === path;
-        return (
-          <Button
-            key={path}
-            variant={isActive ? 'default' : 'ghost'}
-            className={`w-full justify-start group transition-all duration-200 ${
-              isActive 
-                ? 'bg-gradient-primary text-white shadow-medium hover:shadow-strong' 
-                : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover-lift'
-            }`}
-            onClick={() => navigate(path)}
-          >
-            <Icon className={`h-4 w-4 mr-3 transition-transform duration-200 ${
-              isActive ? 'scale-110' : 'group-hover:scale-105'
-            }`} />
-            <span className="font-medium">{label}</span>
-            {isActive && (
-              <div className="ml-auto w-1 h-4 bg-white/30 rounded-full"></div>
-            )}
-          </Button>
-        );
-      })}
+    <nav className="flex flex-col space-y-2">
+      {navigationItems.map(({ icon: Icon, label, path }) => (
+        <Button
+          key={path}
+          variant={location.pathname === path ? 'default' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => navigate(path)}
+        >
+          <Icon className="h-4 w-4 mr-2" />
+          {label}
+        </Button>
+      ))}
     </nav>
   );
 }

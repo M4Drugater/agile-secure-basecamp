@@ -1,29 +1,26 @@
 
-import { Navigate } from 'react-router-dom';
-import { useSimplifiedAuthContext } from '@/contexts/SimplifiedAuthContext';
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: string;
 }
 
-export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, hasRole } = useSimplifiedAuthContext();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (requireRole && !hasRole(requireRole)) {
-    return <Navigate to="/" replace />;
+  if (!user) {
+    return <AuthForm />;
   }
 
   return <>{children}</>;

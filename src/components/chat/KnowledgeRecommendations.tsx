@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, ExternalLink, GraduationCap, Clock, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { KnowledgeSearchResult } from '@/hooks/useKnowledgeRetrieval';
 
 interface KnowledgeRecommendationsProps {
@@ -13,8 +12,6 @@ interface KnowledgeRecommendationsProps {
 }
 
 export function KnowledgeRecommendations({ recommendations, onViewResource }: KnowledgeRecommendationsProps) {
-  const navigate = useNavigate();
-
   if (recommendations.length === 0) return null;
 
   const getSourceIcon = (source: string) => {
@@ -47,20 +44,6 @@ export function KnowledgeRecommendations({ recommendations, onViewResource }: Kn
     }
   };
 
-  const handleViewResource = (item: KnowledgeSearchResult) => {
-    // Navigate based on the source type
-    if (item.source === 'learning_path') {
-      // Navigate to learning management page
-      navigate('/learning');
-    } else {
-      // Navigate to knowledge base
-      navigate('/knowledge-base');
-    }
-    
-    // Also call the original handler
-    onViewResource(item);
-  };
-
   return (
     <div className="w-80 flex-shrink-0">
       <Card>
@@ -74,8 +57,7 @@ export function KnowledgeRecommendations({ recommendations, onViewResource }: Kn
           {recommendations.map((item, index) => (
             <div
               key={`${item.source}-${item.id}-${index}`}
-              className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => handleViewResource(item)}
+              className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h4 className="font-medium text-sm line-clamp-2">{item.title}</h4>
@@ -135,10 +117,7 @@ export function KnowledgeRecommendations({ recommendations, onViewResource }: Kn
                 variant="ghost"
                 size="sm"
                 className="w-full text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViewResource(item);
-                }}
+                onClick={() => onViewResource(item)}
               >
                 {item.source === 'learning_path' ? 'View Course' : 'View Resource'}
                 <ExternalLink className="h-3 w-3 ml-1" />

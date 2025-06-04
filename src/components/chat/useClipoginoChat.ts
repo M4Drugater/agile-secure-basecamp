@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCostMonitoring } from '@/hooks/useCostMonitoring';
 import { useToast } from '@/hooks/use-toast';
-import { useChatHistory } from './history';
+import { useChatHistory } from './useChatHistory';
 import { useProfileContext } from '@/hooks/useProfileContext';
 import { useKnowledgeContext } from '@/hooks/useKnowledgeContext';
 import { ChatMessage, ChatResponse } from './types';

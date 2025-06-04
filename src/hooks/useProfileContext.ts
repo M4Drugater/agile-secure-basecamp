@@ -1,109 +1,126 @@
 
 import { useUserProfile } from './useUserProfile';
 
-export function useProfileContext() {
+export interface ProfileContext {
+  personalInfo: string;
+  careerGoals: string;
+  learningPreferences: string;
+  fullContext: string;
+}
+
+export function useProfileContext(): ProfileContext | null {
   const { profile } = useUserProfile();
 
   if (!profile) return null;
 
-  // Check if we have enough profile data for meaningful context
-  const hasBasicInfo = profile.full_name && profile.current_position;
-  const hasCareerInfo = profile.experience_level || profile.years_of_experience;
-  const hasGoals = profile.target_position || profile.career_goals?.length;
+  const personalInfo = buildPersonalInfo(profile);
+  const careerGoals = buildCareerGoals(profile);
+  const learningPreferences = buildLearningPreferences(profile);
   
-  // Only return context if we have meaningful data
-  if (!hasBasicInfo && !hasCareerInfo && !hasGoals) return null;
+  const fullContext = [personalInfo, careerGoals, learningPreferences]
+    .filter(Boolean)
+    .join('\n\n');
 
-  // Build the full context string
-  const contextParts = [];
+  return {
+    personalInfo,
+    careerGoals,
+    learningPreferences,
+    fullContext,
+  };
+}
+
+function buildPersonalInfo(profile: any): string {
+  const parts = [];
   
   if (profile.full_name) {
-    contextParts.push(`USER PROFILE: ${profile.full_name}`);
+    parts.push(`Name: ${profile.full_name}`);
   }
   
-  if (profile.current_position || profile.company) {
-    const position = profile.current_position || 'Professional';
-    const company = profile.company ? ` at ${profile.company}` : '';
-    contextParts.push(`CURRENT ROLE: ${position}${company}`);
+  if (profile.current_position && profile.company) {
+    parts.push(`Current Role: ${profile.current_position} at ${profile.company}`);
+  } else if (profile.current_position) {
+    parts.push(`Current Role: ${profile.current_position}`);
   }
   
   if (profile.industry) {
-    contextParts.push(`INDUSTRY: ${profile.industry}`);
+    parts.push(`Industry: ${profile.industry}`);
   }
   
   if (profile.experience_level && profile.years_of_experience) {
-    contextParts.push(`EXPERIENCE: ${profile.experience_level} level with ${profile.years_of_experience} years`);
-  } else if (profile.experience_level) {
-    contextParts.push(`EXPERIENCE LEVEL: ${profile.experience_level}`);
-  } else if (profile.years_of_experience) {
-    contextParts.push(`YEARS OF EXPERIENCE: ${profile.years_of_experience}`);
+    parts.push(`Experience: ${profile.experience_level} level with ${profile.years_of_experience} years`);
   }
   
-  if (profile.management_level && profile.management_level !== 'individual_contributor') {
-    const teamInfo = profile.team_size ? ` managing ${profile.team_size} people` : '';
-    contextParts.push(`MANAGEMENT: ${profile.management_level}${teamInfo}`);
+  if (profile.management_level) {
+    const managementText = profile.management_level.replace('_', ' ');
+    parts.push(`Management Level: ${managementText}`);
   }
+  
+  if (profile.team_size && profile.team_size > 0) {
+    parts.push(`Team Size: ${profile.team_size} people`);
+  }
+  
+  if (profile.leadership_experience) {
+    parts.push(`Has leadership experience`);
+  }
+
+  return parts.length > 0 ? `PROFESSIONAL BACKGROUND:\n${parts.join('\n')}` : '';
+}
+
+function buildCareerGoals(profile: any): string {
+  const parts = [];
   
   if (profile.target_position) {
-    contextParts.push(`CAREER GOAL: Aspiring to become ${profile.target_position}`);
+    parts.push(`Target Position: ${profile.target_position}`);
+  }
+  
+  if (profile.target_industry) {
+    parts.push(`Target Industry: ${profile.target_industry}`);
+  }
+  
+  if (profile.target_salary_range) {
+    const salaryText = profile.target_salary_range.replace('_', ' - $').replace('k', ',000');
+    parts.push(`Target Salary: $${salaryText}`);
   }
   
   if (profile.career_goals && profile.career_goals.length > 0) {
-    contextParts.push(`CAREER OBJECTIVES: ${profile.career_goals.join(', ')}`);
-  }
-  
-  if (profile.current_skills && profile.current_skills.length > 0) {
-    contextParts.push(`CURRENT SKILLS: ${profile.current_skills.join(', ')}`);
+    parts.push(`Goals: ${profile.career_goals.join(', ')}`);
   }
   
   if (profile.skill_gaps && profile.skill_gaps.length > 0) {
-    contextParts.push(`SKILL GAPS: ${profile.skill_gaps.join(', ')}`);
+    parts.push(`Skill Gaps to Address: ${profile.skill_gaps.join(', ')}`);
   }
   
   if (profile.learning_priorities && profile.learning_priorities.length > 0) {
-    contextParts.push(`LEARNING PRIORITIES: ${profile.learning_priorities.join(', ')}`);
+    parts.push(`Learning Priorities: ${profile.learning_priorities.join(', ')}`);
   }
+
+  return parts.length > 0 ? `CAREER OBJECTIVES:\n${parts.join('\n')}` : '';
+}
+
+function buildLearningPreferences(profile: any): string {
+  const parts = [];
   
   if (profile.learning_style) {
-    contextParts.push(`LEARNING STYLE: ${profile.learning_style}`);
+    const styleText = profile.learning_style.replace('_', '/');
+    parts.push(`Learning Style: ${styleText}`);
   }
   
   if (profile.communication_style) {
-    contextParts.push(`COMMUNICATION STYLE: ${profile.communication_style}`);
+    parts.push(`Communication Style: ${profile.communication_style}`);
   }
   
   if (profile.feedback_preference) {
-    contextParts.push(`FEEDBACK PREFERENCE: ${profile.feedback_preference}`);
+    const feedbackText = profile.feedback_preference.replace('_', ' ');
+    parts.push(`Feedback Preference: ${feedbackText}`);
   }
   
   if (profile.work_environment) {
-    contextParts.push(`WORK ENVIRONMENT: ${profile.work_environment}`);
+    parts.push(`Work Environment: ${profile.work_environment}`);
+  }
+  
+  if (profile.current_skills && profile.current_skills.length > 0) {
+    parts.push(`Current Skills: ${profile.current_skills.join(', ')}`);
   }
 
-  const fullContext = contextParts.length > 0 ? `\n\nUSER PERSONALIZATION CONTEXT:\n${contextParts.join('\n')}\n` : '';
-
-  return {
-    fullName: profile.full_name,
-    currentPosition: profile.current_position,
-    company: profile.company,
-    industry: profile.industry,
-    experienceLevel: profile.experience_level,
-    yearsOfExperience: profile.years_of_experience,
-    managementLevel: profile.management_level,
-    teamSize: profile.team_size,
-    leadershipExperience: profile.leadership_experience,
-    targetPosition: profile.target_position,
-    targetIndustry: profile.target_industry,
-    targetSalaryRange: profile.target_salary_range,
-    careerGoals: profile.career_goals,
-    currentSkills: profile.current_skills,
-    skillGaps: profile.skill_gaps,
-    learningPriorities: profile.learning_priorities,
-    learningStyle: profile.learning_style,
-    communicationStyle: profile.communication_style,
-    feedbackPreference: profile.feedback_preference,
-    workEnvironment: profile.work_environment,
-    certifications: profile.certifications,
-    fullContext, // Add the formatted context string
-  };
+  return parts.length > 0 ? `LEARNING PREFERENCES:\n${parts.join('\n')}` : '';
 }

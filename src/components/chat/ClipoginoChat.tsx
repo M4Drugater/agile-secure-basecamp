@@ -6,10 +6,8 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, PanelLeftOpen, PanelLeftClose, User, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import { useClipoginoChat } from './useClipoginoChat';
-import { useChatHistory } from './history';
+import { useChatHistory } from './useChatHistory';
 import { useProfileContext } from '@/hooks/useProfileContext';
 import { ChatHeader } from './ChatHeader';
 import { UsageWarning } from './UsageWarning';
@@ -22,8 +20,6 @@ import { ModelSelector } from './ModelSelector';
 import { KnowledgeRecommendations } from './KnowledgeRecommendations';
 
 export function ClipoginoChat() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const { 
     messages, 
     isLoading, 
@@ -59,16 +55,8 @@ export function ClipoginoChat() {
   };
 
   const handleViewKnowledgeResource = (resource: any) => {
-    console.log('Viewing knowledge resource:', resource);
-    
-    // Show toast notification
-    toast({
-      title: "Navigating to Resource",
-      description: `Opening ${resource.title} in ${resource.source === 'learning_path' ? 'Learning Management' : 'Knowledge Base'}`,
-      variant: 'default',
-    });
-    
-    // Navigation is already handled in the KnowledgeRecommendations component
+    // You could implement a modal or navigation to the knowledge base here
+    console.log('View knowledge resource:', resource);
   };
 
   return (
@@ -99,7 +87,7 @@ export function ClipoginoChat() {
 
         {/* Main Chat Area */}
         <div className="flex-1">
-          <Card className="h-[700px] flex flex-col">
+          <Card className="h-[600px] flex flex-col">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -145,9 +133,9 @@ export function ClipoginoChat() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col space-y-4 min-h-0">
+            <CardContent className="flex-1 flex flex-col space-y-4">
               <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-                <div className="space-y-4 pb-4">
+                <div className="space-y-4">
                   {messages.length === 0 && <WelcomeMessage />}
                   
                   {messages.map((message, index) => (
