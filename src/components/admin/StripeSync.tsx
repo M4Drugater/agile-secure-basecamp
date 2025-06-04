@@ -12,11 +12,11 @@ import { SyncButton } from './stripe-sync/SyncButton';
 import { SyncInstructions } from './stripe-sync/SyncInstructions';
 
 export function StripeSync() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { isLoading, lastSync, syncResult, handleSync } = useSyncStripe();
 
-  // Check if user is admin
-  const isAdmin = user?.user_metadata?.role === 'admin' || user?.user_metadata?.role === 'super_admin';
+  // Check if user is admin - Fixed to use profile?.role instead of user metadata
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
 
   if (!isAdmin) {
     return (
@@ -31,7 +31,8 @@ export function StripeSync() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Admin privileges required to access Stripe synchronization.
+              Admin or Super Admin privileges required to access Stripe synchronization. 
+              Current role: {profile?.role || 'Not determined'}
             </AlertDescription>
           </Alert>
         </CardContent>

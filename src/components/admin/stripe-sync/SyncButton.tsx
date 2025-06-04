@@ -19,12 +19,12 @@ export function SyncButton({ isLoading, onSync }: SyncButtonProps) {
       {isLoading ? (
         <>
           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-          Reparando Sistema Stripe...
+          Repairing Stripe System...
         </>
       ) : (
         <>
           <Wrench className="w-4 h-4 mr-2" />
-          Reparar y Sincronizar Stripe
+          Repair and Sync Stripe
         </>
       )}
     </Button>
