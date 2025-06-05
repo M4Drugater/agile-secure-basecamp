@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
-import { UserKnowledgeFile } from './useUserKnowledgeFiles';
 
-export interface KnowledgeFormData {
+export type DocumentType = 'personal' | 'system' | 'template';
+
+interface FormData {
   title: string;
   description: string;
   content: string;
@@ -10,17 +11,25 @@ export interface KnowledgeFormData {
   metadata?: any;
 }
 
-export type DocumentType = 'personal' | 'system' | 'template';
+interface EditingFile {
+  id: string;
+  title: string;
+  description?: string;
+  content?: string;
+  tags?: string[] | string;
+  metadata?: any;
+}
 
 export function useUserKnowledgeForm() {
-  const [formData, setFormData] = useState<KnowledgeFormData>({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     content: '',
     tags: '',
     metadata: {},
   });
-  const [editingFile, setEditingFile] = useState<UserKnowledgeFile | null>(null);
+
+  const [editingFile, setEditingFile] = useState<EditingFile | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [inputMethod, setInputMethod] = useState<'manual' | 'upload'>('manual');
   const [documentType, setDocumentType] = useState<DocumentType>('personal');
@@ -39,24 +48,23 @@ export function useUserKnowledgeForm() {
     setDocumentType('personal');
   };
 
-  const populateForm = (file: UserKnowledgeFile) => {
+  const populateForm = (file: EditingFile) => {
     setEditingFile(file);
     setFormData({
-      title: file.title,
+      title: file.title || '',
       description: file.description || '',
       content: file.content || '',
-      tags: file.tags?.join(', ') || '',
+      tags: Array.isArray(file.tags) ? file.tags.join(', ') : (file.tags || ''),
       metadata: file.metadata || {},
     });
-    setInputMethod(file.file_url ? 'upload' : 'manual');
+    setInputMethod('manual'); // Always use manual for editing
   };
 
-  const updateFormField = (field: keyof KnowledgeFormData, value: string | any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const setDocumentTypeForContext = (type: DocumentType) => {
-    setDocumentType(type);
+  const updateFormField = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   return {
@@ -67,7 +75,7 @@ export function useUserKnowledgeForm() {
     documentType,
     setSelectedFile,
     setInputMethod,
-    setDocumentType: setDocumentTypeForContext,
+    setDocumentType,
     resetForm,
     populateForm,
     updateFormField,

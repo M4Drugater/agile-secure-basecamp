@@ -12,7 +12,8 @@ import { UserKnowledgeFilters } from './UserKnowledgeFilters';
 import { UserKnowledgeEmptyState } from './UserKnowledgeEmptyState';
 import { ProcessingQueueViewer } from './ProcessingQueueViewer';
 import { KnowledgeRecommendations } from './KnowledgeRecommendations';
-import { Plus, Brain, Settings } from 'lucide-react';
+import { Plus, Brain, Settings, BarChart3 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export function EnhancedUserKnowledgeManager() {
   const { files, deleteFile } = useUserKnowledgeFiles();
@@ -70,8 +71,21 @@ export function EnhancedUserKnowledgeManager() {
     setIsDialogOpen(true);
   };
 
-  const handleReprocess = async (fileId: string) => {
-    await reprocessFile(fileId, 'full');
+  const handleReprocess = async (fileId: string, fileName: string) => {
+    try {
+      await reprocessFile(fileId, 'full');
+      toast({
+        title: "Processing Started",
+        description: `${fileName} has been queued for AI reprocessing.`,
+      });
+    } catch (error) {
+      console.error('Reprocessing error:', error);
+      toast({
+        title: "Processing Failed",
+        description: "Failed to queue file for reprocessing.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleOpenDialog = () => {
@@ -110,7 +124,7 @@ export function EnhancedUserKnowledgeManager() {
             AI Insights
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
+            <BarChart3 className="h-4 w-4" />
             Analytics
           </TabsTrigger>
         </TabsList>
@@ -133,22 +147,24 @@ export function EnhancedUserKnowledgeManager() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredFiles.map((file) => (
-                  <div key={file.id} className="relative">
+                  <div key={file.id} className="relative group">
                     <UserKnowledgeCard
                       file={file}
                       onEdit={handleEdit}
                       onDelete={deleteFile}
                     />
                     {!file.is_ai_processed && file.file_url && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute top-2 right-2 z-10"
-                        onClick={() => handleReprocess(file.id)}
-                      >
-                        <Brain className="h-3 w-3 mr-1" />
-                        AI Process
-                      </Button>
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleReprocess(file.id, file.title)}
+                          className="h-8 text-xs"
+                        >
+                          <Brain className="h-3 w-3 mr-1" />
+                          AI Process
+                        </Button>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -166,7 +182,7 @@ export function EnhancedUserKnowledgeManager() {
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 border rounded-lg">
               <h3 className="font-medium mb-2">Total Knowledge Items</h3>
               <p className="text-2xl font-bold">{files?.length || 0}</p>
@@ -181,6 +197,12 @@ export function EnhancedUserKnowledgeManager() {
               <h3 className="font-medium mb-2">File Uploads</h3>
               <p className="text-2xl font-bold">
                 {files?.filter(f => f.file_url).length || 0}
+              </p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium mb-2">Manual Entries</h3>
+              <p className="text-2xl font-bold">
+                {files?.filter(f => !f.file_url).length || 0}
               </p>
             </div>
           </div>
