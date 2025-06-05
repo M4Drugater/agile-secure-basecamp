@@ -16,17 +16,32 @@ export function useProcessingQueue() {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // First get the processing queue items
+      const { data: queueItems, error: queueError } = await supabase
         .from('knowledge_processing_queue')
-        .select(`
-          *,
-          user_knowledge_files!inner(user_id, title)
-        `)
-        .eq('user_knowledge_files.user_id', user.id)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (queueError) throw queueError;
+
+      // Then get the user knowledge files separately and match them
+      const { data: userFiles, error: filesError } = await supabase
+        .from('user_knowledge_files')
+        .select('id, title, user_id')
+        .eq('user_id', user.id);
+
+      if (filesError) throw filesError;
+
+      // Create a map for quick lookup
+      const filesMap = new Map(userFiles?.map(file => [file.id, file]) || []);
+
+      // Combine the data
+      const enrichedQueue = queueItems?.map(item => ({
+        ...item,
+        user_knowledge_files: filesMap.get(item.file_id) || null
+      })).filter(item => item.user_knowledge_files !== null) || [];
+
+      return enrichedQueue;
     },
     enabled: !!user,
   });
