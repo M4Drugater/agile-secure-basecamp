@@ -57,7 +57,11 @@ export function useEnhancedKnowledgeBase() {
       return [];
     }
 
-    return data || [];
+    // Type-cast the returned data to ensure proper typing
+    return (data || []).map(item => ({
+      ...item,
+      knowledge_type: item.knowledge_type as 'personal' | 'system'
+    }));
   };
 
   // Get processing queue for current user
