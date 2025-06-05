@@ -13,13 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Save, X, FileText, Type, Brain } from 'lucide-react';
 import { EnhancedFileUpload } from './EnhancedFileUpload';
+import { DocumentTypeSelector } from './DocumentTypeSelector';
 import { useUserKnowledgeForm, DocumentType } from '@/hooks/useUserKnowledgeForm';
 import { useEnhancedFileUpload } from '@/hooks/useEnhancedFileUpload';
-import { useMultiTierKnowledge } from '@/hooks/useMultiTierKnowledge';
+import { useKnowledgeOperations } from '@/hooks/useKnowledgeOperations';
 
 interface UserKnowledgeDialogProps {
   open: boolean;
@@ -41,7 +40,6 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
   } = useUserKnowledgeForm();
 
   const {
-    uploadAndProcessFile,
     isUploading,
     uploadProgress,
   } = useEnhancedFileUpload();
@@ -50,7 +48,8 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
     createDocument,
     updateDocument,
     isCreating,
-  } = useMultiTierKnowledge();
+    isUpdating,
+  } = useKnowledgeOperations();
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -58,40 +57,10 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
     }
 
     try {
-      let finalFormData = { ...formData };
-
-      // If uploading a file, process it first
-      if (inputMethod === 'upload' && selectedFile) {
-        const uploadResult = await uploadAndProcessFile(selectedFile);
-        if (!uploadResult) {
-          return; // Upload failed
-        }
-
-        // Enhance form data with AI analysis
-        if (uploadResult.ai_analysis) {
-          finalFormData = {
-            ...finalFormData,
-            description: finalFormData.description || uploadResult.ai_analysis.summary || '',
-            content: uploadResult.extracted_content || '',
-            tags: finalFormData.tags || uploadResult.ai_analysis.key_points?.join(', ') || '',
-          };
-        }
-
-        // Add file information to metadata
-        finalFormData.metadata = {
-          ...finalFormData.metadata,
-          fileUrl: uploadResult.file_url,
-          originalFileName: uploadResult.original_file_name,
-          fileType: uploadResult.file_type,
-          fileSize: uploadResult.file_size,
-          aiAnalysis: uploadResult.ai_analysis,
-        };
-      }
-
       if (editingFile) {
-        await updateDocument(documentType, editingFile.id, finalFormData);
+        await updateDocument(documentType, editingFile.id, formData);
       } else {
-        await createDocument(documentType, finalFormData, selectedFile, inputMethod);
+        await createDocument(documentType, formData, selectedFile, inputMethod);
       }
       
       handleClose();
@@ -107,7 +76,6 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
-    // Auto-populate title from filename if not set
     if (!formData.title) {
       const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
       updateFormField('title', nameWithoutExt);
@@ -117,6 +85,8 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
   const handleRemoveFile = () => {
     setSelectedFile(null);
   };
+
+  const isLoading = isCreating || isUpdating || isUploading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,22 +105,11 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
 
         <div className="space-y-4">
           {!editingFile && (
-            <div className="space-y-2">
-              <Label htmlFor="documentType">Knowledge Type</Label>
-              <Select value={documentType} onValueChange={(value) => setDocumentType(value as DocumentType)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select knowledge type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Personal Knowledge</SelectItem>
-                  <SelectItem value="system">System Framework</SelectItem>
-                  <SelectItem value="template">Template</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Personal knowledge is private to you, while system frameworks can be shared across the platform.
-              </p>
-            </div>
+            <DocumentTypeSelector
+              value={documentType}
+              onChange={setDocumentType}
+              disabled={isLoading}
+            />
           )}
 
           <div className="space-y-2">
@@ -160,6 +119,7 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
               value={formData.title}
               onChange={(e) => updateFormField('title', e.target.value)}
               placeholder="Enter a descriptive title..."
+              disabled={isLoading}
             />
           </div>
 
@@ -171,17 +131,18 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
               onChange={(e) => updateFormField('description', e.target.value)}
               placeholder="Brief description of this knowledge item..."
               rows={2}
+              disabled={isLoading}
             />
           </div>
 
           {!editingFile && (
             <Tabs value={inputMethod} onValueChange={(value) => setInputMethod(value as 'manual' | 'upload')}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="manual" className="flex items-center gap-2">
+                <TabsTrigger value="manual" className="flex items-center gap-2" disabled={isLoading}>
                   <Type className="h-4 w-4" />
                   Manual Entry
                 </TabsTrigger>
-                <TabsTrigger value="upload" className="flex items-center gap-2">
+                <TabsTrigger value="upload" className="flex items-center gap-2" disabled={isLoading}>
                   <FileText className="h-4 w-4" />
                   File Upload
                 </TabsTrigger>
@@ -196,6 +157,7 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
                     onChange={(e) => updateFormField('content', e.target.value)}
                     placeholder="Enter your knowledge content here..."
                     rows={8}
+                    disabled={isLoading}
                   />
                 </div>
               </TabsContent>
@@ -233,6 +195,7 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
                 onChange={(e) => updateFormField('content', e.target.value)}
                 placeholder="Enter your knowledge content here..."
                 rows={8}
+                disabled={isLoading}
               />
             </div>
           )}
@@ -244,6 +207,7 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
               value={formData.tags}
               onChange={(e) => updateFormField('tags', e.target.value)}
               placeholder="Enter tags separated by commas..."
+              disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground">
               Separate multiple tags with commas (e.g., "career, development, skills")
@@ -252,16 +216,16 @@ export function UserKnowledgeDialog({ open, onOpenChange }: UserKnowledgeDialogP
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!formData.title.trim() || isCreating || isUploading}
+            disabled={!formData.title.trim() || isLoading}
           >
             <Save className="w-4 h-4 mr-2" />
-            {isCreating || isUploading ? 'Processing...' : editingFile ? 'Update Knowledge' : 'Save Knowledge'}
+            {isLoading ? 'Processing...' : editingFile ? 'Update Knowledge' : 'Save Knowledge'}
           </Button>
         </DialogFooter>
       </DialogContent>
