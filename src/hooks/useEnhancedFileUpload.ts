@@ -41,6 +41,7 @@ export function useEnhancedFileUpload() {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
+      console.log('Starting file upload:', { fileName, fileSize: file.size, fileType: file.type });
       setUploadProgress(20);
 
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -51,9 +52,11 @@ export function useEnhancedFileUpload() {
         });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw new Error(`Failed to upload file: ${uploadError.message}`);
       }
 
+      console.log('File uploaded successfully:', uploadData);
       setUploadProgress(50);
 
       // Get the public URL
@@ -61,34 +64,90 @@ export function useEnhancedFileUpload() {
         .from('knowledge-files')
         .getPublicUrl(fileName);
 
+      console.log('Generated public URL:', publicUrl);
       setUploadProgress(70);
 
-      // Step 2: Process file with AI
+      // Step 2: Create database record first
+      const { data: fileRecord, error: dbError } = await supabase
+        .from('user_knowledge_files')
+        .insert({
+          user_id: user.id,
+          title: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          file_url: publicUrl,
+          original_file_name: file.name,
+          processing_status: 'processing',
+          extraction_status: 'processing',
+          is_ai_processed: false,
+          source_type: 'upload'
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        // Clean up uploaded file
+        await supabase.storage.from('knowledge-files').remove([fileName]);
+        throw new Error(`Failed to create database record: ${dbError.message}`);
+      }
+
+      console.log('Database record created:', fileRecord);
+      setUploadProgress(80);
+
+      // Step 3: Process file with AI using correct parameters
       let processedData: any = {};
       
       try {
+        console.log('Calling process-enhanced-file function with params:', {
+          fileId: fileRecord.id,
+          fileUrl: publicUrl,
+          fileType: file.type,
+          fileName: file.name
+        });
+
         const { data: aiData, error: aiError } = await supabase.functions.invoke('process-enhanced-file', {
           body: {
+            fileId: fileRecord.id,
             fileUrl: publicUrl,
-            fileName: file.name,
             fileType: file.type,
-            fileSize: file.size,
+            fileName: file.name
           },
         });
 
         if (aiError) {
           console.warn('AI processing failed:', aiError);
+          // Update status to completed without AI processing
+          await supabase
+            .from('user_knowledge_files')
+            .update({ 
+              processing_status: 'completed',
+              extraction_status: 'completed',
+              error_details: `AI processing failed: ${aiError.message}`
+            })
+            .eq('id', fileRecord.id);
+            
           toast({
-            title: "Processing Warning",
+            title: "Upload Successful",
             description: "File uploaded but AI processing encountered an issue. You can still use the file.",
             variant: "default",
           });
         } else if (aiData) {
+          console.log('AI processing successful:', aiData);
           processedData = aiData;
         }
       } catch (aiError) {
         console.warn('AI processing error:', aiError);
-        // Continue without AI processing
+        // Update status to completed without AI processing
+        await supabase
+          .from('user_knowledge_files')
+          .update({ 
+            processing_status: 'completed',
+            extraction_status: 'completed',
+            error_details: `AI processing error: ${aiError instanceof Error ? aiError.message : 'Unknown error'}`
+          })
+          .eq('id', fileRecord.id);
       }
 
       setUploadProgress(100);
@@ -104,7 +163,7 @@ export function useEnhancedFileUpload() {
 
       toast({
         title: "Upload Successful",
-        description: `${file.name} has been uploaded and processed with AI analysis.`,
+        description: `${file.name} has been uploaded${processedData.aiAnalysis ? ' and processed with AI analysis' : ''}.`,
       });
 
       return result;

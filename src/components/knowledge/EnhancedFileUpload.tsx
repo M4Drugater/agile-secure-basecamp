@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { Upload, File, X, CheckCircle, AlertCircle, Brain } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, Brain, Loader2 } from 'lucide-react';
 
 interface EnhancedFileUploadProps {
   onFileSelect: (file: File) => void;
@@ -36,10 +36,14 @@ export function EnhancedFileUpload({
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/markdown': ['.md'],
       'application/json': ['.json'],
-      'text/csv': ['.csv']
+      'text/csv': ['.csv'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif']
     },
     maxSize: 10 * 1024 * 1024, // 10MB limit
-    multiple: false
+    multiple: false,
+    disabled: isUploading
   });
 
   const formatFileSize = (bytes: number) => {
@@ -56,12 +60,21 @@ export function EnhancedFileUpload({
     if (type.includes('text')) return '📄';
     if (type.includes('json')) return '🔧';
     if (type.includes('csv')) return '📊';
+    if (type.includes('image')) return '🖼️';
     return '📄';
+  };
+
+  const getUploadStatus = () => {
+    if (uploadProgress === 0) return 'Preparing...';
+    if (uploadProgress < 50) return 'Uploading...';
+    if (uploadProgress < 80) return 'Processing...';
+    if (uploadProgress < 100) return 'Analyzing with AI...';
+    return 'Completing...';
   };
 
   if (selectedFile) {
     return (
-      <Card>
+      <Card className={isUploading ? 'border-blue-200 bg-blue-50' : ''}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -90,13 +103,30 @@ export function EnhancedFileUpload({
           {isUploading && (
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <Brain className="h-4 w-4 animate-pulse text-blue-600" />
-                Processing with AI analysis...
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="font-medium">{getUploadStatus()}</span>
               </div>
               <Progress value={uploadProgress} className="w-full" />
-              <div className="text-xs text-muted-foreground">
-                {uploadProgress}% complete
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>
+                  {uploadProgress < 50 && 'Uploading file to secure storage...'}
+                  {uploadProgress >= 50 && uploadProgress < 80 && 'Creating database record...'}
+                  {uploadProgress >= 80 && 'AI processing and analysis...'}
+                </span>
+                <span>{uploadProgress}%</span>
               </div>
+            </div>
+          )}
+
+          {!isUploading && (
+            <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-900">Ready for Processing</span>
+              </div>
+              <p className="text-xs text-green-700">
+                This file will be uploaded and processed with AI to extract content, generate summaries, and identify key insights automatically.
+              </p>
             </div>
           )}
         </CardContent>
@@ -113,6 +143,7 @@ export function EnhancedFileUpload({
           ? 'border-primary bg-primary/5' 
           : 'border-gray-300 hover:border-gray-400'
         }
+        ${isUploading ? 'pointer-events-none opacity-50' : ''}
       `}
     >
       <input {...getInputProps()} />
@@ -132,7 +163,7 @@ export function EnhancedFileUpload({
         </div>
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <div>Supported formats: PDF, Word docs, text files, JSON, CSV, Markdown</div>
+          <div>Supported formats: PDF, Word docs, text files, JSON, CSV, Markdown, Images</div>
           <div>Maximum file size: 10MB</div>
           <div className="flex items-center justify-center gap-1 text-blue-600">
             <Brain className="h-3 w-3" />
@@ -140,7 +171,7 @@ export function EnhancedFileUpload({
           </div>
         </div>
 
-        <Button variant="outline" className="mt-4">
+        <Button variant="outline" className="mt-4" disabled={isUploading}>
           Choose File
         </Button>
       </div>
