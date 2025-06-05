@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { UserKnowledgeManager } from '@/components/knowledge/UserKnowledgeManager';
+import { EnhancedUserKnowledgeManager } from '@/components/knowledge/EnhancedUserKnowledgeManager';
 import { SystemKnowledgeViewer } from '@/components/knowledge/SystemKnowledgeViewer';
 import { DownloadableResourcesManager } from '@/components/knowledge/DownloadableResourcesManager';
 import { UniversalLayout } from '@/components/layout/UniversalLayout';
-import { BookOpen, Download, Database } from 'lucide-react';
+import { BookOpen, Download, Database, Zap } from 'lucide-react';
 
 export default function KnowledgeBase() {
   const [activeTab, setActiveTab] = useState('personal');
@@ -15,9 +15,12 @@ export default function KnowledgeBase() {
       <div className="min-h-screen bg-background pt-16">
         <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Knowledge Base</h1>
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+              Enhanced Knowledge Base
+              <Zap className="h-8 w-8 text-yellow-500" />
+            </h1>
             <p className="text-muted-foreground">
-              Access your personal knowledge, system frameworks, and downloadable resources
+              Advanced AI-powered knowledge management with intelligent processing, recommendations, and CLIPOGINO integration
             </p>
           </div>
 
@@ -38,7 +41,7 @@ export default function KnowledgeBase() {
             </TabsList>
 
             <TabsContent value="personal" className="mt-6">
-              <UserKnowledgeManager />
+              <EnhancedUserKnowledgeManager />
             </TabsContent>
 
             <TabsContent value="system" className="mt-6">

@@ -610,6 +610,36 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_base_config: {
+        Row: {
+          config_key: string
+          config_value: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          config_key: string
+          config_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       knowledge_documents: {
         Row: {
           content: string | null
@@ -670,6 +700,54 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      knowledge_processing_queue: {
+        Row: {
+          attempts: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          file_id: string
+          file_type: string
+          id: string
+          max_attempts: number | null
+          priority: number | null
+          processing_type: string
+          scheduled_for: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_id: string
+          file_type: string
+          id?: string
+          max_attempts?: number | null
+          priority?: number | null
+          processing_type?: string
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_id?: string
+          file_type?: string
+          id?: string
+          max_attempts?: number | null
+          priority?: number | null
+          processing_type?: string
+          scheduled_for?: string | null
+          started_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -1292,15 +1370,19 @@ export type Database = {
           embeddings: string | null
           id: string
           is_active: boolean | null
+          is_template: boolean | null
           knowledge_type: string
           last_updated_by: string | null
           metadata: Json | null
+          parent_id: string | null
           priority: number | null
+          source_type: string | null
           subcategory: string | null
           tags: string[] | null
           title: string
           updated_at: string
           usage_count: number | null
+          version: number | null
         }
         Insert: {
           category: string
@@ -1312,15 +1394,19 @@ export type Database = {
           embeddings?: string | null
           id?: string
           is_active?: boolean | null
+          is_template?: boolean | null
           knowledge_type: string
           last_updated_by?: string | null
           metadata?: Json | null
+          parent_id?: string | null
           priority?: number | null
+          source_type?: string | null
           subcategory?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
           usage_count?: number | null
+          version?: number | null
         }
         Update: {
           category?: string
@@ -1332,17 +1418,29 @@ export type Database = {
           embeddings?: string | null
           id?: string
           is_active?: boolean | null
+          is_template?: boolean | null
           knowledge_type?: string
           last_updated_by?: string | null
           metadata?: Json | null
+          parent_id?: string | null
           priority?: number | null
+          source_type?: string | null
           subcategory?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
           usage_count?: number | null
+          version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "system_knowledge_base_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "system_knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_credits: {
         Row: {
@@ -1376,12 +1474,16 @@ export type Database = {
       }
       user_knowledge_files: {
         Row: {
+          ai_analysis: Json | null
           ai_key_points: string[] | null
           ai_summary: string | null
           content: string | null
           created_at: string
           description: string | null
+          document_category: string | null
           embeddings: string | null
+          error_details: string | null
+          extracted_content: string | null
           extraction_status: string | null
           file_name: string | null
           file_path: string | null
@@ -1390,23 +1492,32 @@ export type Database = {
           file_url: string | null
           id: string
           is_ai_processed: boolean | null
+          is_template: boolean | null
           key_insights: string[] | null
           metadata: Json | null
           original_file_name: string | null
+          parent_id: string | null
+          processing_metadata: Json | null
           processing_status: string | null
+          source_type: string | null
           summary: string | null
           tags: string[] | null
           title: string
           updated_at: string
           user_id: string
+          version: number | null
         }
         Insert: {
+          ai_analysis?: Json | null
           ai_key_points?: string[] | null
           ai_summary?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
+          document_category?: string | null
           embeddings?: string | null
+          error_details?: string | null
+          extracted_content?: string | null
           extraction_status?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -1415,23 +1526,32 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_ai_processed?: boolean | null
+          is_template?: boolean | null
           key_insights?: string[] | null
           metadata?: Json | null
           original_file_name?: string | null
+          parent_id?: string | null
+          processing_metadata?: Json | null
           processing_status?: string | null
+          source_type?: string | null
           summary?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
           user_id: string
+          version?: number | null
         }
         Update: {
+          ai_analysis?: Json | null
           ai_key_points?: string[] | null
           ai_summary?: string | null
           content?: string | null
           created_at?: string
           description?: string | null
+          document_category?: string | null
           embeddings?: string | null
+          error_details?: string | null
+          extracted_content?: string | null
           extraction_status?: string | null
           file_name?: string | null
           file_path?: string | null
@@ -1440,17 +1560,30 @@ export type Database = {
           file_url?: string | null
           id?: string
           is_ai_processed?: boolean | null
+          is_template?: boolean | null
           key_insights?: string[] | null
           metadata?: Json | null
           original_file_name?: string | null
+          parent_id?: string | null
+          processing_metadata?: Json | null
           processing_status?: string | null
+          source_type?: string | null
           summary?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
           user_id?: string
+          version?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_knowledge_files_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "user_knowledge_files"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_learning_progress: {
         Row: {
@@ -1619,6 +1752,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_knowledge_recommendations: {
+        Args: { search_text: string; user_uuid?: string }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          content_snippet: string
+          knowledge_type: string
+          relevance_score: number
+        }[]
+      }
       get_monthly_cost: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1713,6 +1857,10 @@ export type Database = {
       increment_message_count: {
         Args: { conversation_id: string }
         Returns: number
+      }
+      increment_system_knowledge_usage: {
+        Args: { doc_id: string }
+        Returns: undefined
       }
       is_admin_user: {
         Args: Record<PropertyKey, never>
