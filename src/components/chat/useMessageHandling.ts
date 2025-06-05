@@ -41,20 +41,24 @@ export function useMessageHandling() {
         body: {
           message: userMessage.content,
           context: fullContext,
-          conversationHistory: messages.slice(-10), // Send last 10 messages for context
+          conversationHistory: messages.slice(-10).map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })), // Send last 10 messages for context
           model: selectedModel,
         },
       });
 
       if (error) {
+        console.error('Supabase function error:', error);
         throw error;
       }
 
-      const response = data as ChatResponse;
+      console.log('CLIPOGINO response data:', data);
       
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: response.response,
+        content: data.response || data.reply || 'Lo siento, no pude generar una respuesta.',
         timestamp: new Date(),
       };
 
@@ -62,12 +66,12 @@ export function useMessageHandling() {
       await refreshUsage();
 
       const contextInfo = [];
-      if (fullContext.includes('User Profile Context:')) contextInfo.push('personalization');
-      if (fullContext.includes('KNOWLEDGE CONTEXT')) contextInfo.push('knowledge context');
+      if (fullContext.includes('USER PROFILE')) contextInfo.push('personalización');
+      if (fullContext.includes('KNOWLEDGE')) contextInfo.push('base de conocimiento');
       
       toast({
-        title: 'CLIPOGINO Response',
-        description: `Used ${response.usage.totalTokens} tokens (${response.model})${contextInfo.length > 0 ? ` with ${contextInfo.join(' & ')}` : ''}`,
+        title: 'Respuesta de CLIPOGINO',
+        description: `Usados ${data.usage?.totalTokens || 0} tokens (${data.model || selectedModel})${contextInfo.length > 0 ? ` con ${contextInfo.join(' y ')}` : ''}`,
         variant: 'default',
       });
 
@@ -76,15 +80,15 @@ export function useMessageHandling() {
     } catch (error: any) {
       console.error('Chat error:', error);
       
-      let errorMessage = 'Failed to get response from CLIPOGINO';
+      let errorMessage = 'No se pudo obtener respuesta de CLIPOGINO';
       if (error.message?.includes('Usage limit reached')) {
-        errorMessage = 'You have reached your daily AI usage limit';
+        errorMessage = 'Has alcanzado tu límite diario de uso de IA';
       } else if (error.message?.includes('Cost limit exceeded')) {
-        errorMessage = 'Request would exceed your usage limits';
+        errorMessage = 'La solicitud excedería tus límites de uso';
       }
 
       toast({
-        title: 'Chat Error',
+        title: 'Error de Chat',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -92,7 +96,7 @@ export function useMessageHandling() {
       // Return error message
       return {
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${errorMessage}. Please try again later.`,
+        content: `Lo siento, encontré un error: ${errorMessage}. Por favor intenta de nuevo más tarde.`,
         timestamp: new Date(),
       };
     } finally {

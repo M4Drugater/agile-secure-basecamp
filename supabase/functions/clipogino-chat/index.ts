@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationId } = await req.json();
+    const { message, context, conversationHistory, model = 'gpt-4o-mini' } = await req.json();
     
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -171,31 +171,15 @@ serve(async (req) => {
         }
       }
 
+      // Add any additional context passed from the frontend
+      if (context) {
+        knowledgeContext += '\n=== ADDITIONAL CONTEXT ===\n';
+        knowledgeContext += context;
+      }
+
     } catch (contextError) {
       console.error('Error building knowledge context:', contextError);
       // Continue without context if there's an error
-    }
-
-    // Get conversation history
-    let conversationHistory = [];
-    if (conversationId) {
-      try {
-        const { data: messages } = await supabase
-          .from('chat_messages')
-          .select('role, content')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true })
-          .limit(10);
-
-        if (messages) {
-          conversationHistory = messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }));
-        }
-      } catch (historyError) {
-        console.error('Error fetching conversation history:', historyError);
-      }
     }
 
     // Build the system prompt with comprehensive context
@@ -207,6 +191,7 @@ PERSONALITY & APPROACH:
 - Encouraging and supportive
 - Focused on practical, actionable advice
 - Adapt communication style to user preferences
+- Respond in the same language the user writes in (Spanish, English, etc.)
 
 PERSONALIZATION INSTRUCTIONS:
 ${knowledgeContext ? `
@@ -228,19 +213,23 @@ RESPONSE GUIDELINES:
 - Suggest next steps and resources
 - Be encouraging and supportive
 - Maintain professional tone while being personable
+- If user writes in Spanish, respond in Spanish
+- If user writes in English, respond in English
 
 Remember: You have access to the user's complete knowledge base including all uploaded documents. Use this information to provide highly personalized and relevant responses.`;
 
     // Prepare messages for OpenAI
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-8), // Include recent conversation history
+      ...(conversationHistory || []).slice(-8), // Include recent conversation history
       { role: 'user', content: message }
     ];
 
     if (!openAIApiKey) {
       return new Response(JSON.stringify({ 
-        reply: "I apologize, but the AI service is currently unavailable. Please contact support to configure the OpenAI API key."
+        response: "Lo siento, pero el servicio de IA no está disponible actualmente. Por favor contacta a soporte para configurar la clave de OpenAI API.",
+        usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+        model: model
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -254,9 +243,9 @@ Remember: You have access to the user's complete knowledge base including all up
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: model,
         messages: messages,
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.1,
@@ -277,13 +266,16 @@ Remember: You have access to the user's complete knowledge base including all up
     const usage = data.usage;
     if (usage) {
       try {
+        const costPer1000Tokens = model === 'gpt-4o' ? 0.005 : 0.0001;
+        const totalCost = (usage.total_tokens * costPer1000Tokens) / 1000;
+        
         await supabase.from('ai_usage_logs').insert({
           user_id: user.id,
-          model_name: 'gpt-4o',
+          model_name: model,
           function_name: 'clipogino-chat',
           input_tokens: usage.prompt_tokens,
           output_tokens: usage.completion_tokens,
-          total_cost: (usage.prompt_tokens * 0.0025 + usage.completion_tokens * 0.01) / 1000,
+          total_cost: totalCost,
           status: 'success'
         });
       } catch (logError) {
@@ -299,7 +291,15 @@ Remember: You have access to the user's complete knowledge base including all up
       hasSystemKnowledge: knowledgeContext.includes('SYSTEM KNOWLEDGE')
     });
 
-    return new Response(JSON.stringify({ reply }), {
+    return new Response(JSON.stringify({ 
+      response: reply,
+      usage: {
+        totalTokens: usage?.total_tokens || 0,
+        promptTokens: usage?.prompt_tokens || 0,
+        completionTokens: usage?.completion_tokens || 0
+      },
+      model: model
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -307,7 +307,9 @@ Remember: You have access to the user's complete knowledge base including all up
     console.error('Error in clipogino-chat function:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      message: 'An error occurred while processing your request. Please try again.'
+      response: 'Lo siento, encontré un error al procesar tu solicitud. Por favor intenta de nuevo más tarde.',
+      usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+      model: 'error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
