@@ -27,15 +27,6 @@ export function useKnowledgeOperations() {
     file?: File,
     inputMethod?: 'manual' | 'upload'
   ) => {
-    if (type !== 'personal') {
-      toast({
-        title: "Not implemented",
-        description: "System knowledge creation is not yet implemented.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsCreating(true);
     try {
       if (inputMethod === 'upload' && file) {
@@ -45,15 +36,6 @@ export function useKnowledgeOperations() {
         const uploadResult = await uploadAndProcessFile(file);
         if (!uploadResult) {
           throw new Error('File upload failed');
-        }
-
-        // The file has already been processed and saved to the database
-        // Just update the title and description if provided
-        if (data.title !== file.name.replace(/\.[^/.]+$/, '') || data.description) {
-          // Find the created record and update it
-          // Note: This is a bit of a workaround since uploadAndProcessFile doesn't return the ID
-          // In a future refactor, we should return the full record
-          console.log('Upload successful, file processed and saved to database');
         }
 
         toast({
@@ -74,12 +56,13 @@ export function useKnowledgeOperations() {
           is_ai_processed: false,
           source_type: 'manual',
           metadata: data.metadata || {},
+          document_category: type === 'personal' ? 'personal' : 'system',
         };
 
         await createFile(fileData);
         toast({
           title: "Success",
-          description: "Knowledge item created successfully.",
+          description: `${type === 'personal' ? 'Personal' : 'System'} knowledge item created successfully.`,
         });
       }
     } catch (error) {
@@ -100,15 +83,6 @@ export function useKnowledgeOperations() {
     id: string,
     updates: Partial<CreateDocumentData>
   ) => {
-    if (type !== 'personal') {
-      toast({
-        title: "Not implemented",
-        description: "System knowledge updates are not yet implemented.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsUpdating(true);
     try {
       const updateData = {
