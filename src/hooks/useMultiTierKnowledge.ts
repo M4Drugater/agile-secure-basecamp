@@ -1,151 +1,160 @@
 
 import { useUserKnowledgeFiles } from './useUserKnowledgeFiles';
-import { useKnowledgeBase } from './useKnowledgeBase';
-import { useDownloadableResources } from './useDownloadableResources';
-import { useFileUpload } from './useFileUpload';
-import { DocumentType } from './useUserKnowledgeForm';
-import { toast } from '@/hooks/use-toast';
+import { useSystemKnowledge } from './useSystemKnowledge';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+export type DocumentType = 'personal' | 'system' | 'template';
+
+export interface CreateDocumentData {
+  title: string;
+  description?: string;
+  content?: string;
+  tags?: string;
+  metadata?: any;
+}
 
 export function useMultiTierKnowledge() {
-  const personalKnowledge = useUserKnowledgeFiles();
-  const systemKnowledge = useKnowledgeBase();
-  const resources = useDownloadableResources();
-  const { uploadFile } = useFileUpload();
+  const { user } = useAuth();
+  const { createFile: createPersonalFile, updateFile: updatePersonalFile } = useUserKnowledgeFiles();
+  const { incrementUsage: incrementSystemUsage } = useSystemKnowledge();
 
   const createDocument = async (
-    documentType: DocumentType,
-    formData: any,
-    selectedFile: File | null,
-    inputMethod: 'manual' | 'upload'
+    type: DocumentType,
+    data: CreateDocumentData,
+    file?: File,
+    inputMethod?: 'manual' | 'upload'
   ) => {
-    let fileData: any = {
-      title: formData.title,
-      description: formData.description,
-      tags: formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [],
-      metadata: { documentType },
-    };
-
-    // Handle file upload if needed
-    if (inputMethod === 'upload' && selectedFile) {
-      const uploadResult = await uploadFile(selectedFile);
-      if (!uploadResult) {
-        return; // Upload failed, error already shown
-      }
-
-      fileData = {
-        ...fileData,
-        file_url: uploadResult.file_url,
-        original_file_name: uploadResult.original_file_name,
-        file_type: uploadResult.file_type,
-        file_size: uploadResult.file_size,
-        extraction_status: 'pending',
-        processing_status: 'pending',
-      };
-    } else {
-      // Manual input
-      fileData.content = formData.content;
+    if (!user) {
+      throw new Error('User not authenticated');
     }
 
-    // Route to appropriate service based on document type
-    switch (documentType) {
-      case 'personal':
-        personalKnowledge.createFile(fileData);
-        break;
-      
-      case 'system':
-        const systemData = {
-          ...fileData,
-          document_type: 'system_knowledge',
-          privacy_level: 'private' as const,
-          processing_status: 'completed' as const,
-          is_active: true,
-          processed_at: new Date().toISOString(),
+    try {
+      if (type === 'personal') {
+        const fileData = {
+          title: data.title,
+          description: data.description || '',
+          content: data.content || '',
+          tags: data.tags ? data.tags.split(',').map(tag => tag.trim()) : [],
+          processing_status: 'completed',
+          is_ai_processed: false,
+          metadata: data.metadata || {},
         };
-        systemKnowledge.createDocument(systemData);
-        break;
-      
-      case 'resource':
-        // Note: Resources typically require admin privileges
-        // For now, we'll create as personal knowledge with resource metadata
-        const resourceData = {
-          ...fileData,
-          metadata: { ...fileData.metadata, isResource: true },
-        };
-        personalKnowledge.createFile(resourceData);
-        toast({
-          title: "Resource Created",
-          description: "Resource created in personal knowledge. Admin can promote to public resource.",
-        });
-        break;
-      
-      default:
-        throw new Error(`Unsupported document type: ${documentType}`);
-    }
 
-    // Trigger processing for uploaded files
-    if (inputMethod === 'upload' && selectedFile) {
-      setTimeout(async () => {
-        try {
-          await supabase.functions.invoke('process-knowledge-file', {
-            body: {
-              fileUrl: fileData.file_url,
-              fileType: fileData.file_type,
-              fileName: fileData.original_file_name,
-              documentType,
-            },
+        if (inputMethod === 'upload' && file) {
+          // Upload file to storage first
+          const fileName = `${user.id}/${Date.now()}_${file.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('knowledge-files')
+            .upload(fileName, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage
+            .from('knowledge-files')
+            .getPublicUrl(fileName);
+
+          Object.assign(fileData, {
+            file_name: file.name,
+            file_type: file.type,
+            file_size: file.size,
+            file_url: urlData.publicUrl,
+            original_file_name: file.name,
+            file_path: fileName,
+            processing_status: 'pending',
           });
-        } catch (error) {
-          console.error('Error processing file:', error);
-          toast({
-            title: "Processing Error",
-            description: "File uploaded but processing failed. You can manually add content.",
-            variant: "destructive",
-          });
+
+          // Trigger file processing
+          try {
+            await supabase.functions.invoke('process-knowledge-file', {
+              body: {
+                fileId: 'temp', // Will be updated after creation
+                fileUrl: urlData.publicUrl,
+                fileType: file.type,
+                fileName: file.name,
+              },
+            });
+          } catch (processingError) {
+            console.error('File processing failed:', processingError);
+            // Continue with creation even if processing fails
+          }
         }
-      }, 2000);
+
+        await createPersonalFile(fileData);
+      } else {
+        toast({
+          title: "Not implemented",
+          description: "System knowledge creation is not yet implemented.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create document. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   const updateDocument = async (
-    documentType: DocumentType,
+    type: DocumentType,
     id: string,
-    updates: any
+    updates: Partial<CreateDocumentData>
   ) => {
-    switch (documentType) {
-      case 'personal':
-        personalKnowledge.updateFile({ id, ...updates });
-        break;
-      case 'system':
-        systemKnowledge.updateDocument({ id, ...updates });
-        break;
-      case 'resource':
-        // Handle resource updates through personal knowledge for now
-        personalKnowledge.updateFile({ id, ...updates });
-        break;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      if (type === 'personal') {
+        const updateData = {
+          ...updates,
+          tags: updates.tags ? updates.tags.split(',').map(tag => tag.trim()) : undefined,
+        };
+
+        await updatePersonalFile({ id, ...updateData });
+      } else {
+        toast({
+          title: "Not implemented",
+          description: "System knowledge updates are not yet implemented.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update document. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
-  const deleteDocument = async (documentType: DocumentType, id: string) => {
-    switch (documentType) {
-      case 'personal':
-        personalKnowledge.deleteFile(id);
-        break;
-      case 'system':
-        systemKnowledge.deleteDocument(id);
-        break;
-      case 'resource':
-        personalKnowledge.deleteFile(id);
-        break;
+  const trackUsage = async (type: DocumentType, id: string) => {
+    try {
+      if (type === 'system') {
+        await incrementSystemUsage(id);
+      } else if (type === 'personal') {
+        await supabase.rpc('update_knowledge_usage_stats', {
+          knowledge_id: id,
+          knowledge_type: 'personal'
+        });
+      }
+    } catch (error) {
+      console.error('Error tracking usage:', error);
     }
   };
 
   return {
     createDocument,
     updateDocument,
-    deleteDocument,
-    isCreating: personalKnowledge.isCreating || systemKnowledge.isCreating,
-    isUpdating: personalKnowledge.isUpdating || systemKnowledge.isUpdating,
-    isDeleting: personalKnowledge.isDeleting || systemKnowledge.isDeleting,
+    trackUsage,
+    isCreating: false, // You could implement loading states here
+    isUpdating: false,
   };
 }

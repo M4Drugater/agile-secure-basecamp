@@ -10,11 +10,11 @@ import { Search, Download, FileText, Star, TrendingDown } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function DownloadableResourcesManager() {
-  const { resources, isLoading, downloadResource } = useDownloadableResources();
+  const { resources, isLoading, downloadResource, isDownloading } = useDownloadableResources();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const categories = ['Templates', 'Guides', 'Worksheets', 'Checklists', 'Case Studies'];
+  const categories = [...new Set(resources?.map(r => r.category) || [])];
 
   const filteredResources = resources?.filter(resource => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,20 +24,15 @@ export function DownloadableResourcesManager() {
     return matchesSearch && matchesCategory;
   }) || [];
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'Unknown size';
-    const mb = bytes / (1024 * 1024);
-    return mb < 1 ? `${(bytes / 1024).toFixed(0)}KB` : `${mb.toFixed(1)}MB`;
+  const handleDownload = (resourceId: string) => {
+    downloadResource(resourceId);
   };
 
-  const handleDownload = async (resource: any) => {
-    try {
-      await downloadResource(resource.id);
-      // You might want to trigger actual download here
-      console.log('Downloaded:', resource.title);
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
+  const getFileIcon = (fileType?: string) => {
+    if (fileType?.includes('pdf')) return <FileText className="h-4 w-4 text-red-600" />;
+    if (fileType?.includes('word')) return <FileText className="h-4 w-4 text-blue-600" />;
+    if (fileType?.includes('image')) return <FileText className="h-4 w-4 text-green-600" />;
+    return <FileText className="h-4 w-4 text-gray-600" />;
   };
 
   if (isLoading) {
@@ -57,7 +52,7 @@ export function DownloadableResourcesManager() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search templates, guides, worksheets..."
+            placeholder="Search resources..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -85,7 +80,7 @@ export function DownloadableResourcesManager() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-primary" />
+                    {getFileIcon(resource.file_type)}
                     <Badge variant="outline" className="text-xs">
                       {resource.category}
                     </Badge>
@@ -105,18 +100,15 @@ export function DownloadableResourcesManager() {
             <CardContent className="pt-0">
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Size</span>
-                  <span className="font-medium">
-                    {formatFileSize(resource.file_size)}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Downloads</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <TrendingDown className="h-3 w-3" />
-                    <span className="font-medium">{resource.download_count}</span>
+                    <span>{resource.download_count} downloads</span>
                   </div>
+                  {resource.file_size && (
+                    <span className="text-muted-foreground">
+                      {(resource.file_size / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  )}
                 </div>
 
                 {resource.tags && resource.tags.length > 0 && (
@@ -134,17 +126,20 @@ export function DownloadableResourcesManager() {
                   </div>
                 )}
 
-                <p className="text-xs text-muted-foreground">
-                  Updated {format(new Date(resource.updated_at), 'MMM d, yyyy')}
-                </p>
-
                 <Button
-                  className="w-full mt-4"
-                  onClick={() => handleDownload(resource)}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => handleDownload(resource.id)}
+                  disabled={isDownloading}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download
+                  {isDownloading ? 'Downloading...' : 'Download'}
                 </Button>
+
+                <p className="text-xs text-muted-foreground">
+                  Added {format(new Date(resource.created_at), 'MMM d, yyyy')}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -154,10 +149,10 @@ export function DownloadableResourcesManager() {
       {filteredResources.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <Download className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No resources found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || selectedCategory !== 'all' 
+            <p className="text-muted-foreground">
+              {searchTerm || selectedCategory !== 'all'
                 ? 'Try adjusting your search or filter criteria'
                 : 'Downloadable resources will appear here when available'
               }

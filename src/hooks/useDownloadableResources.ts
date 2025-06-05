@@ -8,11 +8,11 @@ export interface DownloadableResource {
   id: string;
   title: string;
   description?: string;
+  category: string;
   file_name?: string;
-  file_path?: string;
   file_type?: string;
   file_size?: number;
-  category: string;
+  file_path?: string;
   tags?: string[];
   download_count: number;
   is_featured: boolean;
@@ -39,8 +39,7 @@ export function useDownloadableResources() {
         .select('*')
         .eq('is_active', true)
         .order('is_featured', { ascending: false })
-        .order('download_count', { ascending: false })
-        .order('updated_at', { ascending: false });
+        .order('download_count', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -63,7 +62,7 @@ export function useDownloadableResources() {
       });
     },
     onError: (error) => {
-      console.error('Download error:', error);
+      console.error('Error downloading resource:', error);
       toast({
         title: "Download failed",
         description: "Failed to download the resource. Please try again.",

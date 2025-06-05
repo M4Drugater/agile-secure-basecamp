@@ -1,7 +1,7 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 export interface SystemKnowledgeDocument {
   id: string;
@@ -12,10 +12,13 @@ export interface SystemKnowledgeDocument {
   knowledge_type: string;
   tags?: string[];
   priority: number;
-  is_active: boolean;
-  context_triggers?: string[];
   usage_count: number;
   effectiveness_score: number;
+  is_active: boolean;
+  source_type?: string;
+  version?: number;
+  parent_id?: string;
+  is_template?: boolean;
   metadata?: any;
   created_at: string;
   updated_at: string;
@@ -24,7 +27,7 @@ export interface SystemKnowledgeDocument {
 }
 
 export function useSystemKnowledge() {
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const {
     data: documents,
@@ -43,12 +46,29 @@ export function useSystemKnowledge() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+  });
+
+  const incrementUsage = useMutation({
+    mutationFn: async (documentId: string) => {
+      const { error } = await supabase.rpc('update_knowledge_usage_stats', {
+        knowledge_id: documentId,
+        knowledge_type: 'system'
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemKnowledge'] });
+    },
+    onError: (error) => {
+      console.error('Error updating usage stats:', error);
+    },
   });
 
   return {
     documents,
     isLoading,
     error,
+    incrementUsage: incrementUsage.mutate,
   };
 }

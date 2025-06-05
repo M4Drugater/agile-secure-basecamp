@@ -1,110 +1,72 @@
 
-import { useKnowledgeRetrieval, KnowledgeSearchResult } from './useKnowledgeRetrieval';
+import { useUserKnowledgeFiles } from './useUserKnowledgeFiles';
+import { useSystemKnowledge } from './useSystemKnowledge';
+import { useDownloadableResources } from './useDownloadableResources';
 
 export function useKnowledgeContext() {
-  const { searchKnowledge } = useKnowledgeRetrieval();
+  const { files: personalFiles } = useUserKnowledgeFiles();
+  const { documents: systemDocuments } = useSystemKnowledge();
+  const { resources } = useDownloadableResources();
 
   const buildKnowledgeContext = async (userMessage: string): Promise<string> => {
-    try {
-      const relevantKnowledge = await searchKnowledge(userMessage, 8);
-      
-      if (relevantKnowledge.length === 0) {
-        return '';
-      }
+    const searchTerms = userMessage.toLowerCase().split(' ').filter(term => term.length > 3);
+    let context = '';
 
-      const contextSections = {
-        learning_path: relevantKnowledge.filter(k => k.source === 'learning_path'),
-        personal: relevantKnowledge.filter(k => k.source === 'personal'),
-        system: relevantKnowledge.filter(k => k.source === 'system'),
-        downloadable: relevantKnowledge.filter(k => k.source === 'downloadable'),
-      };
+    // Search personal knowledge
+    const relevantPersonalFiles = personalFiles?.filter(file => 
+      searchTerms.some(term => 
+        file.title.toLowerCase().includes(term) ||
+        file.content?.toLowerCase().includes(term) ||
+        file.tags?.some(tag => tag.toLowerCase().includes(term)) ||
+        file.ai_summary?.toLowerCase().includes(term)
+      )
+    ) || [];
 
-      let context = '\n--- RELEVANT KNOWLEDGE CONTEXT ---\n';
+    // Search system knowledge
+    const relevantSystemDocs = systemDocuments?.filter(doc =>
+      searchTerms.some(term =>
+        doc.title.toLowerCase().includes(term) ||
+        doc.content.toLowerCase().includes(term) ||
+        doc.tags?.some(tag => tag.toLowerCase().includes(term)) ||
+        doc.category.toLowerCase().includes(term)
+      )
+    ) || [];
 
-      // Add learning paths first (highest priority for course recommendations)
-      if (contextSections.learning_path.length > 0) {
-        context += '\n🎓 INTERNAL LEARNING PATHS & COURSES:\n';
-        contextSections.learning_path.forEach(item => {
-          context += `• "${item.title}" (${item.difficulty_level || 'beginner'} level)\n`;
-          if (item.content && item.content.length < 300) {
-            context += `  Description: ${item.content.substring(0, 200)}${item.content.length > 200 ? '...' : ''}\n`;
-          }
-          if (item.estimated_duration_hours) {
-            context += `  Duration: ${item.estimated_duration_hours} hours\n`;
-          }
-          if (item.enrollment_count && item.enrollment_count > 0) {
-            context += `  ${item.enrollment_count} users enrolled\n`;
-          }
-          if (item.tags && item.tags.length > 0) {
-            context += `  Topics: ${item.tags.join(', ')}\n`;
-          }
-          context += '\n';
-        });
-      }
-
-      // Add personal knowledge
-      if (contextSections.personal.length > 0) {
-        context += '\n🏠 PERSONAL KNOWLEDGE:\n';
-        contextSections.personal.forEach(item => {
-          context += `• ${item.title}\n`;
-          if (item.content && item.content.length < 300) {
-            context += `  ${item.content.substring(0, 200)}${item.content.length > 200 ? '...' : ''}\n`;
-          }
-          if (item.tags && item.tags.length > 0) {
-            context += `  Tags: ${item.tags.join(', ')}\n`;
-          }
-          context += '\n';
-        });
-      }
-
-      // Add system knowledge
-      if (contextSections.system.length > 0) {
-        context += '\n🏢 SYSTEM FRAMEWORKS & METHODOLOGIES:\n';
-        contextSections.system.forEach(item => {
-          context += `• ${item.title} (${item.type})\n`;
-          if (item.content && item.content.length < 400) {
-            context += `  ${item.content.substring(0, 300)}${item.content.length > 300 ? '...' : ''}\n`;
-          }
-          if (item.category) {
-            context += `  Category: ${item.category}\n`;
-          }
-          context += '\n';
-        });
-      }
-
-      // Add downloadable resources
-      if (contextSections.downloadable.length > 0) {
-        context += '\n📁 AVAILABLE RESOURCES:\n';
-        contextSections.downloadable.forEach(item => {
-          context += `• ${item.title} (${item.category})\n`;
-          if (item.content) {
-            context += `  ${item.content.substring(0, 150)}${item.content.length > 150 ? '...' : ''}\n`;
-          }
-          context += '\n';
-        });
-      }
-
-      context += '\n--- END KNOWLEDGE CONTEXT ---\n';
-      context += '\nPLEASE PRIORITIZE RECOMMENDING INTERNAL LEARNING PATHS when users ask about learning, training, skill development, or career growth. These are courses specifically designed for our platform users. Reference specific course titles, difficulty levels, and topics covered when making recommendations.\n';
-
-      return context;
-    } catch (error) {
-      console.error('Error building knowledge context:', error);
-      return '';
+    // Build context string
+    if (relevantPersonalFiles.length > 0) {
+      context += '\n\n=== PERSONAL KNOWLEDGE ===\n';
+      relevantPersonalFiles.slice(0, 3).forEach(file => {
+        context += `\n**${file.title}**\n`;
+        if (file.ai_summary) {
+          context += `Summary: ${file.ai_summary}\n`;
+        }
+        if (file.content) {
+          context += `Content: ${file.content.substring(0, 500)}...\n`;
+        }
+        if (file.tags && file.tags.length > 0) {
+          context += `Tags: ${file.tags.join(', ')}\n`;
+        }
+      });
     }
-  };
 
-  const getKnowledgeRecommendations = async (userMessage: string): Promise<KnowledgeSearchResult[]> => {
-    try {
-      return await searchKnowledge(userMessage, 5);
-    } catch (error) {
-      console.error('Error getting knowledge recommendations:', error);
-      return [];
+    if (relevantSystemDocs.length > 0) {
+      context += '\n\n=== SYSTEM KNOWLEDGE ===\n';
+      relevantSystemDocs.slice(0, 3).forEach(doc => {
+        context += `\n**${doc.title}** (${doc.category})\n`;
+        context += `${doc.content.substring(0, 800)}...\n`;
+        if (doc.tags && doc.tags.length > 0) {
+          context += `Tags: ${doc.tags.join(', ')}\n`;
+        }
+      });
     }
+
+    return context;
   };
 
   return {
     buildKnowledgeContext,
-    getKnowledgeRecommendations,
+    personalFilesCount: personalFiles?.length || 0,
+    systemDocsCount: systemDocuments?.length || 0,
+    resourcesCount: resources?.length || 0,
   };
 }
