@@ -63,8 +63,46 @@ export function useKnowledgeContext() {
     return context;
   };
 
+  const getKnowledgeRecommendations = async (userMessage: string) => {
+    const searchTerms = userMessage.toLowerCase().split(' ').filter(term => term.length > 3);
+    
+    // Get relevant personal files
+    const relevantPersonalFiles = personalFiles?.filter(file => 
+      searchTerms.some(term => 
+        file.title.toLowerCase().includes(term) ||
+        file.content?.toLowerCase().includes(term) ||
+        file.tags?.some(tag => tag.toLowerCase().includes(term))
+      )
+    ).slice(0, 3) || [];
+
+    // Get relevant system documents
+    const relevantSystemDocs = systemDocuments?.filter(doc =>
+      searchTerms.some(term =>
+        doc.title.toLowerCase().includes(term) ||
+        doc.content.toLowerCase().includes(term) ||
+        doc.tags?.some(tag => tag.toLowerCase().includes(term))
+      )
+    ).slice(0, 3) || [];
+
+    // Get relevant resources
+    const relevantResources = resources?.filter(resource =>
+      searchTerms.some(term =>
+        resource.title.toLowerCase().includes(term) ||
+        resource.description?.toLowerCase().includes(term) ||
+        resource.tags?.some(tag => tag.toLowerCase().includes(term))
+      )
+    ).slice(0, 2) || [];
+
+    return [
+      ...relevantPersonalFiles.map(file => ({ ...file, type: 'personal' })),
+      ...relevantSystemDocs.map(doc => ({ ...doc, type: 'system' })),
+      ...relevantResources.map(resource => ({ ...resource, type: 'resource' }))
+    ];
+  };
+
   return {
     buildKnowledgeContext,
+    getKnowledgeRecommendations,
     personalFilesCount: personalFiles?.length || 0,
     systemDocsCount: systemDocuments?.length || 0,
     resourcesCount: resources?.length || 0,

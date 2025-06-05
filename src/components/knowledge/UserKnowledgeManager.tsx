@@ -49,10 +49,10 @@ export function UserKnowledgeManager() {
         title: formData.title,
         description: formData.description,
         content: formData.content,
-        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
+        tags: formData.tags,
       });
     } else {
-      await createDocument(documentType, formData, selectedFile, inputMethod);
+      await createDocument('personal', formData, selectedFile, inputMethod);
     }
 
     resetForm();

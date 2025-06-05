@@ -50,10 +50,14 @@ export function useSystemKnowledge() {
 
   const incrementUsage = useMutation({
     mutationFn: async (documentId: string) => {
-      const { error } = await supabase.rpc('update_knowledge_usage_stats', {
-        knowledge_id: documentId,
-        knowledge_type: 'system'
-      });
+      // Update usage count directly in the table since the RPC function doesn't exist
+      const { error } = await supabase
+        .from('system_knowledge_base')
+        .update({ 
+          usage_count: supabase.raw('usage_count + 1'),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId);
 
       if (error) throw error;
     },

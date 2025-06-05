@@ -10,7 +10,7 @@ export interface KnowledgeFormData {
   metadata?: any;
 }
 
-export type DocumentType = 'personal' | 'system' | 'resource';
+export type DocumentType = 'personal' | 'system' | 'template';
 
 export function useUserKnowledgeForm() {
   const [formData, setFormData] = useState<KnowledgeFormData>({

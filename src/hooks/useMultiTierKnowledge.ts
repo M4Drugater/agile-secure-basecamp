@@ -140,10 +140,8 @@ export function useMultiTierKnowledge() {
       if (type === 'system') {
         await incrementSystemUsage(id);
       } else if (type === 'personal') {
-        await supabase.rpc('update_knowledge_usage_stats', {
-          knowledge_id: id,
-          knowledge_type: 'personal'
-        });
+        // For now, just log usage - we can implement a proper tracking system later
+        console.log('Tracking usage for personal knowledge:', id);
       }
     } catch (error) {
       console.error('Error tracking usage:', error);
