@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -140,7 +139,7 @@ serve(async (req) => {
         }
       }
 
-      // Get system knowledge
+      // Get system knowledge from system_knowledge_base table
       const { data: systemKnowledge } = await supabase
         .from('system_knowledge_base')
         .select('*')
@@ -148,21 +147,42 @@ serve(async (req) => {
         .order('priority', { ascending: false })
         .limit(10);
 
-      if (systemKnowledge && systemKnowledge.length > 0) {
+      // Get system knowledge from user_knowledge_files that are marked as system
+      const { data: userSystemKnowledge } = await supabase
+        .from('user_knowledge_files')
+        .select('*')
+        .eq('document_category', 'system')
+        .eq('processing_status', 'completed')
+        .order('updated_at', { ascending: false })
+        .limit(10);
+
+      // Combine and process both types of system knowledge
+      const allSystemKnowledge = [
+        ...(systemKnowledge || []),
+        ...(userSystemKnowledge || []).map(file => ({
+          id: file.id,
+          title: file.title,
+          content: file.content || file.extracted_content || file.ai_summary || file.description || '',
+          category: 'User Contributed',
+          tags: file.tags
+        }))
+      ];
+
+      if (allSystemKnowledge && allSystemKnowledge.length > 0) {
         const searchTerms = message.toLowerCase().split(' ').filter(term => term.length > 3);
-        const relevantSystemDocs = systemKnowledge.filter(doc =>
+        const relevantSystemDocs = allSystemKnowledge.filter(doc =>
           searchTerms.some(term =>
             doc.title.toLowerCase().includes(term) ||
             doc.content.toLowerCase().includes(term) ||
-            doc.category.toLowerCase().includes(term) ||
+            (doc.category && doc.category.toLowerCase().includes(term)) ||
             doc.tags?.some(tag => tag.toLowerCase().includes(term))
           )
         ).slice(0, 3);
 
         if (relevantSystemDocs.length > 0) {
-          knowledgeContext += '\n=== RELEVANT SYSTEM KNOWLEDGE ===\n';
+          knowledgeContext += '\n\n=== RELEVANT SYSTEM KNOWLEDGE ===\n';
           relevantSystemDocs.forEach(doc => {
-            knowledgeContext += `\n**${doc.title}** (${doc.category})\n`;
+            knowledgeContext += `\n**${doc.title}** (${doc.category || 'System Knowledge'})\n`;
             knowledgeContext += `${doc.content.substring(0, 800)}...\n`;
             if (doc.tags?.length) {
               knowledgeContext += `Tags: ${doc.tags.join(', ')}\n`;
@@ -173,7 +193,7 @@ serve(async (req) => {
 
       // Add any additional context passed from the frontend
       if (context) {
-        knowledgeContext += '\n=== ADDITIONAL CONTEXT ===\n';
+        knowledgeContext += '\n\n=== ADDITIONAL CONTEXT ===\n';
         knowledgeContext += context;
       }
 

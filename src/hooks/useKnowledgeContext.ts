@@ -1,4 +1,3 @@
-
 import { useUserKnowledgeFiles } from './useUserKnowledgeFiles';
 import { useSystemKnowledge } from './useSystemKnowledge';
 import { useDownloadableResources } from './useDownloadableResources';
@@ -38,7 +37,8 @@ export function useKnowledgeContext() {
     }
 
     // Search personal knowledge (all files, including uploaded documents)
-    const relevantPersonalFiles = personalFiles?.filter(file => 
+    const personalFilesForSearch = personalFiles?.filter(file => file.document_category === 'personal') || [];
+    const relevantPersonalFiles = personalFilesForSearch.filter(file => 
       searchTerms.some(term => 
         file.title.toLowerCase().includes(term) ||
         file.content?.toLowerCase().includes(term) ||
@@ -48,15 +48,30 @@ export function useKnowledgeContext() {
         file.tags?.some(tag => tag.toLowerCase().includes(term)) ||
         file.ai_key_points?.some(point => point.toLowerCase().includes(term))
       )
-    ) || [];
+    );
 
-    // Search system knowledge
+    // Search system knowledge - including both tables
+    // First, standard system knowledge documents
     const relevantSystemDocs = systemDocuments?.filter(doc =>
       searchTerms.some(term =>
         doc.title.toLowerCase().includes(term) ||
         doc.content.toLowerCase().includes(term) ||
         doc.tags?.some(tag => tag.toLowerCase().includes(term)) ||
-        doc.category.toLowerCase().includes(term)
+        doc.category?.toLowerCase().includes(term)
+      )
+    ) || [];
+    
+    // Also get personal files marked as system
+    const systemCategoryFiles = personalFiles?.filter(file => 
+      file.document_category === 'system' &&
+      searchTerms.some(term => 
+        file.title.toLowerCase().includes(term) ||
+        file.content?.toLowerCase().includes(term) ||
+        file.description?.toLowerCase().includes(term) ||
+        file.extracted_content?.toLowerCase().includes(term) ||
+        file.ai_summary?.toLowerCase().includes(term) ||
+        file.tags?.some(tag => tag.toLowerCase().includes(term)) ||
+        file.ai_key_points?.some(point => point.toLowerCase().includes(term))
       )
     ) || [];
 
@@ -86,15 +101,27 @@ export function useKnowledgeContext() {
       });
     }
 
-    if (relevantSystemDocs.length > 0) {
+    // Combine both types of system knowledge
+    const allSystemKnowledge = [
+      ...relevantSystemDocs,
+      ...systemCategoryFiles.map(file => ({
+        id: file.id,
+        title: file.title,
+        content: file.content || file.extracted_content || file.ai_summary || file.description || '',
+        category: 'User Contributed',
+        tags: file.tags
+      }))
+    ];
+
+    if (allSystemKnowledge.length > 0) {
       context += '\n\n=== SYSTEM KNOWLEDGE BASE ===\n';
-      relevantSystemDocs.slice(0, 3).forEach(doc => {
-        context += `\n**${doc.title}** (${doc.category})\n`;
+      allSystemKnowledge.slice(0, 5).forEach(doc => {
+        context += `\n**${doc.title}** (${doc.category || 'System Knowledge'})\n`;
         context += `${doc.content.substring(0, 1000)}...\n`;
         if (doc.tags && doc.tags.length > 0) {
           context += `Tags: ${doc.tags.join(', ')}\n`;
         }
-        context += `Priority: ${doc.priority}/10 | Usage: ${doc.usage_count}\n`;
+        context += `Priority: ${doc.priority || 5}/10 | Usage: ${doc.usage_count || 0}\n`;
       });
     }
 
@@ -161,8 +188,11 @@ export function useKnowledgeContext() {
   return {
     buildKnowledgeContext,
     getKnowledgeRecommendations,
-    personalFilesCount: personalFiles?.length || 0,
-    systemDocsCount: systemDocuments?.length || 0,
+    personalFilesCount: personalFiles?.filter(f => f.document_category === 'personal').length || 0,
+    systemDocsCount: (
+      (systemDocuments?.length || 0) + 
+      (personalFiles?.filter(f => f.document_category === 'system').length || 0)
+    ),
     resourcesCount: resources?.length || 0,
     uploadedFilesCount: personalFiles?.filter(file => file.file_url).length || 0,
     processedFilesCount: personalFiles?.filter(file => file.is_ai_processed).length || 0,

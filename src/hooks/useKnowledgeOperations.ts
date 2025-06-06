@@ -4,6 +4,7 @@ import { useUserKnowledgeFiles } from './useUserKnowledgeFiles';
 import { useEnhancedFileUpload } from './useEnhancedFileUpload';
 import { useAdvancedFileProcessing } from './useAdvancedFileProcessing';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { DocumentType } from './useUserKnowledgeForm';
 
 export interface CreateDocumentData {
@@ -14,7 +15,7 @@ export interface CreateDocumentData {
   metadata?: any;
 }
 
-export function useKnowledgeOperations() {
+export function useKnowledge Operations() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { createFile, updateFile, deleteFile } = useUserKnowledgeFiles();
@@ -31,11 +32,38 @@ export function useKnowledgeOperations() {
     try {
       if (inputMethod === 'upload' && file) {
         // Use the unified upload and processing flow
-        console.log('Creating document via file upload:', { fileName: file.name, inputData: data });
+        console.log('Creating document via file upload:', { fileName: file.name, inputData: data, type });
         
         const uploadResult = await uploadAndProcessFile(file);
         if (!uploadResult) {
           throw new Error('File upload failed');
+        }
+
+        // If this is system knowledge, we need to also update the type
+        if (type === 'system') {
+          const { data: fileData, error: fileError } = await supabase
+            .from('user_knowledge_files')
+            .select('id')
+            .eq('file_url', uploadResult.file_url)
+            .single();
+          
+          if (fileError || !fileData) {
+            console.error('Error finding uploaded file record:', fileError);
+            throw new Error('Failed to find uploaded file record');
+          }
+
+          // Update the document category to 'system'
+          const { error: updateError } = await supabase
+            .from('user_knowledge_files')
+            .update({
+              document_category: 'system',
+            })
+            .eq('id', fileData.id);
+
+          if (updateError) {
+            console.error('Error updating document category:', updateError);
+            throw new Error('Failed to update document category');
+          }
         }
 
         toast({
@@ -44,7 +72,7 @@ export function useKnowledgeOperations() {
         });
       } else {
         // Manual entry - create directly in database
-        console.log('Creating document via manual entry:', data);
+        console.log('Creating document via manual entry:', { data, type });
         
         const fileData = {
           title: data.title,
@@ -69,7 +97,7 @@ export function useKnowledgeOperations() {
       console.error('Error creating document:', error);
       toast({
         title: "Error",
-        description: "Failed to create document. Please try again.",
+        description: `Failed to create ${type} document. Please try again.`,
         variant: "destructive",
       });
       throw error;
