@@ -15,7 +15,7 @@ export interface CreateDocumentData {
   metadata?: any;
 }
 
-export function useKnowledge Operations() {
+export function useKnowledgeOperations() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const { createFile, updateFile, deleteFile } = useUserKnowledgeFiles();
