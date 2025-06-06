@@ -25,12 +25,12 @@ export function useKnowledgeContext() {
     if (profile) {
       context += '=== USER PROFILE ===\n';
       if (profile.full_name) context += `Name: ${profile.full_name}\n`;
-      if (profile.role) context += `Role: ${profile.role}\n`;
+      if (profile.current_position) context += `Role: ${profile.current_position}\n`;
       if (profile.company) context += `Company: ${profile.company}\n`;
       if (profile.industry) context += `Industry: ${profile.industry}\n`;
       if (profile.experience_level) context += `Experience: ${profile.experience_level}\n`;
       if (profile.career_goals) context += `Goals: ${profile.career_goals}\n`;
-      if (profile.learning_preferences) context += `Learning Style: ${profile.learning_preferences}\n`;
+      if (profile.learning_style) context += `Learning Style: ${profile.learning_style}\n`;
       context += '\n';
     }
 
@@ -58,7 +58,6 @@ export function useKnowledgeContext() {
       documents.forEach(doc => {
         if (doc.content) {
           context += `Title: ${doc.title}\n`;
-          if (doc.description) context += `Description: ${doc.description}\n`;
           context += `Content: ${doc.content.substring(0, 500)}...\n`;
           if (doc.tags && doc.tags.length > 0) context += `Tags: ${doc.tags.join(', ')}\n`;
           context += '\n';
@@ -124,6 +123,10 @@ export function useKnowledgeContext() {
       .slice(0, limit);
   };
 
+  const getKnowledgeRecommendations = async (message: string): Promise<KnowledgeDocument[]> => {
+    return getRelevantDocuments(message, 3);
+  };
+
   const getDocumentsByCategory = (category: 'personal' | 'system'): KnowledgeDocument[] => {
     if (category === 'personal' && files) {
       return files
@@ -161,6 +164,7 @@ export function useKnowledgeContext() {
   return {
     buildContext,
     getRelevantDocuments,
+    getKnowledgeRecommendations,
     getDocumentsByCategory,
     getTotalDocumentCount,
     profile,
