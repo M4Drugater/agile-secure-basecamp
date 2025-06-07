@@ -5,13 +5,14 @@ import { SystemKnowledgeSearch } from './SystemKnowledgeSearch';
 import { SystemKnowledgeCard } from './SystemKnowledgeCard';
 import { SystemKnowledgeDetailDialog } from './SystemKnowledgeDetailDialog';
 import { SystemKnowledgeEmptyState } from './SystemKnowledgeEmptyState';
+import { SystemKnowledgeDocument } from '@/hooks/useSystemKnowledge';
 
 export function SystemKnowledgeViewer() {
   const { documents, isLoading, refetch } = useSystemKnowledge();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [viewingDocument, setViewingDocument] = useState<any>(null);
+  const [viewingDocument, setViewingDocument] = useState<SystemKnowledgeDocument | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Extract unique categories from documents
@@ -83,7 +84,7 @@ export function SystemKnowledgeViewer() {
 
       <SystemKnowledgeDetailDialog
         document={viewingDocument}
-        open={viewingDocument !== null}
+        open={Boolean(viewingDocument)}
         onOpenChange={() => setViewingDocument(null)}
       />
     </div>
