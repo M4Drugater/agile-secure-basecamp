@@ -24,79 +24,76 @@ const corsHeaders = {
 };
 
 interface ContentRequest {
-  type: 'resume' | 'cover-letter' | 'linkedin-post' | 'email' | 'presentation' | 'article';
+  type: string;
   topic: string;
-  style?: 'professional' | 'casual' | 'formal' | 'creative';
-  length?: 'short' | 'medium' | 'long';
+  style?: string;
+  length?: string;
   additionalInstructions?: string;
   targetAudience?: string;
+  businessContext?: string;
   model?: 'gpt-4o-mini' | 'gpt-4o';
+  tone?: string;
+  industry?: string;
+  purpose?: string;
 }
 
-// Token counting utility
 function countTokens(text: string): number {
   const words = text.split(/\s+/).length;
   const chars = text.length;
   return Math.ceil(Math.max(words * 1.33, chars / 4));
 }
 
-function buildContentPrompt(request: ContentRequest): string {
-  const { type, topic, style = 'professional', length = 'medium', additionalInstructions, targetAudience } = request;
+function buildEnhancedSystemPrompt(): string {
+  return `You are CLIPOGINO, an elite executive content strategist and communication specialist with deep expertise in C-suite level business communication. 
 
-  const basePrompts = {
-    'resume': `Create a professional resume section or content for: ${topic}`,
-    'cover-letter': `Write a compelling cover letter for: ${topic}`,
-    'linkedin-post': `Create an engaging LinkedIn post about: ${topic}`,
-    'email': `Draft a professional email regarding: ${topic}`,
-    'presentation': `Create presentation content/outline for: ${topic}`,
-    'article': `Write an informative article about: ${topic}`
+Your mission is to create premium, sophisticated content that demonstrates:
+- Strategic business thinking and executive presence
+- Deep industry knowledge and market intelligence
+- Data-driven insights and analytical rigor
+- Professional credibility and thought leadership
+- Actionable recommendations with clear business impact
+
+You understand that your content will be consumed by senior executives, board members, investors, and other sophisticated business audiences who expect:
+- Concise, impactful communication that respects their time
+- Strategic insights that drive business value
+- Professional tone with appropriate gravitas
+- Evidence-based recommendations and conclusions
+- Clear articulation of business implications and next steps
+
+Your content should position the author as a strategic business leader with executive presence and deep expertise in their field.
+
+Always maintain the highest standards of business communication, ensuring content is board-room ready and suitable for C-suite consumption.`;
+}
+
+function getMaxTokensForLength(length: string): number {
+  const tokenLimits = {
+    'executive-summary': 512,
+    'short': 1024,
+    'medium': 2048,
+    'comprehensive': 4096,
   };
+  return tokenLimits[length as keyof typeof tokenLimits] || 2048;
+}
 
-  const lengthGuidelines = {
-    'short': 'Keep it concise and to the point (100-300 words)',
-    'medium': 'Provide a balanced level of detail (300-600 words)',
-    'long': 'Include comprehensive detail and examples (600-1200 words)'
+function getTemperatureForStyle(style: string): number {
+  const temperatureMap = {
+    'executive': 0.3,
+    'strategic': 0.4,
+    'analytical': 0.2,
+    'professional': 0.3,
+    'authoritative': 0.2,
+    'visionary': 0.7,
+    'consultative': 0.5,
   };
-
-  const styleGuidelines = {
-    'professional': 'Use professional, business-appropriate language',
-    'casual': 'Use a conversational, approachable tone',
-    'formal': 'Use formal, academic-style language',
-    'creative': 'Use creative, engaging language with personality'
-  };
-
-  let prompt = `You are an expert content creator specializing in professional development and career advancement.
-
-Task: ${basePrompts[type]}
-
-Style: ${styleGuidelines[style]}
-Length: ${lengthGuidelines[length]}
-${targetAudience ? `Target Audience: ${targetAudience}` : ''}
-
-Requirements:
-- Make it highly relevant and actionable
-- Use industry best practices
-- Include specific examples when appropriate
-- Ensure professional quality and accuracy
-- Focus on value and impact
-
-${additionalInstructions ? `Additional Instructions: ${additionalInstructions}` : ''}
-
-Topic: ${topic}
-
-Please create the content now:`;
-
-  return prompt;
+  return temperatureMap[style as keyof typeof temperatureMap] || 0.4;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get user from auth header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Authorization required' }), {
@@ -105,7 +102,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify user authentication
     const jwt = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
     
@@ -125,23 +121,28 @@ serve(async (req) => {
       });
     }
 
-    const model = contentRequest.model || 'gpt-4o-mini';
-    const prompt = buildContentPrompt(contentRequest);
+    const model = contentRequest.model || 'gpt-4o';
+    const systemPrompt = buildEnhancedSystemPrompt();
+    const userPrompt = contentRequest.topic; // This now contains the enhanced prompt from the frontend
+    
+    const maxTokens = getMaxTokensForLength(contentRequest.length || 'medium');
+    const temperature = getTemperatureForStyle(contentRequest.style || 'executive');
 
-    console.log('Generate Content Request:', {
+    console.log('Enhanced Content Generation Request:', {
       userId: user.id,
       type: contentRequest.type,
       model,
-      topicLength: contentRequest.topic.length,
-      estimatedTokens: countTokens(prompt)
+      maxTokens,
+      temperature,
+      targetAudience: contentRequest.targetAudience,
+      estimatedTokens: countTokens(systemPrompt + userPrompt)
     });
 
-    // Execute with cost control
     const result = await costMonitor.withCostControl(
       user.id,
       model,
       'generate-content',
-      prompt,
+      systemPrompt + userPrompt,
       async () => {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -152,10 +153,11 @@ serve(async (req) => {
           body: JSON.stringify({
             model,
             messages: [
-              { role: 'user', content: prompt }
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
             ],
-            max_tokens: contentRequest.length === 'long' ? 2048 : contentRequest.length === 'medium' ? 1024 : 512,
-            temperature: contentRequest.style === 'creative' ? 0.9 : 0.7,
+            max_tokens: maxTokens,
+            temperature,
             top_p: 0.9,
             frequency_penalty: 0.1,
             presence_penalty: 0.1,
@@ -190,22 +192,28 @@ serve(async (req) => {
               style: contentRequest.style,
               length: contentRequest.length,
               targetAudience: contentRequest.targetAudience,
+              businessContext: contentRequest.businessContext,
+              tone: contentRequest.tone,
+              industry: contentRequest.industry,
+              purpose: contentRequest.purpose,
               generatedAt: new Date().toISOString(),
+              enhanced: true,
             }
           },
-          inputTokens: usage?.prompt_tokens || countTokens(prompt),
+          inputTokens: usage?.prompt_tokens || countTokens(systemPrompt + userPrompt),
           outputTokens: usage?.completion_tokens || countTokens(generatedContent || ''),
         };
       }
     );
 
-    console.log('Generate Content Success:', {
+    console.log('Enhanced Content Generation Success:', {
       userId: user.id,
       type: contentRequest.type,
       model,
       inputTokens: result.usage.promptTokens,
       outputTokens: result.usage.completionTokens,
-      contentLength: result.content.length
+      contentLength: result.content.length,
+      enhanced: true
     });
 
     return new Response(JSON.stringify(result), {
@@ -213,9 +221,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in generate-content function:', error);
+    console.error('Error in enhanced generate-content function:', error);
     
-    // Return appropriate error response based on error type
     if (error instanceof Error && error.message.includes('Cost limit exceeded')) {
       return new Response(JSON.stringify({ 
         error: 'Usage limit reached',
@@ -229,7 +236,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      message: 'An error occurred while generating content. Please try again.'
+      message: 'An error occurred while generating enhanced content. Please try again.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
