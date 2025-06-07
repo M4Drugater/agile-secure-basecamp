@@ -39,6 +39,9 @@ export function SystemKnowledgeViewer() {
 
   const hasFilters = searchTerm || selectedCategory !== 'all' || selectedType !== 'all';
 
+  // Ensure the dialog open state is properly typed as boolean
+  const isDialogOpen: boolean = viewingDocument !== null;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -84,7 +87,7 @@ export function SystemKnowledgeViewer() {
 
       <SystemKnowledgeDetailDialog
         document={viewingDocument}
-        open={viewingDocument !== null}
+        open={isDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
             setViewingDocument(null);
