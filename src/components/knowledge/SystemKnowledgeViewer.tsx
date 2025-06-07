@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useSystemKnowledge } from '@/hooks/useSystemKnowledge';
-import { Search, Eye, BookOpen, Star, TrendingUp, RefreshCw } from 'lucide-react';
+import { SystemKnowledgeUploadDialog } from './SystemKnowledgeUploadDialog';
+import { Search, Eye, BookOpen, Star, TrendingUp, RefreshCw, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function SystemKnowledgeViewer() {
@@ -33,6 +33,10 @@ export function SystemKnowledgeViewer() {
     setRefreshing(true);
     await refetch();
     setTimeout(() => setRefreshing(false), 500);
+  };
+
+  const handleUploadComplete = () => {
+    refetch();
   };
 
   const filteredDocuments = documents?.filter(doc => {
@@ -63,51 +67,57 @@ export function SystemKnowledgeViewer() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar frameworks, metodologías, mejores prácticas..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar frameworks, metodologías, mejores prácticas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Todas las categorías" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las categorías</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Todos los tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los tipos</SelectItem>
+              {knowledgeTypes.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Todas las categorías" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las categorías</SelectItem>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Todos los tipos" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            {knowledgeTypes.map(type => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className={refreshing ? 'animate-spin' : ''}
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+        
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={refreshing ? 'animate-spin' : ''}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <SystemKnowledgeUploadDialog onUploadComplete={handleUploadComplete} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -186,12 +196,13 @@ export function SystemKnowledgeViewer() {
           <CardContent>
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No se encontró conocimiento</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               {searchTerm || selectedCategory !== 'all' || selectedType !== 'all'
                 ? 'Intenta ajustar tu búsqueda o criterios de filtro'
                 : 'El conocimiento del sistema aparecerá aquí cuando esté disponible'
               }
             </p>
+            <SystemKnowledgeUploadDialog onUploadComplete={handleUploadComplete} />
           </CardContent>
         </Card>
       )}
