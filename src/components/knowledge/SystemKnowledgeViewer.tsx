@@ -84,8 +84,12 @@ export function SystemKnowledgeViewer() {
 
       <SystemKnowledgeDetailDialog
         document={viewingDocument}
-        open={Boolean(viewingDocument)}
-        onOpenChange={() => setViewingDocument(null)}
+        open={viewingDocument !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewingDocument(null);
+          }
+        }}
       />
     </div>
   );
