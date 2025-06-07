@@ -83,7 +83,7 @@ export function SystemKnowledgeViewer() {
 
       <SystemKnowledgeDetailDialog
         document={viewingDocument}
-        open={!!viewingDocument}
+        open={viewingDocument !== null}
         onOpenChange={() => setViewingDocument(null)}
       />
     </div>
