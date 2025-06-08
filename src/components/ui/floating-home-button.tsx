@@ -11,10 +11,7 @@ export function FloatingHomeButton() {
   const location = useLocation();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Don't show on dashboard/home page
-  if (location.pathname === '/' || location.pathname === '/dashboard') return null;
-
-  // Handle scroll to top functionality
+  // Handle scroll to top functionality - ALWAYS call this hook
   React.useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
@@ -23,6 +20,9 @@ export function FloatingHomeButton() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Don't show on dashboard/home page - moved AFTER all hooks
+  if (location.pathname === '/' || location.pathname === '/dashboard') return null;
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
