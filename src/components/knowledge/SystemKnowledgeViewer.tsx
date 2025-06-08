@@ -37,7 +37,7 @@ export function SystemKnowledgeViewer() {
     return matchesSearch && matchesCategory && matchesType;
   }) || [];
 
-  const hasFilters = searchTerm || selectedCategory !== 'all' || selectedType !== 'all';
+  const hasFilters = searchTerm !== '' || selectedCategory !== 'all' || selectedType !== 'all';
 
   if (isLoading) {
     return (

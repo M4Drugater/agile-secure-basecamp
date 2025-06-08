@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { DashboardMetrics } from './dashboard/DashboardMetrics';
 import { SystemHealth } from './dashboard/SystemHealth';
@@ -9,6 +10,9 @@ import { QuickActions } from './dashboard/QuickActions';
 import { PhaseProgress } from './dashboard/PhaseProgress';
 
 export function AdminDashboard() {
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'dashboard';
+
   const { data: userStats } = useQuery({
     queryKey: ['admin-user-stats'],
     queryFn: async () => {
