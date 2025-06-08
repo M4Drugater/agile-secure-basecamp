@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { FloatingHomeButton } from "@/components/ui/floating-home-button";
+import { EnhancedFloatingButtons } from "@/components/ui/enhanced-floating-buttons";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -50,7 +50,7 @@ function AppContent() {
         {/* Catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <FloatingHomeButton />
+      <EnhancedFloatingButtons />
     </>
   );
 }

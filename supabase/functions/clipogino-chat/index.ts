@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { KnowledgeContextBuilder } from './knowledge-context-builder.ts';
+import { EnhancedKnowledgeContextBuilder } from './knowledge-context-builder.ts';
 import { buildSystemPrompt, buildMessages, ChatMessage } from './prompt-system.ts';
 import { UsageLogger } from './usage-logger.ts';
 
@@ -50,19 +50,23 @@ serve(async (req) => {
       });
     }
 
-    console.log('CLIPOGINO Chat Request:', { userId: user.id, message: message.substring(0, 100) });
+    console.log('Enhanced CLIPOGINO Chat Request:', { 
+      userId: user.id, 
+      message: message.substring(0, 100),
+      model: model 
+    });
 
-    // Build comprehensive knowledge context
-    const contextBuilder = new KnowledgeContextBuilder();
-    let knowledgeContext = await contextBuilder.buildContext(message, user.id);
+    // Build comprehensive enhanced knowledge context
+    const contextBuilder = new EnhancedKnowledgeContextBuilder();
+    let knowledgeContext = await contextBuilder.buildEnhancedContext(message, user.id);
 
     // Add any additional context passed from the frontend
     if (context) {
-      knowledgeContext += '\n\n=== ADDITIONAL CONTEXT ===\n';
+      knowledgeContext += '\n\n=== ADDITIONAL FRONTEND CONTEXT ===\n';
       knowledgeContext += context;
     }
 
-    // Build the system prompt with comprehensive context
+    // Build the enhanced system prompt with comprehensive context
     const systemPrompt = buildSystemPrompt(knowledgeContext);
 
     // Prepare messages for OpenAI
@@ -78,7 +82,7 @@ serve(async (req) => {
       });
     }
 
-    // Call OpenAI API
+    // Call OpenAI API with enhanced prompting
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -88,7 +92,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: model,
         messages: messages,
-        max_tokens: 1500,
+        max_tokens: model === 'gpt-4o' ? 2000 : 1500,
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.1,
@@ -112,12 +116,17 @@ serve(async (req) => {
       await usageLogger.logUsage(user.id, model, usage);
     }
 
-    console.log('CLIPOGINO Response generated:', { 
+    console.log('Enhanced CLIPOGINO Response generated:', { 
       userId: user.id, 
       replyLength: reply.length,
       contextLength: knowledgeContext.length,
       hasPersonalFiles: knowledgeContext.includes('PERSONAL KNOWLEDGE'),
-      hasSystemKnowledge: knowledgeContext.includes('SYSTEM KNOWLEDGE')
+      hasSystemKnowledge: knowledgeContext.includes('SYSTEM KNOWLEDGE'),
+      hasContentContext: knowledgeContext.includes('CONTENT CREATION'),
+      hasLearningContext: knowledgeContext.includes('LEARNING PROGRESS'),
+      hasActivityContext: knowledgeContext.includes('RECENT ACTIVITY'),
+      hasConversationHistory: knowledgeContext.includes('CONVERSATION HISTORY'),
+      model: model
     });
 
     return new Response(JSON.stringify({ 
@@ -133,7 +142,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in clipogino-chat function:', error);
+    console.error('Error in enhanced clipogino-chat function:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
       response: 'Lo siento, encontré un error al procesar tu solicitud. Por favor intenta de nuevo más tarde.',

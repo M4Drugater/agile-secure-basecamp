@@ -16,10 +16,10 @@ export interface UserProfile {
   communication_style?: string;
 }
 
-export class KnowledgeContextBuilder {
+export class EnhancedKnowledgeContextBuilder {
   private supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  async buildContext(message: string, userId: string): Promise<string> {
+  async buildEnhancedContext(message: string, userId: string): Promise<string> {
     let knowledgeContext = '';
 
     try {
@@ -41,8 +41,32 @@ export class KnowledgeContextBuilder {
         knowledgeContext += systemContext;
       }
 
+      // Get user's created content
+      const contentContext = await this.getContentCreationContext(userId);
+      if (contentContext) {
+        knowledgeContext += contentContext;
+      }
+
+      // Get learning progress
+      const learningContext = await this.getLearningProgressContext(userId);
+      if (learningContext) {
+        knowledgeContext += learningContext;
+      }
+
+      // Get recent activity
+      const activityContext = await this.getRecentActivityContext(userId);
+      if (activityContext) {
+        knowledgeContext += activityContext;
+      }
+
+      // Get conversation history
+      const conversationContext = await this.getConversationHistoryContext(userId);
+      if (conversationContext) {
+        knowledgeContext += conversationContext;
+      }
+
     } catch (contextError) {
-      console.error('Error building knowledge context:', contextError);
+      console.error('Error building enhanced knowledge context:', contextError);
     }
 
     return knowledgeContext;
@@ -102,7 +126,6 @@ export class KnowledgeContextBuilder {
     ).slice(0, 5);
 
     if (relevantFiles.length === 0) {
-      // Include recent uploads even if not directly relevant
       const recentUploads = personalFiles
         .filter(file => file.file_url && file.is_ai_processed)
         .slice(0, 2);
@@ -144,7 +167,6 @@ export class KnowledgeContextBuilder {
   }
 
   private async getSystemKnowledgeContext(message: string): Promise<string> {
-    // Get system knowledge from system_knowledge_base table
     const { data: systemKnowledge } = await this.supabase
       .from('system_knowledge_base')
       .select('*')
@@ -152,7 +174,6 @@ export class KnowledgeContextBuilder {
       .order('priority', { ascending: false })
       .limit(10);
 
-    // Get system knowledge from user_knowledge_files that are marked as system
     const { data: userSystemKnowledge } = await this.supabase
       .from('user_knowledge_files')
       .select('*')
@@ -161,7 +182,6 @@ export class KnowledgeContextBuilder {
       .order('updated_at', { ascending: false })
       .limit(10);
 
-    // Combine and process both types of system knowledge
     const allSystemKnowledge = [
       ...(systemKnowledge || []),
       ...(userSystemKnowledge || []).map(file => ({
@@ -193,6 +213,95 @@ export class KnowledgeContextBuilder {
       context += `${doc.content.substring(0, 800)}...\n`;
       if (doc.tags?.length) {
         context += `Tags: ${doc.tags.join(', ')}\n`;
+      }
+    });
+
+    return context;
+  }
+
+  private async getContentCreationContext(userId: string): Promise<string> {
+    const { data: contentItems } = await this.supabase
+      .from('content_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!contentItems || contentItems.length === 0) return '';
+
+    let context = '\n\n=== RECENT CONTENT CREATION ===\n';
+    contentItems.forEach(item => {
+      context += `• ${item.title} (${item.content_type}) - ${new Date(item.created_at).toLocaleDateString()}\n`;
+      context += `  Status: ${item.status || 'Unknown'}\n`;
+      if (item.tags?.length) {
+        context += `  Topics: ${item.tags.join(', ')}\n`;
+      }
+      if (item.content) {
+        context += `  Preview: ${item.content.substring(0, 200)}...\n`;
+      }
+    });
+
+    return context;
+  }
+
+  private async getLearningProgressContext(userId: string): Promise<string> {
+    const { data: learningProgress } = await this.supabase
+      .from('user_learning_progress')
+      .select('*')
+      .eq('user_id', userId)
+      .order('last_accessed', { ascending: false })
+      .limit(3);
+
+    if (!learningProgress || learningProgress.length === 0) return '';
+
+    let context = '\n\n=== LEARNING PROGRESS ===\n';
+    learningProgress.forEach(progress => {
+      context += `• Learning Path: Progress ${progress.progress_percentage || 0}%\n`;
+      context += `  Status: ${progress.status || 'In progress'}\n`;
+      context += `  Last Activity: ${progress.last_accessed ? new Date(progress.last_accessed).toLocaleDateString() : 'Never'}\n`;
+    });
+
+    return context;
+  }
+
+  private async getRecentActivityContext(userId: string): Promise<string> {
+    const { data: recentActivity } = await this.supabase
+      .from('audit_logs')
+      .select('action, resource_type, details, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!recentActivity || recentActivity.length === 0) return '';
+
+    let context = '\n\n=== RECENT ACTIVITY (Last 10 actions) ===\n';
+    recentActivity.forEach(activity => {
+      context += `• ${activity.action} on ${activity.resource_type} - ${new Date(activity.created_at).toLocaleDateString()}\n`;
+      if (activity.details) {
+        const details = typeof activity.details === 'string' ? activity.details : JSON.stringify(activity.details);
+        context += `  Details: ${details.substring(0, 100)}${details.length > 100 ? '...' : ''}\n`;
+      }
+    });
+
+    return context;
+  }
+
+  private async getConversationHistoryContext(userId: string): Promise<string> {
+    const { data: recentConversations } = await this.supabase
+      .from('chat_messages')
+      .select('content, role, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!recentConversations || recentConversations.length === 0) return '';
+
+    let context = '\n\n=== RECENT CONVERSATION HISTORY ===\n';
+    recentConversations.slice(0, 6).forEach(msg => {
+      if (msg.role === 'user') {
+        context += `User: ${msg.content.substring(0, 150)}${msg.content.length > 150 ? '...' : ''}\n`;
+      } else if (msg.role === 'assistant') {
+        context += `CLIPOGINO: ${msg.content.substring(0, 150)}${msg.content.length > 150 ? '...' : ''}\n`;
       }
     });
 
