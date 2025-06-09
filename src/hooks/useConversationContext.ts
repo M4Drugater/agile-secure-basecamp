@@ -25,7 +25,7 @@ export function useConversationContext() {
         .limit(20);
       
       if (error) throw error;
-      return data || [];
+      return (data as ChatMessageResult[]) || [];
     },
     enabled: !!user?.id,
   });
