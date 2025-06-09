@@ -23,13 +23,13 @@ export function useEnhancedContextBuilder() {
   const { files } = useUserKnowledgeFiles();
   const { documents } = useSystemKnowledge();
   
-  // Fix the data access for content items
+  // Fix the data access for content items with explicit type
   const contentQuery = useContentItems();
-  const contentItems = contentQuery.contentItems || [];
+  const contentItems = (contentQuery as any)?.contentItems || [];
   
-  // Fix the data access for learning data
+  // Fix the data access for learning data with explicit type
   const learningQuery = useLearningProgress();
-  const learningData = learningQuery.userProgress || [];
+  const learningData = (learningQuery as any)?.userProgress || [];
 
   // Get recent user activity
   const { data: recentActivity } = useQuery({
@@ -127,7 +127,7 @@ Communication Style: ${profile.communication_style || 'adaptive'}
 === CREATED CONTENT (${contentItems.length} items) ===
 Recent content created by user:
 `;
-      contentItems.slice(0, 5).forEach(item => {
+      contentItems.slice(0, 5).forEach((item: any) => {
         context.content += `• ${item.title} (${item.content_type}) - ${item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown date'}
   Status: ${item.status || 'Unknown'}
   Topics: ${item.tags?.join(', ') || 'No tags'}
@@ -135,15 +135,15 @@ Recent content created by user:
       });
     }
 
-    // Build learning progress context
+    // Build learning progress context - fix property name
     if (learningData && learningData.length > 0) {
       context.learning = `
 === LEARNING PROGRESS ===
 `;
-      learningData.forEach(progress => {
+      learningData.forEach((progress: any) => {
         context.learning += `• Learning Path: Progress ${progress.progress_percentage || 0}%
   Status: ${progress.status || 'In progress'}
-  Last Activity: ${progress.last_accessed ? new Date(progress.last_accessed).toLocaleDateString() : 'Never'}
+  Last Activity: ${progress.last_activity_at ? new Date(progress.last_activity_at).toLocaleDateString() : 'Never'}
 `;
       });
     }
