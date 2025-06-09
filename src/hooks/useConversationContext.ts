@@ -12,20 +12,24 @@ interface ChatMessageResult {
 export function useConversationContext() {
   const { user } = useAuth();
 
-  const { data: recentConversations } = useQuery<ChatMessageResult[]>({
+  const { data: recentConversations } = useQuery({
     queryKey: ['recent-conversations', user?.id],
-    queryFn: async (): Promise<ChatMessageResult[]> => {
+    queryFn: async () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
         .from('chat_messages')
         .select('content, role, created_at')
-        .eq('user_id', user.id)
+        .eq('conversation_id', user.id) // Fixed: using conversation_id instead of user_id
         .order('created_at', { ascending: false })
         .limit(20);
       
-      if (error) throw error;
-      return (data as ChatMessageResult[]) || [];
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        return [];
+      }
+      
+      return data as ChatMessageResult[];
     },
     enabled: !!user?.id,
   });

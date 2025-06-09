@@ -4,12 +4,6 @@ import { useKnowledgeRetrieval } from './useKnowledgeRetrieval';
 export function useKnowledgeContextBuilder() {
   const { retrieveRelevantKnowledge } = useKnowledgeRetrieval();
 
-  const buildKnowledgeContext = (): string => {
-    // For now, return empty context as we don't have direct access to knowledge items
-    // This would typically be populated by the knowledge retrieval system
-    return '';
-  };
-
   const buildKnowledgeContextString = async (userMessage: string): Promise<string> => {
     try {
       const relevantKnowledge = await retrieveRelevantKnowledge(userMessage);
@@ -34,8 +28,7 @@ export function useKnowledgeContextBuilder() {
   };
 
   return {
-    buildKnowledgeContext,
     buildKnowledgeContextString,
-    knowledgeCount: 0, // This would be populated by actual knowledge retrieval
+    knowledgeCount: 0, // This could be enhanced to return actual count
   };
 }

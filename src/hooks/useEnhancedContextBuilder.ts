@@ -16,15 +16,17 @@ interface EnhancedContext {
 
 export function useEnhancedContextBuilder() {
   const { buildProfileContext, hasProfile } = useProfileContextBuilder();
-  const { buildKnowledgeContext, knowledgeCount } = useKnowledgeContextBuilder();
+  const { buildKnowledgeContextString, knowledgeCount } = useKnowledgeContextBuilder();
   const { buildContentContext, buildLearningContext, contentCount, learningCount } = useContentLearningContext();
   const { buildActivityContext, activityCount } = useUserActivityContext();
   const { buildConversationContext, conversationCount } = useConversationContext();
 
-  const buildEnhancedContext = (userMessage: string): EnhancedContext => {
+  const buildEnhancedContext = async (userMessage: string): Promise<EnhancedContext> => {
+    const knowledgeContext = await buildKnowledgeContextString(userMessage);
+    
     return {
       profile: buildProfileContext(),
-      knowledge: buildKnowledgeContext(),
+      knowledge: knowledgeContext,
       content: buildContentContext(),
       learning: buildLearningContext(),
       activity: buildActivityContext(),
@@ -32,8 +34,8 @@ export function useEnhancedContextBuilder() {
     };
   };
 
-  const buildFullContextString = (userMessage: string): string => {
-    const contexts = buildEnhancedContext(userMessage);
+  const buildFullContextString = async (userMessage: string): Promise<string> => {
+    const contexts = await buildEnhancedContext(userMessage);
     
     let fullContext = '';
     if (contexts.profile) fullContext += contexts.profile;
