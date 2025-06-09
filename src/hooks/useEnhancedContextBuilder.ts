@@ -17,6 +17,20 @@ interface EnhancedContext {
   conversations: string;
 }
 
+// Define explicit types for the query results
+interface AuditLogResult {
+  action: string;
+  resource_type: string;
+  details: any;
+  created_at: string;
+}
+
+interface ChatMessageResult {
+  content: string;
+  role: string;
+  created_at: string;
+}
+
 export function useEnhancedContextBuilder() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
@@ -31,10 +45,10 @@ export function useEnhancedContextBuilder() {
   const learningQuery = useLearningProgress();
   const learningData = (learningQuery as any)?.userProgress || [];
 
-  // Get recent user activity
-  const { data: recentActivity } = useQuery({
+  // Get recent user activity with explicit typing
+  const { data: recentActivity } = useQuery<AuditLogResult[]>({
     queryKey: ['recent-activity', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<AuditLogResult[]> => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
@@ -45,15 +59,15 @@ export function useEnhancedContextBuilder() {
         .limit(10);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user?.id,
   });
 
-  // Get recent conversation history
-  const { data: recentConversations } = useQuery({
+  // Get recent conversation history with explicit typing
+  const { data: recentConversations } = useQuery<ChatMessageResult[]>({
     queryKey: ['recent-conversations', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ChatMessageResult[]> => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
@@ -64,7 +78,7 @@ export function useEnhancedContextBuilder() {
         .limit(20);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!user?.id,
   });
