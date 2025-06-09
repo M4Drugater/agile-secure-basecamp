@@ -65,7 +65,7 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       const conversationId = await saveMessageToHistory(userMessage, currentConversationId);
       
       // Build enhanced full context (profile + knowledge + content + learning + activity + conversations + file attachments)
-      let fullContext = buildFullContextString(input);
+      let fullContext = await buildFullContextString(input);
       
       // Add file context if available
       if (attachedFiles && attachedFiles.length > 0) {
