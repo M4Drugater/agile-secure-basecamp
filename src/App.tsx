@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { EnhancedFloatingButtons } from "@/components/ui/enhanced-floating-buttons";
+import { UnifiedFloatingNav } from "@/components/ui/unified-floating-nav";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -50,7 +50,7 @@ function AppContent() {
         {/* Catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <EnhancedFloatingButtons />
+      <UnifiedFloatingNav variant="full" />
     </>
   );
 }

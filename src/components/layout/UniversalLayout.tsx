@@ -1,13 +1,16 @@
+
 import React from 'react';
 import { EnhancedTopNav } from './EnhancedTopNav';
+import { cn } from '@/lib/utils';
 
 interface UniversalLayoutProps {
   children: React.ReactNode;
+  className?: string;
 }
 
-export function UniversalLayout({ children }: UniversalLayoutProps) {
+export function UniversalLayout({ children, className }: UniversalLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className={cn("min-h-screen bg-background", className)}>
       <EnhancedTopNav />
       <main className="flex-1">
         {children}

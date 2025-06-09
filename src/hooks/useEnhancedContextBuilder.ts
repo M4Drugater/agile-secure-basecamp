@@ -22,8 +22,14 @@ export function useEnhancedContextBuilder() {
   const { profile } = useUserProfile();
   const { files } = useUserKnowledgeFiles();
   const { documents } = useSystemKnowledge();
-  const { data: contentItems } = useContentItems();
-  const { data: learningData } = useLearningProgress();
+  
+  // Fix the data access for content items
+  const contentQuery = useContentItems();
+  const contentItems = contentQuery.contentItems || [];
+  
+  // Fix the data access for learning data
+  const learningQuery = useLearningProgress();
+  const learningData = learningQuery.userProgress || [];
 
   // Get recent user activity
   const { data: recentActivity } = useQuery({
@@ -191,14 +197,7 @@ Recent content created by user:
     return fullContext;
   };
 
-  const getContextSummary = (): { 
-    hasProfile: boolean;
-    knowledgeCount: number;
-    contentCount: number;
-    learningCount: number;
-    activityCount: number;
-    conversationCount: number;
-  } => {
+  const getContextSummary = () => {
     return {
       hasProfile: !!profile,
       knowledgeCount: (files?.length || 0) + (documents?.length || 0),
