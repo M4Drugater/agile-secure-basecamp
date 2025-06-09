@@ -1,32 +1,23 @@
 
 import React from 'react';
 import { AppHeader } from './AppHeader';
-import { AppNavigation } from './AppNavigation';
 import { DashboardCards } from './DashboardCards';
 import { UniversalLayout } from './UniversalLayout';
+import { EnhancedTopNav } from './EnhancedTopNav';
 
 export function AppLayout() {
   return (
-    <UniversalLayout className="bg-gradient-to-br from-background via-muted/30 to-background">
-      <AppHeader />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+      <EnhancedTopNav />
       
-      <div className="flex">
-        {/* Enhanced Sidebar */}
-        <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border shadow-soft">
-          <div className="p-6">
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold text-sidebar-foreground mb-2">Navigation</h2>
-              <div className="h-px bg-gradient-to-r from-sidebar-border to-transparent"></div>
-            </div>
-            <AppNavigation />
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 container-padding section-padding animate-fade-in">
+      <div className="pt-16">
+        <AppHeader />
+        
+        {/* Main Content - Full Width */}
+        <main className="container mx-auto px-4 py-6 lg:px-8 animate-fade-in">
           <DashboardCards />
         </main>
       </div>
-    </UniversalLayout>
+    </div>
   );
 }
