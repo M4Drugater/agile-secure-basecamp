@@ -1,16 +1,14 @@
 
 import React from 'react';
 import { ContentGenerator } from '@/components/content/ContentGenerator';
-import { UniversalLayout } from '@/components/layout/UniversalLayout';
+import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
 
 export default function ContentGeneratorPage() {
   return (
-    <UniversalLayout>
-      <div className="min-h-screen bg-background pt-16">
-        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-          <ContentGenerator />
-        </div>
+    <UnifiedAppLayout>
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+        <ContentGenerator />
       </div>
-    </UniversalLayout>
+    </UnifiedAppLayout>
   );
 }

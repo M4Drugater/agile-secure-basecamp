@@ -11,6 +11,7 @@ import { AuditLogs } from '@/components/admin/AuditLogs';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Users, BarChart3, Calendar, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
 
 export default function Admin() {
   const { profile } = useAuth();
@@ -22,48 +23,42 @@ export default function Admin() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access the admin panel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <UnifiedAppLayout>
+        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+          <Card className="w-full max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+              <CardDescription>
+                You don't have permission to access the admin panel.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => navigate('/dashboard')} className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </UnifiedAppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+    <UnifiedAppLayout>
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+        {/* Admin Header */}
+        <div className="mb-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
-              <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+              <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
               <Badge variant="outline" className="text-xs">
                 Phase 1B - Admin Management
               </Badge>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Welcome, {profile?.full_name || 'Admin'}
               </div>
               <Badge variant={isSuperAdmin ? "default" : "secondary"}>
@@ -72,10 +67,8 @@ export default function Admin() {
             </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto p-6 lg:p-8 max-w-7xl">
+        {/* Admin Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center">
@@ -112,7 +105,7 @@ export default function Admin() {
             <AuditLogs />
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </UnifiedAppLayout>
   );
 }

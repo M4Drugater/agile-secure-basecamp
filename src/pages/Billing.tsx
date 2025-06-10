@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UniversalLayout } from '@/components/layout/UniversalLayout';
+import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
 import { SubscriptionPlans } from '@/components/subscription/SubscriptionPlans';
 import { SubscriptionManagement } from '@/components/subscription/SubscriptionManagement';
 import { CreditUsageCard } from '@/components/subscription/CreditUsageCard';
@@ -14,8 +14,8 @@ export default function Billing() {
   const isAdmin = user?.user_metadata?.role === 'admin' || user?.user_metadata?.role === 'super_admin';
 
   return (
-    <UniversalLayout>
-      <div className="container mx-auto px-6 py-8">
+    <UnifiedAppLayout>
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Billing & Subscription</h1>
           <p className="text-muted-foreground mt-2">
@@ -93,6 +93,6 @@ export default function Billing() {
           </Tabs>
         </div>
       </div>
-    </UniversalLayout>
+    </UnifiedAppLayout>
   );
 }
