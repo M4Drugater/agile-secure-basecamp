@@ -2,19 +2,16 @@
 import React from 'react';
 import { EnhancedClipoginoChat } from '@/components/chat/EnhancedClipoginoChat';
 import { ChatErrorBoundary } from '@/components/chat/ChatErrorBoundary';
-import { EnhancedTopNav } from '@/components/layout/EnhancedTopNav';
+import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
 
 export default function Chat() {
   return (
-    <div className="min-h-screen bg-background">
-      <EnhancedTopNav />
-      <div className="pt-16">
-        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-          <ChatErrorBoundary>
-            <EnhancedClipoginoChat />
-          </ChatErrorBoundary>
-        </div>
+    <UnifiedAppLayout>
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+        <ChatErrorBoundary>
+          <EnhancedClipoginoChat />
+        </ChatErrorBoundary>
       </div>
-    </div>
+    </UnifiedAppLayout>
   );
 }

@@ -76,8 +76,15 @@ export function EnhancedClipoginoChat() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <ChatHeader />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">AI Chat with CLIPOGINO</h1>
+          <p className="text-muted-foreground">Enhanced AI assistant for professional development</p>
+        </div>
+      </div>
+
       <UsageWarning />
 
       {/* Enhanced Context Status */}

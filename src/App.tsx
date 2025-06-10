@@ -32,7 +32,7 @@ function AppContent() {
         {/* Public routes */}
         <Route path="/landing" element={<Landing />} />
         
-        {/* Protected routes */}
+        {/* Protected routes - all using unified layout */}
         <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -50,6 +50,8 @@ function AppContent() {
         {/* Catch all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      
+      {/* Unified floating navigation for mobile/tablet */}
       <UnifiedFloatingNav variant="full" />
     </>
   );
