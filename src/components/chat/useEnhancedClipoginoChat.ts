@@ -26,7 +26,7 @@ export function useEnhancedClipoginoChat() {
     selectConversation: selectConv,
   } = useConversationState();
 
-  const sendMessage = async (input: string, attachedFiles?: AttachedFile[]) => {
+  const sendMessage = async (input: string, attachedFiles?: AttachedFile[], currentPage?: string) => {
     if ((!input.trim() && (!attachedFiles || attachedFiles.length === 0)) || !user || isLoading) return;
 
     // Create enhanced message content including file information
@@ -37,17 +37,18 @@ export function useEnhancedClipoginoChat() {
         .filter(af => af.uploadData)
         .map(af => {
           const analysis = af.uploadData.ai_analysis;
-          return `[Attached File: ${af.uploadData.original_file_name}]
+          return `[Elite File Analysis: ${af.uploadData.original_file_name}]
 File Type: ${af.uploadData.file_type}
-${analysis?.summary ? `Summary: ${analysis.summary}` : ''}
-${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.substring(0, 1000)}${af.uploadData.extracted_content.length > 1000 ? '...' : ''}` : ''}`;
+Strategic Summary: ${analysis?.summary || 'Processing...'}
+Key Business Insights: ${analysis?.key_points?.join('; ') || 'Analyzing...'}
+Content Extract: ${af.uploadData.extracted_content?.substring(0, 1000)}${af.uploadData.extracted_content?.length > 1000 ? '...' : ''}`;
         })
         .join('\n\n');
 
       if (fileDescriptions) {
         messageContent = messageContent 
-          ? `${messageContent}\n\n--- Attached Files ---\n${fileDescriptions}`
-          : `--- Attached Files ---\n${fileDescriptions}`;
+          ? `${messageContent}\n\n--- Strategic File Analysis ---\n${fileDescriptions}`
+          : `--- Strategic File Analysis ---\n${fileDescriptions}`;
       }
     }
 
@@ -64,7 +65,7 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       // Save user message to database and get conversation ID
       const conversationId = await saveMessageToHistory(userMessage, currentConversationId);
       
-      // Build enhanced full context (profile + knowledge + content + learning + activity + conversations + file attachments)
+      // Build elite enhanced context
       let fullContext = await buildFullContextString(input);
       
       // Add file context if available
@@ -73,25 +74,35 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
           .filter(af => af.uploadData)
           .map(af => {
             const analysis = af.uploadData.ai_analysis;
-            return `FILE ATTACHMENT CONTEXT:
-- File: ${af.uploadData.original_file_name}
-- Type: ${af.uploadData.file_type}
-- Summary: ${analysis?.summary || 'No summary available'}
-- Key Points: ${analysis?.key_points?.join(', ') || 'None identified'}
-- Content: ${af.uploadData.extracted_content?.substring(0, 2000) || 'Content not extracted'}`;
+            return `ELITE FILE INTELLIGENCE:
+- Strategic Document: ${af.uploadData.original_file_name}
+- Business Classification: ${af.uploadData.file_type}
+- Executive Summary: ${analysis?.summary || 'Elite analysis in progress'}
+- Strategic Insights: ${analysis?.key_points?.join('; ') || 'Developing strategic insights'}
+- Business Content: ${af.uploadData.extracted_content?.substring(0, 2000) || 'Content extraction in progress'}`;
           })
           .join('\n\n');
 
         if (fileContext) {
-          fullContext += `\n\n=== FILE ATTACHMENTS ===\n${fileContext}`;
+          fullContext += `\n\n=== ELITE FILE INTELLIGENCE ===\n${fileContext}`;
         }
       }
       
-      // Update knowledge recommendations for the sidebar
+      // Update knowledge recommendations
       await updateKnowledgeRecommendations(input);
       
-      // Send message to AI with enhanced context and get response
-      const assistantMessage = await sendMessageToAI(userMessage, fullContext, messages);
+      // Send enhanced message to Elite AI with page context
+      const enhancedUserMessage = {
+        ...userMessage,
+        content: messageContent,
+        metadata: {
+          currentPage: currentPage || '/chat',
+          contextQuality: 'elite',
+          attachedFilesCount: attachedFiles?.length || 0
+        }
+      };
+      
+      const assistantMessage = await sendMessageToAI(enhancedUserMessage, fullContext, messages);
       
       // Add assistant message to UI
       addMessage(assistantMessage);
@@ -100,8 +111,14 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       await saveMessageToHistory(assistantMessage, conversationId);
 
     } catch (error) {
-      console.error('Error in enhanced sendMessage:', error);
-      // Error handling is done in sendMessageToAI
+      console.error('Error in elite enhanced sendMessage:', error);
+      // Add error message with elite tone
+      const errorMessage: ChatMessage = {
+        role: 'assistant',
+        content: 'I apologize for the interruption. Let me recalibrate my systems to provide you with the strategic guidance you need. Please try your request again, and I will deliver the executive-level insights you expect.',
+        timestamp: new Date(),
+      };
+      addMessage(errorMessage);
     }
   };
 

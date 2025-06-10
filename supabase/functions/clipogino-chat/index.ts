@@ -2,8 +2,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { EnhancedKnowledgeContextBuilder } from './knowledge-context-builder.ts';
-import { buildSystemPrompt, buildMessages, ChatMessage } from './prompt-system.ts';
+import { ElitePromptSystem } from './elite-prompt-system.ts';
+import { EnhancedContextBuilder } from './enhanced-context-builder.ts';
+import { buildMessages, ChatMessage } from './prompt-system.ts';
 import { UsageLogger } from './usage-logger.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -21,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, conversationHistory, model = 'gpt-4o-mini' } = await req.json();
+    const { message, context, conversationHistory, model = 'gpt-4o-mini', currentPage = '/chat' } = await req.json();
     
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -50,39 +51,40 @@ serve(async (req) => {
       });
     }
 
-    console.log('Enhanced CLIPOGINO Chat Request:', { 
+    console.log('Elite CLIPOGINO Request:', { 
       userId: user.id, 
       message: message.substring(0, 100),
-      model: model 
+      model,
+      currentPage
     });
 
-    // Build comprehensive enhanced knowledge context
-    const contextBuilder = new EnhancedKnowledgeContextBuilder();
-    let knowledgeContext = await contextBuilder.buildEnhancedContext(message, user.id);
+    // Build enhanced user context
+    const contextBuilder = new EnhancedContextBuilder();
+    const userContext = await contextBuilder.buildUserContext(user.id, currentPage);
 
-    // Add any additional context passed from the frontend
-    if (context) {
-      knowledgeContext += '\n\n=== ADDITIONAL FRONTEND CONTEXT ===\n';
-      knowledgeContext += context;
-    }
+    // Generate elite system prompt
+    const elitePromptSystem = new ElitePromptSystem();
+    const eliteSystemPrompt = elitePromptSystem.buildEliteSystemPrompt(userContext);
 
-    // Build the enhanced system prompt with comprehensive context
-    const systemPrompt = buildSystemPrompt(knowledgeContext);
-
-    // Prepare messages for OpenAI
-    const messages = buildMessages(systemPrompt, message, conversationHistory);
+    // Prepare enhanced messages with elite prompt
+    const messages: ChatMessage[] = [
+      { role: 'system', content: eliteSystemPrompt },
+      ...(conversationHistory || []).slice(-8), // Include recent conversation history
+      { role: 'user', content: message }
+    ];
 
     if (!openAIApiKey) {
       return new Response(JSON.stringify({ 
-        response: "Lo siento, pero el servicio de IA no está disponible actualmente. Por favor contacta a soporte para configurar la clave de OpenAI API.",
+        response: "I apologize, but my AI services are temporarily unavailable. Please contact support for assistance with configuring the OpenAI API.",
         usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
-        model: model
+        model: model,
+        contextQuality: 'elite'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Call OpenAI API with enhanced prompting
+    // Call OpenAI API with elite configuration
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,11 +94,11 @@ serve(async (req) => {
       body: JSON.stringify({
         model: model,
         messages: messages,
-        max_tokens: model === 'gpt-4o' ? 2000 : 1500,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.1,
-        presence_penalty: 0.1,
+        max_tokens: model === 'gpt-4o' ? 2500 : 2000,
+        temperature: 0.8, // Higher creativity for strategic thinking
+        top_p: 0.95, // Enhanced response quality
+        frequency_penalty: 0.2, // Reduce repetition
+        presence_penalty: 0.3, // Encourage diverse thinking
       }),
     });
 
@@ -109,23 +111,21 @@ serve(async (req) => {
     const data = await response.json();
     const reply = data.choices[0].message.content;
 
-    // Log usage if needed
+    // Log elite usage metrics
     const usage = data.usage;
     if (usage) {
       const usageLogger = new UsageLogger();
       await usageLogger.logUsage(user.id, model, usage);
     }
 
-    console.log('Enhanced CLIPOGINO Response generated:', { 
+    console.log('Elite CLIPOGINO Response:', { 
       userId: user.id, 
       replyLength: reply.length,
-      contextLength: knowledgeContext.length,
-      hasPersonalFiles: knowledgeContext.includes('PERSONAL KNOWLEDGE'),
-      hasSystemKnowledge: knowledgeContext.includes('SYSTEM KNOWLEDGE'),
-      hasContentContext: knowledgeContext.includes('CONTENT CREATION'),
-      hasLearningContext: knowledgeContext.includes('LEARNING PROGRESS'),
-      hasActivityContext: knowledgeContext.includes('RECENT ACTIVITY'),
-      hasConversationHistory: knowledgeContext.includes('CONVERSATION HISTORY'),
+      contextQuality: 'elite',
+      personalFilesCount: userContext.knowledge.personal_files_count,
+      systemKnowledgeCount: userContext.knowledge.system_knowledge_count,
+      experienceLevel: userContext.profile.experience_level,
+      currentPage: userContext.session.current_page,
       model: model
     });
 
@@ -136,18 +136,25 @@ serve(async (req) => {
         promptTokens: usage?.prompt_tokens || 0,
         completionTokens: usage?.completion_tokens || 0
       },
-      model: model
+      model: model,
+      contextQuality: 'elite',
+      userContext: {
+        experienceLevel: userContext.profile.experience_level,
+        knowledgeAssets: userContext.knowledge.personal_files_count,
+        industryFocus: userContext.profile.industry
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in enhanced clipogino-chat function:', error);
+    console.error('Error in elite clipogino-chat function:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
-      response: 'Lo siento, encontré un error al procesar tu solicitud. Por favor intenta de nuevo más tarde.',
+      response: 'I encountered an error while processing your request. Please try again, and I will provide you with the strategic guidance you need.',
       usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
-      model: 'error'
+      model: 'error',
+      contextQuality: 'error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
