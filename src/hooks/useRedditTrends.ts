@@ -30,9 +30,9 @@ export interface TrendsMetadata {
 
 interface RedditTrendsParams {
   subreddits: string[];
-  timeframe?: 'hour' | 'day' | 'week' | 'month' | 'year';
-  limit?: number;
-  sortBy?: 'hot' | 'new' | 'top' | 'rising';
+  timeframe: 'hour' | 'day' | 'week' | 'month' | 'year';
+  limit: number;
+  sortBy: 'hot' | 'new' | 'top' | 'rising';
 }
 
 export function useRedditTrends(enabled: boolean = true) {
@@ -58,7 +58,7 @@ export function useRedditTrends(enabled: boolean = true) {
     },
     enabled: enabled && !!user && params.subreddits.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
   });
 
   const updateParams = (newParams: Partial<RedditTrendsParams>) => {

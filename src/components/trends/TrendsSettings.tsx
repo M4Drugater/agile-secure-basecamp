@@ -7,13 +7,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import { X, Settings } from 'lucide-react';
 
+interface TrendsSettingsParams {
+  timeframe: string;
+  sortBy: string;
+  limit: number;
+}
+
 interface TrendsSettingsProps {
-  params: {
-    timeframe: string;
-    sortBy: string;
-    limit: number;
-  };
-  onUpdateParams: (params: any) => void;
+  params: TrendsSettingsParams;
+  onUpdateParams: (params: Partial<TrendsSettingsParams>) => void;
   onClose: () => void;
 }
 

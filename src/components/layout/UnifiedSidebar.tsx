@@ -17,7 +17,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 
-const mainNavItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  adminOnly?: boolean;
+}
+
+const mainNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: '/dashboard',
@@ -36,7 +44,7 @@ const mainNavItems = [
   },
 ];
 
-const contentNavItems = [
+const contentNavItems: NavItem[] = [
   {
     title: 'Generador',
     href: '/content/generator',
@@ -54,7 +62,7 @@ const contentNavItems = [
   },
 ];
 
-const learningNavItems = [
+const learningNavItems: NavItem[] = [
   {
     title: 'Base de Conocimiento',
     href: '/knowledge',
@@ -67,7 +75,7 @@ const learningNavItems = [
   },
 ];
 
-const settingsNavItems = [
+const settingsNavItems: NavItem[] = [
   {
     title: 'Facturación',
     href: '/billing',
@@ -97,7 +105,7 @@ export function UnifiedSidebar({ isCollapsed = false }: UnifiedSidebarProps) {
     className = "" 
   }: { 
     title: string; 
-    items: typeof mainNavItems; 
+    items: NavItem[]; 
     className?: string;
   }) => (
     <div className={cn("space-y-1", className)}>

@@ -10,13 +10,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Filter, ChevronDown } from 'lucide-react';
 
+interface TrendsFiltersParams {
+  timeframe: string;
+  sortBy: string;
+  limit: number;
+}
+
 interface TrendsFiltersProps {
-  params: {
-    timeframe: string;
-    sortBy: string;
-    limit: number;
-  };
-  onUpdateParams: (params: any) => void;
+  params: TrendsFiltersParams;
+  onUpdateParams: (params: Partial<TrendsFiltersParams>) => void;
 }
 
 export function TrendsFilters({ params, onUpdateParams }: TrendsFiltersProps) {
