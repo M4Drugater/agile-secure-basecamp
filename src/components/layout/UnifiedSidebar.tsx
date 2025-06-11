@@ -12,7 +12,8 @@ import {
   Settings, 
   CreditCard,
   TrendingUp,
-  Brain
+  Brain,
+  Search
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,6 +41,12 @@ const mainNavItems: NavItem[] = [
     title: 'Tendencias',
     href: '/trends',
     icon: TrendingUp,
+    badge: 'Nuevo',
+  },
+  {
+    title: 'Research',
+    href: '/research',
+    icon: Search,
     badge: 'Nuevo',
   },
 ];

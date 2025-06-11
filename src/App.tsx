@@ -17,6 +17,7 @@ import LearningManagement from "./pages/LearningManagement";
 import Admin from "./pages/Admin";
 import Billing from "./pages/Billing";
 import TrendsDiscovery from "./pages/TrendsDiscovery";
+import ResearchWorkbench from "./pages/ResearchWorkbench";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,11 @@ function App() {
               <Route path="/trends" element={
                 <ProtectedRoute>
                   <TrendsDiscovery />
+                </ProtectedRoute>
+              } />
+              <Route path="/research" element={
+                <ProtectedRoute>
+                  <ResearchWorkbench />
                 </ProtectedRoute>
               } />
               <Route path="/admin" element={
