@@ -61,38 +61,29 @@ export function usePerplexityResearch() {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      // Use raw SQL query since the table is new and not in types yet
       const { data, error } = await supabase
-        .rpc('get_research_sessions', { user_uuid: user.id });
+        .from('research_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (error) {
-        // Fallback to direct table query if RPC doesn't exist
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('research_sessions' as any)
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
-
-        if (fallbackError) throw fallbackError;
-        
-        // Transform the data to match our interface
-        return (fallbackData || []).map((item: any) => ({
-          id: item.id,
-          query: item.query,
-          content: item.content,
-          sources: item.sources || [],
-          insights: item.insights || [],
-          keywords: item.keywords || [],
-          researchType: item.research_type,
-          industry: item.industry,
-          creditsUsed: item.credits_used,
-          modelUsed: item.model_used,
-          createdAt: item.created_at,
-        })) as ResearchSession[];
-      }
-
-      return data as ResearchSession[];
+      if (error) throw error;
+      
+      // Transform the data to match our interface
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        query: item.query,
+        content: item.content,
+        sources: item.sources || [],
+        insights: item.insights || [],
+        keywords: item.keywords || [],
+        researchType: item.research_type,
+        industry: item.industry,
+        creditsUsed: item.credits_used,
+        modelUsed: item.model_used,
+        createdAt: item.created_at,
+      })) as ResearchSession[];
     },
     enabled: !!user,
   });
@@ -102,7 +93,7 @@ export function usePerplexityResearch() {
       if (!user) throw new Error('User not authenticated');
 
       const { error } = await supabase
-        .from('research_sessions' as any)
+        .from('research_sessions')
         .delete()
         .eq('id', sessionId)
         .eq('user_id', user.id);
