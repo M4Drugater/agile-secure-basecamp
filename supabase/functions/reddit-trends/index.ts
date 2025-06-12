@@ -5,6 +5,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabaseUrl = 'https://jzvpgqtobzqbavsillqp.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const redditClientId = Deno.env.get('REDDIT_CLIENT_ID')!;
+const redditClientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,9 +25,9 @@ interface RedditPost {
   url: string;
   permalink: string;
   upvote_ratio: number;
+  domain?: string;
   thumbnail?: string;
   post_hint?: string;
-  domain?: string;
   is_video: boolean;
   over_18: boolean;
 }
@@ -36,6 +38,42 @@ interface RedditResponse {
       data: RedditPost;
     }>;
   };
+}
+
+// Global variable to store access token and expiry
+let accessToken: string | null = null;
+let tokenExpiry: number = 0;
+
+async function getRedditAccessToken(): Promise<string> {
+  // Check if we have a valid token
+  if (accessToken && Date.now() < tokenExpiry) {
+    return accessToken;
+  }
+
+  console.log('Getting new Reddit access token...');
+  
+  const credentials = btoa(`${redditClientId}:${redditClientSecret}`);
+  
+  const response = await fetch('https://www.reddit.com/api/v1/access_token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'LAIGENT:1.0 (by /u/laigent_app)',
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get Reddit access token: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // Refresh 1 minute early
+  
+  console.log('Successfully obtained Reddit access token');
+  return accessToken;
 }
 
 serve(async (req) => {
@@ -81,33 +119,22 @@ serve(async (req) => {
       limit
     });
 
+    // Get Reddit access token
+    const token = await getRedditAccessToken();
     const allTrends: (RedditPost & { trend_score: number; engagement_rate: number })[] = [];
 
-    // Fetch trends from each subreddit with better error handling and User-Agent rotation
+    // Fetch trends from each subreddit using authenticated Reddit API
     for (const subreddit of subreddits) {
       try {
-        const redditUrl = `https://www.reddit.com/r/${subreddit}/${sortBy}.json?limit=${limit}&t=${timeframe}`;
+        const redditUrl = `https://oauth.reddit.com/r/${subreddit}/${sortBy}?limit=${limit}&t=${timeframe}`;
         
-        // Use a more realistic User-Agent that mimics a browser
-        const userAgents = [
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        ];
-        
-        const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
-        
-        console.log(`Fetching from r/${subreddit} with URL: ${redditUrl}`);
+        console.log(`Fetching from r/${subreddit} with authenticated API`);
         
         const response = await fetch(redditUrl, {
           headers: {
-            'User-Agent': randomUserAgent,
+            'Authorization': `Bearer ${token}`,
+            'User-Agent': 'LAIGENT:1.0 (by /u/laigent_app)',
             'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
           },
         });
 
@@ -116,30 +143,30 @@ serve(async (req) => {
         if (!response.ok) {
           console.error(`Failed to fetch from r/${subreddit}: ${response.status} ${response.statusText}`);
           
-          // Try alternative approach with old.reddit.com
-          if (response.status === 403 || response.status === 429) {
-            console.log(`Trying old.reddit.com for r/${subreddit}`);
-            const oldRedditUrl = `https://old.reddit.com/r/${subreddit}/${sortBy}.json?limit=${limit}&t=${timeframe}`;
+          // Try to get a new token if we get a 401
+          if (response.status === 401) {
+            console.log('Token expired, getting new token...');
+            accessToken = null; // Force token refresh
+            const newToken = await getRedditAccessToken();
             
-            const oldResponse = await fetch(oldRedditUrl, {
+            const retryResponse = await fetch(redditUrl, {
               headers: {
-                'User-Agent': randomUserAgent,
+                'Authorization': `Bearer ${newToken}`,
+                'User-Agent': 'LAIGENT:1.0 (by /u/laigent_app)',
                 'Accept': 'application/json',
               },
             });
             
-            if (oldResponse.ok) {
-              const oldData: RedditResponse = await oldResponse.json();
-              const posts = oldData.data.children.map(child => ({
+            if (retryResponse.ok) {
+              const retryData: RedditResponse = await retryResponse.json();
+              const posts = retryData.data.children.map(child => ({
                 ...child.data,
                 subreddit,
                 trend_score: calculateTrendScore(child.data),
                 engagement_rate: child.data.num_comments / Math.max(child.data.score, 1)
               }));
               allTrends.push(...posts);
-              console.log(`Successfully fetched ${posts.length} posts from old.reddit.com r/${subreddit}`);
-            } else {
-              console.error(`Old Reddit also failed for r/${subreddit}: ${oldResponse.status}`);
+              console.log(`Successfully fetched ${posts.length} posts from r/${subreddit} after retry`);
             }
           }
           continue;
@@ -162,8 +189,8 @@ serve(async (req) => {
         allTrends.push(...posts);
         console.log(`Successfully fetched ${posts.length} posts from r/${subreddit}`);
         
-        // Add a small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Add a small delay to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
         
       } catch (error) {
         console.error(`Error fetching r/${subreddit}:`, error);
@@ -186,8 +213,8 @@ serve(async (req) => {
       .map(post => ({
         ...post,
         // Ensure we have working Reddit links
-        permalink: post.permalink.startsWith('/') ? `https://reddit.com${post.permalink}` : post.permalink,
-        url: post.url.startsWith('/') ? `https://reddit.com${post.url}` : post.url
+        permalink: post.permalink.startsWith('/') ? post.permalink : post.permalink,
+        url: post.url
       }));
 
     // Log usage
@@ -203,7 +230,8 @@ serve(async (req) => {
             results_count: sortedTrends.length,
             timeframe,
             sortBy,
-            success_rate: `${(sortedTrends.length / (subreddits.length * limit) * 100).toFixed(1)}%`
+            success_rate: `${(sortedTrends.length / (subreddits.length * limit) * 100).toFixed(1)}%`,
+            api_method: 'authenticated_reddit_api'
           }
         });
     } catch (logError) {
@@ -225,7 +253,8 @@ serve(async (req) => {
         sortBy,
         total_results: sortedTrends.length,
         generated_at: new Date().toISOString(),
-        success_rate: `${(sortedTrends.length / (subreddits.length * limit) * 100).toFixed(1)}%`
+        success_rate: `${(sortedTrends.length / (subreddits.length * limit) * 100).toFixed(1)}%`,
+        api_method: 'authenticated_reddit_api'
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

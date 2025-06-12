@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +17,7 @@ export interface RedditTrend {
   upvote_ratio: number;
   trend_score: number;
   engagement_rate: number;
+  domain?: string;
 }
 
 export interface TrendsMetadata {
