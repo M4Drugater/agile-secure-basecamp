@@ -1278,6 +1278,54 @@ export type Database = {
         }
         Relationships: []
       }
+      research_sessions: {
+        Row: {
+          content: string
+          created_at: string
+          credits_used: number
+          id: string
+          industry: string | null
+          insights: string[] | null
+          keywords: string[] | null
+          model_used: string
+          query: string
+          research_type: string
+          sources: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          industry?: string | null
+          insights?: string[] | null
+          keywords?: string[] | null
+          model_used: string
+          query: string
+          research_type: string
+          sources?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          industry?: string | null
+          insights?: string[] | null
+          keywords?: string[] | null
+          model_used?: string
+          query?: string
+          research_type?: string
+          sources?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string

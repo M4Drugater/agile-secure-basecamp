@@ -32,7 +32,8 @@ export function ResearchWorkbench() {
     currentSession, 
     researchSessions, 
     estimateCredits,
-    error 
+    error,
+    setCurrentSession
   } = usePerplexityResearch();
 
   const [query, setQuery] = useState('');
@@ -264,7 +265,7 @@ export function ResearchWorkbench() {
                 <ResearchSessionCard 
                   key={session.id} 
                   session={session}
-                  onSelect={(session) => setCurrentSession(session)}
+                  onSelect={setCurrentSession}
                 />
               ))
             ) : (
