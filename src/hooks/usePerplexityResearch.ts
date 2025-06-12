@@ -9,6 +9,9 @@ export interface ResearchSource {
   url: string;
   snippet: string;
   relevance: number;
+  domain: string;
+  publishDate?: string;
+  author?: string;
 }
 
 export interface ResearchSession {
@@ -30,7 +33,6 @@ export interface ResearchRequest {
   researchType: 'quick' | 'comprehensive' | 'industry-specific';
   model?: 'llama-3.1-sonar-small-128k-online' | 'llama-3.1-sonar-large-128k-online';
   industry?: string;
-  depth?: 'surface' | 'detailed' | 'expert';
   sessionId?: string;
 }
 

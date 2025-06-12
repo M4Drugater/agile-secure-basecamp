@@ -9,7 +9,10 @@ import {
   ExternalLink, 
   TrendingUp,
   Clock,
-  User
+  User,
+  Link as LinkIcon,
+  Globe,
+  Copy
 } from 'lucide-react';
 import { RedditTrend } from '@/hooks/useRedditTrends';
 
@@ -37,6 +40,17 @@ export function RedditTrendCard({ trend }: RedditTrendCardProps) {
     return Math.round(score).toString();
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`https://reddit.com${trend.permalink}`);
+  };
+
+  const handleCopyContent = () => {
+    const content = `${trend.title}\n\n${trend.selftext}\n\nFuente: https://reddit.com${trend.permalink}`;
+    navigator.clipboard.writeText(content);
+  };
+
+  const isExternalLink = trend.url && !trend.url.includes('reddit.com');
+
   return (
     <Card className="h-full hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -53,16 +67,27 @@ export function RedditTrendCard({ trend }: RedditTrendCardProps) {
             </div>
           </div>
           
-          <Button variant="ghost" size="sm" asChild className="h-6 w-6 p-0">
-            <a 
-              href={`https://reddit.com${trend.permalink}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Ver en Reddit"
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleCopyLink}
+              className="h-6 w-6 p-0"
+              title="Copiar enlace de Reddit"
             >
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </Button>
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" asChild className="h-6 w-6 p-0">
+              <a 
+                href={`https://reddit.com${trend.permalink}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Ver en Reddit"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </Button>
+          </div>
         </div>
         
         <h3 className="font-semibold text-sm leading-tight line-clamp-2">
@@ -71,12 +96,59 @@ export function RedditTrendCard({ trend }: RedditTrendCardProps) {
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="space-y-3">
+        <div className="space-y-4">
           {trend.selftext && (
-            <p className="text-xs text-muted-foreground line-clamp-3">
-              {trend.selftext.substring(0, 150)}
-              {trend.selftext.length > 150 && '...'}
-            </p>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground line-clamp-3">
+                {trend.selftext.substring(0, 150)}
+                {trend.selftext.length > 150 && '...'}
+              </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleCopyContent}
+                className="h-6 text-xs"
+              >
+                <Copy className="h-3 w-3 mr-1" />
+                Copiar contenido
+              </Button>
+            </div>
+          )}
+
+          {/* External Link Section */}
+          {isExternalLink && (
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-1">
+                <Globe className="h-3 w-3 text-blue-600" />
+                <span className="text-xs font-medium text-blue-800">Enlace Externo</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-blue-600 font-mono truncate">
+                  {trend.domain || new URL(trend.url).hostname}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => navigator.clipboard.writeText(trend.url)}
+                    className="h-5 w-5 p-0"
+                  >
+                    <Copy className="h-2 w-2" />
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild className="h-5 px-2">
+                    <a 
+                      href={trend.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1"
+                    >
+                      <LinkIcon className="h-2 w-2" />
+                      <span className="text-xs">Abrir</span>
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
           
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -107,7 +179,7 @@ export function RedditTrendCard({ trend }: RedditTrendCardProps) {
             </div>
           </div>
           
-          <div className="pt-2">
+          <div className="pt-1">
             <div className="text-xs text-muted-foreground">
               Engagement: {trend.engagement_rate.toFixed(2)}
             </div>
