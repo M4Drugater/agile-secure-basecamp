@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -44,12 +43,12 @@ interface RedditResponse {
 const cache = new Map<string, { data: any; timestamp: number }>();
 const tokenCache = new Map<string, { token: string; expires: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const TOKEN_CACHE_DURATION = 3600 * 1000; // 1 hour (Reddit tokens expire in 1 hour)
+const TOKEN_CACHE_DURATION = 3600 * 1000; // 1 hour
 
 // Rate limiting
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 100; // requests per minute
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT = 100;
+const RATE_LIMIT_WINDOW = 60 * 1000;
 
 async function getRedditAccessToken(): Promise<string> {
   const cacheKey = 'reddit_access_token';
@@ -62,6 +61,13 @@ async function getRedditAccessToken(): Promise<string> {
 
   try {
     console.log('Requesting new Reddit access token...');
+    console.log(`Client ID exists: ${!!redditClientId}`);
+    console.log(`Client Secret exists: ${!!redditClientSecret}`);
+    console.log(`Client ID length: ${redditClientId?.length || 0}`);
+    
+    if (!redditClientId || !redditClientSecret) {
+      throw new Error('Reddit credentials not found in environment variables');
+    }
     
     const credentials = btoa(`${redditClientId}:${redditClientSecret}`);
     const response = await fetch('https://www.reddit.com/api/v1/access_token', {
@@ -74,20 +80,30 @@ async function getRedditAccessToken(): Promise<string> {
       body: 'grant_type=client_credentials',
     });
 
+    console.log(`Reddit OAuth response status: ${response.status}`);
+    const responseText = await response.text();
+    console.log(`Reddit OAuth response: ${responseText.substring(0, 200)}`);
+
     if (!response.ok) {
-      throw new Error(`Reddit OAuth failed: ${response.status} ${response.statusText}`);
+      throw new Error(`Reddit OAuth failed: ${response.status} ${response.statusText} - ${responseText}`);
     }
 
-    const tokenData = await response.json();
+    let tokenData;
+    try {
+      tokenData = JSON.parse(responseText);
+    } catch (parseError) {
+      throw new Error(`Failed to parse Reddit OAuth response: ${parseError.message}`);
+    }
     
     if (!tokenData.access_token) {
-      throw new Error('No access token received from Reddit');
+      throw new Error(`No access token received from Reddit. Response: ${JSON.stringify(tokenData)}`);
     }
 
     console.log('Successfully obtained Reddit access token');
+    console.log(`Token type: ${tokenData.token_type}, expires in: ${tokenData.expires_in} seconds`);
     
-    // Cache the token (Reddit tokens expire in 1 hour)
-    const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // Subtract 1 minute for safety
+    // Cache the token
+    const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000;
     tokenCache.set(cacheKey, {
       token: tokenData.access_token,
       expires: expiresAt
@@ -96,6 +112,12 @@ async function getRedditAccessToken(): Promise<string> {
     return tokenData.access_token;
   } catch (error) {
     console.error('Failed to get Reddit access token:', error);
+    console.error('Error details:', {
+      message: error.message,
+      clientIdPresent: !!redditClientId,
+      clientSecretPresent: !!redditClientSecret,
+      clientIdPrefix: redditClientId ? redditClientId.substring(0, 4) + '...' : 'not found'
+    });
     throw new Error(`Reddit authentication failed: ${error.message}`);
   }
 }
@@ -142,10 +164,8 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
     try {
       const accessToken = await getRedditAccessToken();
       
-      // Use Reddit OAuth API endpoint
       let url = `https://oauth.reddit.com/r/${subreddit}/${sortBy}?limit=${limit}`;
       
-      // Add time parameter for 'top' sorting
       if (sortBy === 'top') {
         url += `&t=${timeframe}`;
       }
@@ -161,18 +181,19 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
       });
 
       console.log(`Response status for r/${subreddit}: ${response.status}`);
+      const responseText = await response.text();
+      console.log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`);
 
       if (response.status === 401) {
-        // Token might be expired, clear cache and retry
+        console.log('Token expired, clearing cache...');
         tokenCache.delete('reddit_access_token');
         if (attempt < maxRetries) {
-          console.log('Token expired, will retry with new token...');
+          console.log('Will retry with new token...');
           continue;
         }
       }
 
       if (response.status === 429) {
-        // Rate limited
         const retryAfter = response.headers.get('retry-after');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
         console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
@@ -181,21 +202,30 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
       }
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        console.error(`HTTP error for r/${subreddit}: ${response.status} ${response.statusText}`);
+        console.error(`Response body: ${responseText.substring(0, 500)}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText.substring(0, 200)}`);
       }
 
-      const data: RedditResponse = await response.json();
+      let data: RedditResponse;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(`Failed to parse JSON response for r/${subreddit}:`, parseError);
+        console.error(`Response text: ${responseText.substring(0, 500)}`);
+        throw new Error(`Invalid JSON response: ${parseError.message}`);
+      }
       
       if (!data?.data?.children) {
+        console.error(`Invalid response structure for r/${subreddit}:`, data);
         throw new Error('Invalid response structure from Reddit API');
       }
 
       const posts = data.data.children.map(child => ({
         ...child.data,
-        subreddit: subreddit // Ensure subreddit is set correctly
+        subreddit: subreddit
       }));
 
-      // Cache the successful result
       cache.set(cacheKey, { data: posts, timestamp: Date.now() });
       
       console.log(`Successfully fetched ${posts.length} posts from r/${subreddit}`);
@@ -203,10 +233,12 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
 
     } catch (error) {
       lastError = error as Error;
-      console.error(`Attempt ${attempt} failed for r/${subreddit}:`, error);
+      console.error(`Attempt ${attempt} failed for r/${subreddit}:`, {
+        error: error.message,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      });
       
       if (attempt < maxRetries) {
-        // Exponential backoff: wait 1s, then 2s, then 4s
         const waitTime = Math.pow(2, attempt - 1) * 1000;
         console.log(`Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -214,16 +246,15 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
     }
   }
 
-  console.error(`All ${maxRetries} attempts failed for r/${subreddit}:`, lastError);
+  console.error(`All ${maxRetries} attempts failed for r/${subreddit}:`, lastError?.message);
   
-  // Return cached data if available, otherwise empty array
   const fallbackData = cache.get(cacheKey);
   if (fallbackData) {
     console.log(`Using stale cached data for r/${subreddit}`);
     return fallbackData.data;
   }
   
-  return []; // Return empty array instead of throwing to avoid breaking the entire request
+  return [];
 }
 
 function validateAndCleanPost(post: RedditPost): boolean {
@@ -290,14 +321,30 @@ serve(async (req) => {
       timeframe,
       sortBy,
       limit,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      credentialsCheck: {
+        clientId: !!redditClientId,
+        clientSecret: !!redditClientSecret,
+        clientIdLength: redditClientId?.length || 0
+      }
     });
 
-    // Validate Reddit credentials
+    // Validate Reddit credentials with detailed logging
     if (!redditClientId || !redditClientSecret) {
+      console.error('Reddit credentials missing:', {
+        clientId: !!redditClientId,
+        clientSecret: !!redditClientSecret,
+        envVars: Object.keys(Deno.env.toObject()).filter(key => key.includes('REDDIT'))
+      });
+      
       return new Response(JSON.stringify({ 
         error: 'Reddit API credentials not configured',
-        message: 'Please configure REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in Supabase secrets' 
+        message: 'Please configure REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in Supabase secrets',
+        debug: {
+          clientIdPresent: !!redditClientId,
+          clientSecretPresent: !!redditClientSecret,
+          availableEnvVars: Object.keys(Deno.env.toObject()).filter(key => key.includes('REDDIT'))
+        }
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -309,21 +356,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         error: 'Invalid request',
         message: 'Subreddits array is required and must not be empty' 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate subreddit names (basic check)
-    const invalidSubreddits = subreddits.filter(sub => 
-      !sub || typeof sub !== 'string' || sub.length < 1 || sub.length > 50
-    );
-    
-    if (invalidSubreddits.length > 0) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid subreddit names',
-        message: `Invalid subreddits: ${invalidSubreddits.join(', ')}` 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -350,6 +382,30 @@ serve(async (req) => {
       });
     }
 
+    // Test Reddit API connection first
+    console.log('Testing Reddit API connection...');
+    try {
+      const testToken = await getRedditAccessToken();
+      console.log('Reddit API connection test successful');
+    } catch (testError) {
+      console.error('Reddit API connection test failed:', testError);
+      return new Response(JSON.stringify({ 
+        error: 'Reddit API connection failed',
+        message: 'Unable to authenticate with Reddit API. Please check your credentials.',
+        debug: {
+          error: testError.message,
+          credentials: {
+            clientIdPresent: !!redditClientId,
+            clientSecretPresent: !!redditClientSecret,
+            clientIdPrefix: redditClientId ? redditClientId.substring(0, 4) + '...' : 'missing'
+          }
+        }
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Fetch trends from all subreddits concurrently
     const fetchPromises = subreddits.map(subreddit => 
       fetchFromRedditAPI(subreddit.toLowerCase().trim(), sortBy, timeframe, limit)
@@ -358,7 +414,6 @@ serve(async (req) => {
     console.log(`Starting concurrent fetch for ${subreddits.length} subreddits using Reddit OAuth API...`);
     const allResults = await Promise.allSettled(fetchPromises);
     
-    // Collect all successful results
     const allTrends: (RedditPost & { trend_score: number; engagement_rate: number })[] = [];
     let successfulFetches = 0;
     
@@ -377,17 +432,15 @@ serve(async (req) => {
         console.log(`Successfully processed ${posts.length} posts from r/${subreddits[index]}`);
       } else {
         console.error(`Failed to fetch from r/${subreddits[index]}:`, 
-          result.status === 'rejected' ? result.reason : 'Empty result');
+          result.status === 'rejected' ? result.reason?.message : 'Empty result');
       }
     });
 
-    // Sort by trend score and limit results
     const sortedTrends = allTrends
       .sort((a, b) => b.trend_score - a.trend_score)
-      .slice(0, Math.min(limit * 2, 100)) // Cap at 100 total results
+      .slice(0, Math.min(limit * 2, 100))
       .map(post => ({
         ...post,
-        // Ensure proper URL formatting
         permalink: post.permalink.startsWith('http') ? post.permalink : `https://reddit.com${post.permalink}`,
         url: post.url || `https://reddit.com${post.permalink}`
       }));
@@ -417,7 +470,6 @@ serve(async (req) => {
         });
     } catch (logError) {
       console.error('Failed to log usage:', logError);
-      // Don't fail the request for logging errors
     }
 
     const responseData = {
