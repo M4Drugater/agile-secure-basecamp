@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,11 @@ export interface TrendsMetadata {
   sortBy: string;
   total_results: number;
   generated_at: string;
+  success_rate: string;
+  api_method: string;
+  successful_subreddits: number;
+  cache_enabled: boolean;
+  data_quality: string;
 }
 
 interface RedditTrendsParams {
@@ -49,32 +55,56 @@ export function useRedditTrends(enabled: boolean = true) {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Fetching Reddit trends with params:', params);
+
       const { data, error } = await supabase.functions.invoke('reddit-trends', {
         body: params
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Reddit trends error:', error);
+        throw new Error(error.message || 'Failed to fetch Reddit trends');
+      }
+
+      if (!data) {
+        throw new Error('No data returned from Reddit trends API');
+      }
+
+      console.log('Reddit trends response:', {
+        trendsCount: data.trends?.length || 0,
+        metadata: data.metadata
+      });
+
       return data as { trends: RedditTrend[]; metadata: TrendsMetadata };
     },
     enabled: enabled && !!user && params.subreddits.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      console.log(`Query retry attempt ${failureCount}:`, error);
+      return failureCount < 2; // Retry up to 2 times
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const updateParams = (newParams: Partial<RedditTrendsParams>) => {
+    console.log('Updating Reddit trends params:', newParams);
     setParams(prev => ({ ...prev, ...newParams }));
   };
 
   const addSubreddit = (subreddit: string) => {
-    if (!params.subreddits.includes(subreddit)) {
+    const cleanSubreddit = subreddit.trim().toLowerCase();
+    if (cleanSubreddit && !params.subreddits.includes(cleanSubreddit)) {
+      console.log('Adding subreddit:', cleanSubreddit);
       setParams(prev => ({
         ...prev,
-        subreddits: [...prev.subreddits, subreddit]
+        subreddits: [...prev.subreddits, cleanSubreddit]
       }));
     }
   };
 
   const removeSubreddit = (subreddit: string) => {
+    console.log('Removing subreddit:', subreddit);
     setParams(prev => ({
       ...prev,
       subreddits: prev.subreddits.filter(s => s !== subreddit)
