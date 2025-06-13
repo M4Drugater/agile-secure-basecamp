@@ -17,12 +17,14 @@ import {
   Clock,
   Users,
   Search,
-  Settings
+  Settings,
+  Info
 } from 'lucide-react';
 import { useRedditTrends } from '@/hooks/useRedditTrends';
 import { RedditTrendCard } from './RedditTrendCard';
 import { TrendsFilters } from './TrendsFilters';
 import { TrendsSettings } from './TrendsSettings';
+import { TrendsStatusIndicator } from './TrendsStatusIndicator';
 
 export function TrendsDiscovery() {
   const [newSubreddit, setNewSubreddit] = useState('');
@@ -70,7 +72,7 @@ export function TrendsDiscovery() {
             Descubrimiento de Tendencias
           </h1>
           <p className="text-muted-foreground mt-2">
-            Descubre tendencias emergentes en Reddit para impulsar tu estrategia de contenido
+            Descubre tendencias emergentes en Reddit usando la API oficial
           </p>
         </div>
         
@@ -93,6 +95,13 @@ export function TrendsDiscovery() {
           </Button>
         </div>
       </div>
+
+      {/* Status Indicator */}
+      <TrendsStatusIndicator 
+        metadata={metadata}
+        isLoading={isLoading}
+        error={error}
+      />
 
       {/* Settings Panel */}
       {showSettings && (
@@ -144,11 +153,37 @@ export function TrendsDiscovery() {
         </CardContent>
       </Card>
 
-      {/* Error Display */}
-      {error && (
-        <Alert variant="destructive">
+      {/* API Information */}
+      {metadata && (
+        <Alert>
+          <Info className="h-4 w-4" />
           <AlertDescription>
-            Error al cargar tendencias: {error.message}
+            <div className="space-y-1">
+              <div className="font-medium">Información de la consulta:</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Método API:</span> 
+                  <span className="ml-1 font-medium">
+                    {metadata.api_method === 'reddit_oauth_api' ? 'OAuth Oficial' : 'API Pública'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Resultados:</span> 
+                  <span className="ml-1 font-medium">{metadata.total_results}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Período:</span> 
+                  <span className="ml-1 font-medium">{metadata.timeframe}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Calidad:</span> 
+                  <span className="ml-1 font-medium">Filtrado y Validado</span>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Última actualización: {new Date(metadata.generated_at).toLocaleString()}
+              </div>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -170,18 +205,6 @@ export function TrendsDiscovery() {
           onUpdateParams={updateParams}
         />
       </div>
-
-      {/* Metadata */}
-      {metadata && (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            Actualizado: {new Date(metadata.generated_at).toLocaleTimeString()}
-          </span>
-          <span>{metadata.total_results} tendencias encontradas</span>
-          <span>Período: {metadata.timeframe}</span>
-        </div>
-      )}
 
       {/* Trends Grid */}
       <Tabs defaultValue="grid" className="space-y-4">
@@ -217,7 +240,10 @@ export function TrendsDiscovery() {
                 <TrendingUp className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No se encontraron tendencias</h3>
                 <p className="text-muted-foreground text-center mb-4">
-                  Ajusta los filtros o agrega más subreddits para descubrir tendencias
+                  {metadata?.successful_subreddits === 0 
+                    ? 'No se pudieron obtener datos de Reddit. Verifica la configuración de la API.'
+                    : 'Ajusta los filtros o agrega más subreddits para descubrir tendencias'
+                  }
                 </p>
                 <Button onClick={() => refetch()}>
                   <RefreshCw className="h-4 w-4 mr-2" />

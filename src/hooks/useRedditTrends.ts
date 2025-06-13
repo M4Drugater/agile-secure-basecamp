@@ -32,6 +32,7 @@ export interface TrendsMetadata {
   successful_subreddits: number;
   cache_enabled: boolean;
   data_quality: string;
+  rate_limit_status?: string;
 }
 
 interface RedditTrendsParams {
@@ -72,7 +73,8 @@ export function useRedditTrends(enabled: boolean = true) {
 
       console.log('Reddit trends response:', {
         trendsCount: data.trends?.length || 0,
-        metadata: data.metadata
+        metadata: data.metadata,
+        apiMethod: data.metadata?.api_method
       });
 
       return data as { trends: RedditTrend[]; metadata: TrendsMetadata };

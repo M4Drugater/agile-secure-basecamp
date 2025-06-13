@@ -5,6 +5,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabaseUrl = 'https://jzvpgqtobzqbavsillqp.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const redditClientId = Deno.env.get('REDDIT_CLIENT_ID')!;
+const redditClientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,11 +40,86 @@ interface RedditResponse {
   };
 }
 
-// Cache for Reddit data to reduce API calls
+// Enhanced cache for Reddit data and access tokens
 const cache = new Map<string, { data: any; timestamp: number }>();
+const tokenCache = new Map<string, { token: string; expires: number }>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const TOKEN_CACHE_DURATION = 3600 * 1000; // 1 hour (Reddit tokens expire in 1 hour)
 
-async function fetchFromPublicRedditAPI(subreddit: string, sortBy: string, timeframe: string, limit: number): Promise<RedditPost[]> {
+// Rate limiting
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 100; // requests per minute
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+
+async function getRedditAccessToken(): Promise<string> {
+  const cacheKey = 'reddit_access_token';
+  const cached = tokenCache.get(cacheKey);
+  
+  if (cached && Date.now() < cached.expires) {
+    console.log('Using cached Reddit access token');
+    return cached.token;
+  }
+
+  try {
+    console.log('Requesting new Reddit access token...');
+    
+    const credentials = btoa(`${redditClientId}:${redditClientSecret}`);
+    const response = await fetch('https://www.reddit.com/api/v1/access_token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'LAIGENT-TrendsDiscovery/1.0 (Web Application for Business Insights)',
+      },
+      body: 'grant_type=client_credentials',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Reddit OAuth failed: ${response.status} ${response.statusText}`);
+    }
+
+    const tokenData = await response.json();
+    
+    if (!tokenData.access_token) {
+      throw new Error('No access token received from Reddit');
+    }
+
+    console.log('Successfully obtained Reddit access token');
+    
+    // Cache the token (Reddit tokens expire in 1 hour)
+    const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // Subtract 1 minute for safety
+    tokenCache.set(cacheKey, {
+      token: tokenData.access_token,
+      expires: expiresAt
+    });
+
+    return tokenData.access_token;
+  } catch (error) {
+    console.error('Failed to get Reddit access token:', error);
+    throw new Error(`Reddit authentication failed: ${error.message}`);
+  }
+}
+
+function checkRateLimit(): boolean {
+  const now = Date.now();
+  const key = 'reddit_api';
+  const current = rateLimitMap.get(key) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+  
+  if (now > current.resetTime) {
+    current.count = 0;
+    current.resetTime = now + RATE_LIMIT_WINDOW;
+  }
+  
+  if (current.count >= RATE_LIMIT) {
+    return false;
+  }
+  
+  current.count++;
+  rateLimitMap.set(key, current);
+  return true;
+}
+
+async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: string, limit: number): Promise<RedditPost[]> {
   const cacheKey = `${subreddit}-${sortBy}-${timeframe}-${limit}`;
   
   // Check cache first
@@ -52,13 +129,21 @@ async function fetchFromPublicRedditAPI(subreddit: string, sortBy: string, timef
     return cached.data;
   }
 
+  // Check rate limit
+  if (!checkRateLimit()) {
+    console.warn('Rate limit exceeded, using cached data if available');
+    return cached?.data || [];
+  }
+
   const maxRetries = 3;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Use public Reddit JSON API
-      let url = `https://www.reddit.com/r/${subreddit}/${sortBy}.json?limit=${limit}`;
+      const accessToken = await getRedditAccessToken();
+      
+      // Use Reddit OAuth API endpoint
+      let url = `https://oauth.reddit.com/r/${subreddit}/${sortBy}?limit=${limit}`;
       
       // Add time parameter for 'top' sorting
       if (sortBy === 'top') {
@@ -69,12 +154,31 @@ async function fetchFromPublicRedditAPI(subreddit: string, sortBy: string, timef
 
       const response = await fetch(url, {
         headers: {
+          'Authorization': `Bearer ${accessToken}`,
           'User-Agent': 'LAIGENT-TrendsDiscovery/1.0 (Web Application for Business Insights)',
           'Accept': 'application/json',
         },
       });
 
       console.log(`Response status for r/${subreddit}: ${response.status}`);
+
+      if (response.status === 401) {
+        // Token might be expired, clear cache and retry
+        tokenCache.delete('reddit_access_token');
+        if (attempt < maxRetries) {
+          console.log('Token expired, will retry with new token...');
+          continue;
+        }
+      }
+
+      if (response.status === 429) {
+        // Rate limited
+        const retryAfter = response.headers.get('retry-after');
+        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
+        console.log(`Rate limited, waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -111,6 +215,14 @@ async function fetchFromPublicRedditAPI(subreddit: string, sortBy: string, timef
   }
 
   console.error(`All ${maxRetries} attempts failed for r/${subreddit}:`, lastError);
+  
+  // Return cached data if available, otherwise empty array
+  const fallbackData = cache.get(cacheKey);
+  if (fallbackData) {
+    console.log(`Using stale cached data for r/${subreddit}`);
+    return fallbackData.data;
+  }
+  
   return []; // Return empty array instead of throwing to avoid breaking the entire request
 }
 
@@ -181,6 +293,17 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     });
 
+    // Validate Reddit credentials
+    if (!redditClientId || !redditClientSecret) {
+      return new Response(JSON.stringify({ 
+        error: 'Reddit API credentials not configured',
+        message: 'Please configure REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in Supabase secrets' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Validate input parameters
     if (!subreddits || !Array.isArray(subreddits) || subreddits.length === 0) {
       return new Response(JSON.stringify({ 
@@ -229,10 +352,10 @@ serve(async (req) => {
 
     // Fetch trends from all subreddits concurrently
     const fetchPromises = subreddits.map(subreddit => 
-      fetchFromPublicRedditAPI(subreddit.toLowerCase().trim(), sortBy, timeframe, limit)
+      fetchFromRedditAPI(subreddit.toLowerCase().trim(), sortBy, timeframe, limit)
     );
 
-    console.log(`Starting concurrent fetch for ${subreddits.length} subreddits...`);
+    console.log(`Starting concurrent fetch for ${subreddits.length} subreddits using Reddit OAuth API...`);
     const allResults = await Promise.allSettled(fetchPromises);
     
     // Collect all successful results
@@ -285,10 +408,11 @@ serve(async (req) => {
             timeframe,
             sortBy,
             success_rate: `${successRate}%`,
-            api_method: 'public_reddit_json_api',
+            api_method: 'reddit_oauth_api',
             successful_subreddits: successfulFetches,
             total_subreddits: subreddits.length,
-            cache_hits: Array.from(cache.keys()).length
+            cache_hits: Array.from(cache.keys()).length,
+            rate_limited: !checkRateLimit()
           }
         });
     } catch (logError) {
@@ -305,10 +429,11 @@ serve(async (req) => {
         total_results: sortedTrends.length,
         generated_at: new Date().toISOString(),
         success_rate: `${successRate}%`,
-        api_method: 'public_reddit_json_api',
+        api_method: 'reddit_oauth_api',
         successful_subreddits: successfulFetches,
         cache_enabled: true,
-        data_quality: 'filtered_and_validated'
+        data_quality: 'filtered_and_validated',
+        rate_limit_status: checkRateLimit() ? 'ok' : 'limited'
       }
     };
 
@@ -317,7 +442,8 @@ serve(async (req) => {
       trendsFound: sortedTrends.length,
       topTrendScore: sortedTrends[0]?.trend_score || 0,
       successRate: `${successRate}%`,
-      subredditsProcessed: `${successfulFetches}/${subreddits.length}`
+      subredditsProcessed: `${successfulFetches}/${subreddits.length}`,
+      apiMethod: 'reddit_oauth_api'
     });
 
     return new Response(JSON.stringify(responseData), {
