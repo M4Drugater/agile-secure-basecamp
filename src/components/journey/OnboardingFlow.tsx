@@ -1,7 +1,7 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
+import { useAutoPageCompletion } from '@/hooks/journey/useAutoPageCompletion';
 import { StepCompletionCelebration } from './StepCompletionCelebration';
 import { OnboardingHeader } from './onboarding/OnboardingHeader';
 import { NextStepCard } from './onboarding/NextStepCard';
@@ -22,6 +22,9 @@ export default function OnboardingFlow() {
     getEarnedAchievements,
     completeStep
   } = useProgressiveJourney();
+
+  // Call useAutoPageCompletion here instead of inside useProgressiveJourney
+  useAutoPageCompletion();
 
   const steps = getJourneySteps();
   const nextStep = getNextStep();

@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
@@ -6,6 +5,7 @@ import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAvailableModules } from '@/hooks/journey/useAvailableModules';
 import { useProgressNotifications } from '@/hooks/journey/useProgressNotifications';
+import { useAutoPageCompletion } from '@/hooks/journey/useAutoPageCompletion';
 import { WelcomeHeader } from './dashboard/WelcomeHeader';
 import { AchievementsDisplay } from './dashboard/AchievementsDisplay';
 import { ProgressTracker } from './dashboard/ProgressTracker';
@@ -32,6 +32,9 @@ export default function ProgressiveDashboard() {
     isInitialized,
     isLoading
   } = useProgressiveJourney();
+
+  // Call useAutoPageCompletion here instead of inside useProgressiveJourney
+  useAutoPageCompletion();
 
   const { 
     notifications, 
