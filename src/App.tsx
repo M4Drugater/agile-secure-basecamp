@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -7,7 +8,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
 import KnowledgeBase from './pages/KnowledgeBase';
-import ContentGeneratorPage from './pages/ContentGeneratorPage';
+import ContentGenerator from './pages/ContentGenerator';
 import ContentLibrary from './pages/ContentLibrary';
 import RedditTrendsPage from './pages/RedditTrendsPage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -27,7 +28,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/knowledge-base" element={<KnowledgeBase />} />
-            <Route path="/content-generator" element={<ContentGeneratorPage />} />
+            <Route path="/content-generator" element={<ContentGenerator />} />
             <Route path="/content-library" element={<ContentLibrary />} />
             <Route path="/reddit-trends" element={<RedditTrendsPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
