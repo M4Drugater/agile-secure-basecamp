@@ -289,6 +289,163 @@ export type Database = {
           },
         ]
       }
+      competitive_intelligence_insights: {
+        Row: {
+          agent_type: string
+          confidence_score: number | null
+          created_at: string
+          id: string
+          impact_level: string | null
+          insight_category: string
+          insight_description: string
+          insight_title: string
+          session_id: string
+          source_data: Json | null
+          tags: string[] | null
+          urgency_level: string | null
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          impact_level?: string | null
+          insight_category: string
+          insight_description: string
+          insight_title: string
+          session_id: string
+          source_data?: Json | null
+          tags?: string[] | null
+          urgency_level?: string | null
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          impact_level?: string | null
+          insight_category?: string
+          insight_description?: string
+          insight_title?: string
+          session_id?: string
+          source_data?: Json | null
+          tags?: string[] | null
+          urgency_level?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitive_intelligence_insights_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "competitive_intelligence_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitive_intelligence_reports: {
+        Row: {
+          agent_type: string
+          confidence_level: number | null
+          created_at: string
+          data_sources: Json | null
+          executive_summary: string | null
+          id: string
+          key_findings: Json | null
+          metadata: Json | null
+          recommendations: Json | null
+          report_content: string | null
+          report_type: string
+          session_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          confidence_level?: number | null
+          created_at?: string
+          data_sources?: Json | null
+          executive_summary?: string | null
+          id?: string
+          key_findings?: Json | null
+          metadata?: Json | null
+          recommendations?: Json | null
+          report_content?: string | null
+          report_type: string
+          session_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          confidence_level?: number | null
+          created_at?: string
+          data_sources?: Json | null
+          executive_summary?: string | null
+          id?: string
+          key_findings?: Json | null
+          metadata?: Json | null
+          recommendations?: Json | null
+          report_content?: string | null
+          report_type?: string
+          session_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitive_intelligence_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "competitive_intelligence_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitive_intelligence_sessions: {
+        Row: {
+          agent_type: string
+          analysis_focus: string | null
+          company_name: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          session_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          analysis_focus?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          session_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          analysis_focus?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          session_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_analytics: {
         Row: {
           click_through_rate: number | null

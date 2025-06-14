@@ -19,6 +19,7 @@ import Admin from "./pages/Admin";
 import Billing from "./pages/Billing";
 import TrendsDiscovery from "./pages/TrendsDiscovery";
 import ResearchWorkbench from "./pages/ResearchWorkbench";
+import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,11 @@ function App() {
               <Route path="/research" element={
                 <ProtectedRoute>
                   <ResearchWorkbench />
+                </ProtectedRoute>
+              } />
+              <Route path="/competitive-intelligence" element={
+                <ProtectedRoute>
+                  <CompetitiveIntelligence />
                 </ProtectedRoute>
               } />
               <Route path="/admin" element={

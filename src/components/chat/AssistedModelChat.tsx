@@ -13,7 +13,9 @@ import {
   Zap,
   MessageSquare,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Shield,
+  Brain
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -39,7 +41,7 @@ export function AssistedModelChat() {
     const welcomeMessage: ChatMessage = {
       id: '1',
       role: 'assistant',
-      content: '¡Hola! Soy tu **Modelo Asistido** de LAIGENT. Estoy aquí para ayudarte a navegar por nuestros módulos especializados. Puedes preguntarme sobre tendencias, contenido, conocimiento y mucho más.',
+      content: '¡Hola! Soy tu **Modelo Asistido** de LAIGENT. Estoy aquí para ayudarte a navegar por nuestros módulos especializados. Puedes preguntarme sobre tendencias, contenido, conocimiento, inteligencia competitiva y mucho más.',
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);
@@ -61,12 +63,23 @@ export function AssistedModelChat() {
       'descubrimiento', 'explorar', 'mercado', 'subreddit'
     ];
 
-    // Otras intenciones futuras
+    // Palabras clave para inteligencia competitiva
+    const competitiveKeywords = [
+      'competencia', 'competitivo', 'competidor', 'competitive',
+      'inteligencia', 'intelligence', 'análisis', 'estrategia',
+      'mercado', 'rival', 'cdv', 'cia', 'cir'
+    ];
+
+    // Otras intenciones
     const contentKeywords = ['contenido', 'content', 'generar', 'crear', 'escribir'];
     const knowledgeKeywords = ['conocimiento', 'knowledge', 'aprender', 'documentos', 'archivos'];
 
     if (trendsKeywords.some(keyword => input.includes(keyword))) {
       return { intent: 'trends', module: 'trends-discovery', confidence: 0.9 };
+    }
+
+    if (competitiveKeywords.some(keyword => input.includes(keyword))) {
+      return { intent: 'competitive', module: 'competitive-intelligence', confidence: 0.9 };
     }
 
     if (contentKeywords.some(keyword => input.includes(keyword))) {
@@ -92,6 +105,17 @@ export function AssistedModelChat() {
           navigate('/trends');
         }, 1500);
         return 'He detectado que te interesan las **tendencias**. Activando el módulo de **Descubrimiento de Tendencias** para mostrarte las últimas tendencias de Reddit en tiempo real. Te redirigiré en un momento...';
+
+      case 'competitive-intelligence':
+        toast({
+          title: '🛡️ Módulo Activado',
+          description: 'Redirigiendo al Sistema de Inteligencia Competitiva...',
+          duration: 2000,
+        });
+        setTimeout(() => {
+          navigate('/competitive-intelligence');
+        }, 1500);
+        return 'Perfecto, necesitas **inteligencia competitiva**. Activando el sistema de **Inteligencia Competitiva** con nuestros agentes especializados CDV, CIA y CIR para análisis estratégico avanzado.';
 
       case 'content-generator':
         toast({
@@ -127,6 +151,10 @@ export function AssistedModelChat() {
       return activateModule(module, userInput);
     }
 
+    if (intent === 'competitive' && module && confidence > 0.8) {
+      return activateModule(module, userInput);
+    }
+
     if (intent === 'content' && module && confidence > 0.7) {
       return activateModule(module, userInput);
     }
@@ -139,6 +167,7 @@ export function AssistedModelChat() {
     return `Como tu **Modelo Asistido**, puedo ayudarte con:
 
 • **Tendencias**: Descubre las últimas tendencias de Reddit y mercado
+• **Inteligencia Competitiva**: Análisis estratégico con agentes especializados (CDV, CIA, CIR)
 • **Contenido**: Genera contenido profesional con IA
 • **Conocimiento**: Gestiona y consulta tu base de conocimiento
 • **Aprendizaje**: Accede a cursos y rutas de aprendizaje
@@ -187,6 +216,7 @@ export function AssistedModelChat() {
 
   const quickActions = [
     { label: 'Ver Tendencias', action: () => navigate('/trends'), icon: TrendingUp },
+    { label: 'Inteligencia Competitiva', action: () => navigate('/competitive-intelligence'), icon: Shield },
     { label: 'Generar Contenido', action: () => navigate('/content/generator'), icon: Zap },
     { label: 'Base de Conocimiento', action: () => navigate('/knowledge'), icon: MessageSquare },
   ];
@@ -211,7 +241,7 @@ export function AssistedModelChat() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {quickActions.map((action, index) => (
           <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
             <CardContent className="p-4">
@@ -221,7 +251,7 @@ export function AssistedModelChat() {
                 onClick={action.action}
               >
                 <action.icon className="h-6 w-6 text-blue-600" />
-                <span className="font-medium">{action.label}</span>
+                <span className="font-medium text-sm">{action.label}</span>
                 <ArrowRight className="h-4 w-4 ml-auto" />
               </Button>
             </CardContent>
@@ -292,7 +322,7 @@ export function AssistedModelChat() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Escribe tu consulta (ej: 'quiero ver las tendencias de Reddit')"
+                placeholder="Escribe tu consulta (ej: 'necesito análisis de competencia')"
                 disabled={isProcessing}
                 className="flex-1"
               />
