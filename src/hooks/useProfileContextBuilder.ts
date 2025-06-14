@@ -2,7 +2,8 @@
 import { useProfileContext } from './useProfileContext';
 
 export function useProfileContextBuilder() {
-  const profileContext = useProfileContext();
+  const profileContextQuery = useProfileContext();
+  const profileContext = profileContextQuery?.data;
 
   const buildProfileContextString = (): string => {
     if (!profileContext) return '';

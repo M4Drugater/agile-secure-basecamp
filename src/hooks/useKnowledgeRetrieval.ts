@@ -11,6 +11,19 @@ interface KnowledgeItem {
   relevance_score?: number;
 }
 
+export interface KnowledgeSearchResult {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  source: string;
+  relevance_score?: number;
+  difficulty_level?: string;
+  estimated_duration_hours?: number;
+  enrollment_count?: number;
+  tags?: string[];
+}
+
 export function useKnowledgeRetrieval() {
   const { user } = useAuth();
 
