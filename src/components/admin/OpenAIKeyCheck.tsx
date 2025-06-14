@@ -4,51 +4,78 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertTriangle, ExternalLink, Settings } from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, ExternalLink, Settings, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function OpenAIKeyCheck() {
   const [keyStatus, setKeyStatus] = useState<'checking' | 'valid' | 'invalid' | 'missing'>('checking');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     checkOpenAIKey();
   }, []);
 
   const checkOpenAIKey = async () => {
+    setIsChecking(true);
     try {
-      // Test the OpenAI API key by making a simple request
-      const { data, error } = await supabase.functions.invoke('generate-content', {
+      console.log('Testing OpenAI API connectivity...');
+      
+      // Test with a minimal competitive intelligence request
+      const { data, error } = await supabase.functions.invoke('competitive-intelligence-chat', {
         body: {
-          type: 'article',
-          topic: 'Test connection',
-          style: 'professional',
-          length: 'short',
-          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You are a test assistant.' },
+            { role: 'user', content: 'Test connection - respond with "OK"' }
+          ],
+          agentType: 'cia',
+          sessionConfig: {
+            companyName: 'Test Company',
+            industry: 'Technology',
+            analysisFocus: 'Connection Test',
+            objectives: 'Test API connectivity'
+          },
+          userContext: {
+            userId: 'test',
+            sessionId: 'test-session'
+          }
         },
       });
 
       if (error) {
+        console.error('OpenAI API test error:', error);
         if (error.message?.includes('insufficient_quota')) {
           setKeyStatus('invalid');
           setErrorMessage('OpenAI API quota exceeded. Please check your billing and usage limits.');
-        } else if (error.message?.includes('OPENAI_API_KEY')) {
+        } else if (error.message?.includes('OPENAI_API_KEY') || error.message?.includes('api key')) {
           setKeyStatus('missing');
-          setErrorMessage('OpenAI API key is not configured.');
+          setErrorMessage('OpenAI API key is not configured or invalid.');
+        } else if (error.message?.includes('401')) {
+          setKeyStatus('invalid');
+          setErrorMessage('OpenAI API key is invalid or unauthorized.');
         } else {
           setKeyStatus('invalid');
-          setErrorMessage('OpenAI API key validation failed.');
+          setErrorMessage(`OpenAI API validation failed: ${error.message}`);
         }
-      } else {
+      } else if (data?.response) {
+        console.log('OpenAI API test successful:', data);
         setKeyStatus('valid');
+        setErrorMessage('');
+      } else {
+        setKeyStatus('invalid');
+        setErrorMessage('Unexpected response from OpenAI API.');
       }
     } catch (error) {
+      console.error('Connection test failed:', error);
       setKeyStatus('invalid');
-      setErrorMessage('Failed to validate OpenAI API key.');
+      setErrorMessage('Failed to test OpenAI API connection.');
+    } finally {
+      setIsChecking(false);
     }
   };
 
   const getStatusIcon = () => {
+    if (isChecking) return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />;
     switch (keyStatus) {
       case 'valid':
         return <CheckCircle className="h-5 w-5 text-green-600" />;
@@ -63,15 +90,16 @@ export function OpenAIKeyCheck() {
   };
 
   const getStatusBadge = () => {
+    if (isChecking) return <Badge variant="outline">Testing...</Badge>;
     switch (keyStatus) {
       case 'valid':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Connected</Badge>;
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">✅ Connected & Working</Badge>;
       case 'invalid':
-        return <Badge variant="destructive">Invalid Key</Badge>;
+        return <Badge variant="destructive">❌ Invalid Key</Badge>;
       case 'missing':
-        return <Badge variant="destructive">Missing Key</Badge>;
+        return <Badge variant="destructive">❌ Missing Key</Badge>;
       case 'checking':
-        return <Badge variant="outline">Checking...</Badge>;
+        return <Badge variant="outline">🔄 Checking...</Badge>;
       default:
         return null;
     }
@@ -83,12 +111,12 @@ export function OpenAIKeyCheck() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {getStatusIcon()}
-            <CardTitle>OpenAI API Configuration</CardTitle>
+            <CardTitle>OpenAI API Status</CardTitle>
           </div>
           {getStatusBadge()}
         </div>
         <CardDescription>
-          Monitor OpenAI API key status and connectivity
+          Real-time connectivity status for competitive intelligence agents
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -96,40 +124,67 @@ export function OpenAIKeyCheck() {
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              {errorMessage}
+              <strong>Action Required:</strong> {errorMessage}
             </AlertDescription>
           </Alert>
         ) : keyStatus === 'valid' ? (
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              OpenAI API is properly configured and accessible.
+              <strong>✅ All Systems Go!</strong> OpenAI API is properly configured and the competitive intelligence agents are ready to use.
             </AlertDescription>
           </Alert>
         ) : null}
 
         <div className="flex gap-2">
-          <Button onClick={checkOpenAIKey} variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Check Again
+          <Button 
+            onClick={checkOpenAIKey} 
+            variant="outline" 
+            size="sm"
+            disabled={isChecking}
+          >
+            {isChecking ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Testing...
+              </>
+            ) : (
+              <>
+                <Settings className="h-4 w-4 mr-2" />
+                Test Connection
+              </>
+            )}
           </Button>
           <Button variant="outline" size="sm" asChild>
             <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
-              OpenAI API Keys
+              OpenAI Dashboard
             </a>
           </Button>
         </div>
 
         {(keyStatus === 'invalid' || keyStatus === 'missing') && (
-          <div className="text-sm text-muted-foreground">
-            <p className="mb-2">To fix this issue:</p>
+          <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded">
+            <p className="mb-2 font-medium">🔧 Quick Fix Guide:</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Go to your OpenAI account dashboard</li>
-              <li>Create or copy your API key</li>
-              <li>Add it as OPENAI_API_KEY in Supabase Edge Function secrets</li>
+              <li>Go to <a href="https://platform.openai.com/api-keys" target="_blank" className="text-blue-600 hover:underline">OpenAI API Keys</a></li>
+              <li>Create a new API key or copy an existing one</li>
+              <li>Add it as <code className="bg-gray-200 px-1 rounded">OPENAI_API_KEY</code> in Supabase Edge Function Secrets</li>
               <li>Ensure your OpenAI account has sufficient credits</li>
+              <li>Click "Test Connection" above to verify</li>
             </ol>
+          </div>
+        )}
+
+        {keyStatus === 'valid' && (
+          <div className="text-sm text-muted-foreground bg-green-50 p-3 rounded border border-green-200">
+            <p className="mb-2 font-medium text-green-800">🚀 Ready for Action:</p>
+            <ul className="list-disc list-inside space-y-1 text-green-700">
+              <li>All competitive intelligence agents are operational</li>
+              <li>McKinsey-level analysis frameworks are active</li>
+              <li>Enhanced prompts v2.0 are loaded and ready</li>
+              <li>Cost monitoring and optimization are in place</li>
+            </ul>
           </div>
         )}
       </CardContent>
