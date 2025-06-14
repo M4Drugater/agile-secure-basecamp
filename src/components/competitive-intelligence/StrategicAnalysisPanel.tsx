@@ -41,7 +41,7 @@ export function StrategicAnalysisPanel({ agentType, analysisData }: StrategicAna
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
           <h4 className="font-semibold text-sm">{threat.threat}</h4>
-          <Badge variant={threat.impact > 7 ? "destructive" : threat.impact > 5 ? "warning" : "secondary"}>
+          <Badge variant={threat.impact > 7 ? "destructive" : threat.impact > 5 ? "outline" : "secondary"}>
             Impact: {threat.impact}/10
           </Badge>
         </div>
@@ -96,7 +96,7 @@ export function StrategicAnalysisPanel({ agentType, analysisData }: StrategicAna
           <h4 className="font-semibold text-sm">{recommendation.action}</h4>
           <Badge variant={
             recommendation.priority === 'high' ? "destructive" : 
-            recommendation.priority === 'medium' ? "warning" : "secondary"
+            recommendation.priority === 'medium' ? "outline" : "secondary"
           }>
             {recommendation.priority}
           </Badge>
