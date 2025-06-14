@@ -1,219 +1,139 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Bot, 
-  Eye, 
-  Target, 
-  TrendingUp,
-  Plus,
-  Zap,
-  Shield,
-  Brain,
-  Activity,
-  Users,
-  FileText,
-  Lightbulb
-} from 'lucide-react';
-import { AgentInterface } from './AgentInterface';
+import { AgentSelectionView } from './AgentSelectionView';
+import { EnhancedAgentWorkspace } from './EnhancedAgentWorkspace';
 import { SessionManager } from './SessionManager';
 import { InsightsHub } from './InsightsHub';
-import { useSupabase } from '@/hooks/useSupabase';
-
-const agents = [
-  {
-    id: 'cdv',
-    name: 'CDV - Competitor Discovery & Validator',
-    description: 'Descubre, analiza y valida amenazas competitivas y oportunidades',
-    icon: Target,
-    color: 'bg-blue-500',
-    features: ['Descubrimiento de Competidores', 'Validación Competitiva', 'Análisis de Oportunidades', 'Evaluación de Amenazas']
-  },
-  {
-    id: 'cir',
-    name: 'CIR - Competitive Intelligence Retriever',
-    description: 'Especialista en datos de inteligencia que proporciona métricas reales del mercado',
-    icon: Activity,
-    color: 'bg-green-500',
-    features: ['Inteligencia de Datos', 'Métricas de Mercado', 'Análisis de Tráfico', 'Benchmarking Competitivo']
-  },
-  {
-    id: 'cia',
-    name: 'CIA - Competitive Intelligence Analysis',
-    description: 'Proporciona inteligencia estratégica y análisis integral del mercado',
-    icon: Brain,
-    color: 'bg-purple-500',
-    features: ['Análisis Estratégico', 'Evaluación de Riesgos', 'Inteligencia de Mercado', 'Planificación de Escenarios']
-  }
-];
+import { Brain, Zap, BarChart3, Target } from 'lucide-react';
 
 export function CompetitiveIntelligenceDashboard() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({
-    activeSessions: 0,
-    totalReports: 0,
-    totalInsights: 0,
-    companiesAnalyzed: 0
+  const [sessionConfig, setSessionConfig] = useState({
+    companyName: '',
+    industry: '',
+    analysisFocus: '',
+    objectives: ''
   });
-  const { supabase, user } = useSupabase();
 
-  // Cargar estadísticas reales de la base de datos
-  useEffect(() => {
-    const loadStats = async () => {
-      if (!user || !supabase) return;
+  const handleAgentSelect = (agentId: string) => {
+    setSelectedAgent(agentId);
+  };
 
-      try {
-        // Obtener sesiones activas
-        const { count: sessionsCount } = await supabase
-          .from('competitive_intelligence_sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'active');
-
-        // Obtener total de reportes
-        const { count: reportsCount } = await supabase
-          .from('competitive_intelligence_reports')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        // Obtener total de insights
-        const { count: insightsCount } = await supabase
-          .from('competitive_intelligence_insights')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        // Obtener empresas únicas analizadas
-        const { data: companies } = await supabase
-          .from('competitive_intelligence_sessions')
-          .select('company_name')
-          .eq('user_id', user.id)
-          .not('company_name', 'is', null);
-
-        const uniqueCompanies = new Set(companies?.map(c => c.company_name) || []).size;
-
-        setStats({
-          activeSessions: sessionsCount || 0,
-          totalReports: reportsCount || 0,
-          totalInsights: insightsCount || 0,
-          companiesAnalyzed: uniqueCompanies
-        });
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    };
-
-    loadStats();
-  }, [user, supabase]);
+  const handleBackToSelection = () => {
+    setSelectedAgent(null);
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <Shield className="h-10 w-10 text-blue-600" />
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Sistema de Inteligencia Competitiva
+      {/* Enhanced Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <Brain className="h-6 w-6 text-white" />
+            </div>
+            McKinsey-Level Competitive Intelligence
           </h1>
-          <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-            <Zap className="h-3 w-3 mr-1" />
-            Powered by AI
+          <p className="text-muted-foreground mt-2">
+            AI-powered strategic analysis using proven consulting frameworks
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <Badge variant="secondary" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Enhanced Prompts v2.0
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            Strategic Frameworks Active
           </Badge>
         </div>
-        <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-          Inteligencia competitiva avanzada con agentes de IA especializados para análisis estratégico y reportes accionables
-        </p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="agents">Agentes IA</TabsTrigger>
-          <TabsTrigger value="sessions">Sesiones</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-        </TabsList>
+      {/* Enhanced Capabilities Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">McKinsey 7-S</p>
+                <p className="text-2xl font-bold">✓</p>
+              </div>
+              <Brain className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* Vista general de agentes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {agents.map((agent) => (
-              <Card key={agent.id} className="hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => {
-                      setSelectedAgent(agent.id);
-                      setActiveTab('agents');
-                    }}>
-                <CardHeader className="text-center">
-                  <div className={`w-16 h-16 ${agent.color} rounded-full flex items-center justify-center mx-auto mb-4`}>
-                    <agent.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl">{agent.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                  <p className="text-muted-foreground">{agent.description}</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {agent.features.map((feature, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {feature}
-                      </Badge>
-                    ))}
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Bot className="h-4 w-4 mr-2" />
-                    Activar Agente
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Porter's 5 Forces</p>
+                <p className="text-2xl font-bold">✓</p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">BCG Matrix</p>
+                <p className="text-2xl font-bold">✓</p>
+              </div>
+              <Target className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">3-Horizons</p>
+                <p className="text-2xl font-bold">✓</p>
+              </div>
+              <Zap className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Interface */}
+      {!selectedAgent ? (
+        <div className="space-y-6">
+          <AgentSelectionView onAgentSelect={handleAgentSelect} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SessionManager />
+            <InsightsHub />
           </div>
-
-          {/* Estadísticas en tiempo real */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{stats.activeSessions}</div>
-                <div className="text-sm text-muted-foreground">Sesiones Activas</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <FileText className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{stats.totalReports}</div>
-                <div className="text-sm text-muted-foreground">Reportes Generados</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Lightbulb className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{stats.totalInsights}</div>
-                <div className="text-sm text-muted-foreground">Insights Creados</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Users className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{stats.companiesAnalyzed}</div>
-                <div className="text-sm text-muted-foreground">Empresas Analizadas</div>
-              </CardContent>
-            </Card>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleBackToSelection}
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
+            >
+              ← Back to Agent Selection
+            </button>
+            <Badge variant="default">
+              Enhanced with Strategic Frameworks
+            </Badge>
           </div>
-        </TabsContent>
-
-        <TabsContent value="agents" className="space-y-6">
-          <AgentInterface selectedAgent={selectedAgent} onAgentSelect={setSelectedAgent} />
-        </TabsContent>
-
-        <TabsContent value="sessions" className="space-y-6">
-          <SessionManager />
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
-          <InsightsHub />
-        </TabsContent>
-      </Tabs>
+          
+          <EnhancedAgentWorkspace 
+            selectedAgent={selectedAgent}
+            sessionConfig={sessionConfig}
+            setSessionConfig={setSessionConfig}
+          />
+        </div>
+      )}
     </div>
   );
 }
