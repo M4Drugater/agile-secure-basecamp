@@ -15,9 +15,15 @@ import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import Chat from '@/pages/Chat';
 import Content from '@/pages/Content';
+import ContentGenerator from '@/pages/ContentGenerator';
+import ContentLibrary from '@/pages/ContentLibrary';
+import ContentAnalytics from '@/pages/ContentAnalytics';
 import Profile from '@/pages/Profile';
 import Admin from '@/pages/Admin';
 import Billing from '@/pages/Billing';
+import TrendsDiscovery from '@/pages/TrendsDiscovery';
+import ResearchWorkbench from '@/pages/ResearchWorkbench';
+import LearningManagement from '@/pages/LearningManagement';
 
 function App() {
   return (
@@ -27,6 +33,7 @@ function App() {
           <div className="min-h-screen bg-background">
             <Toaster />
             <Routes>
+              {/* Dashboard */}
               <Route path="/" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -34,6 +41,17 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
+              {/* Knowledge Base - Updated route */}
+              <Route path="/knowledge" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <KnowledgeBase />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Legacy knowledge-base redirect for compatibility */}
               <Route path="/knowledge-base" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -41,6 +59,8 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
+              {/* AI Modules */}
               <Route path="/agents" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -48,6 +68,7 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
               <Route path="/competitive-intelligence" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -55,21 +76,24 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
-              <Route path="/pricing" element={
-                <UniversalLayout>
-                  <Pricing />
-                </UniversalLayout>
+              
+              <Route path="/trends" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <TrendsDiscovery />
+                  </UniversalLayout>
+                </ProtectedRoute>
               } />
-              <Route path="/terms" element={
-                <UniversalLayout>
-                  <Terms />
-                </UniversalLayout>
+              
+              <Route path="/research" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <ResearchWorkbench />
+                  </UniversalLayout>
+                </ProtectedRoute>
               } />
-              <Route path="/privacy" element={
-                <UniversalLayout>
-                  <Privacy />
-                </UniversalLayout>
-              } />
+              
+              {/* Chat */}
               <Route path="/chat" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -77,6 +101,8 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
+              {/* Content Routes - Organized properly */}
               <Route path="/content" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -84,6 +110,41 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
+              <Route path="/content/generator" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <ContentGenerator />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/content/library" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <ContentLibrary />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/content/analytics" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <ContentAnalytics />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Learning Management */}
+              <Route path="/learning" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <LearningManagement />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Account & Settings */}
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -91,6 +152,15 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
+              
+              <Route path="/billing" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <Billing />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="/admin" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -98,12 +168,24 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
-              <Route path="/billing" element={
-                <ProtectedRoute>
-                  <UniversalLayout>
-                    <Billing />
-                  </UniversalLayout>
-                </ProtectedRoute>
+              
+              {/* Public Routes */}
+              <Route path="/pricing" element={
+                <UniversalLayout>
+                  <Pricing />
+                </UniversalLayout>
+              } />
+              
+              <Route path="/terms" element={
+                <UniversalLayout>
+                  <Terms />
+                </UniversalLayout>
+              } />
+              
+              <Route path="/privacy" element={
+                <UniversalLayout>
+                  <Privacy />
+                </UniversalLayout>
               } />
             </Routes>
           </div>
