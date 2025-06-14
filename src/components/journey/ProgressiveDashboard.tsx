@@ -5,12 +5,14 @@ import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAvailableModules } from '@/hooks/journey/useAvailableModules';
+import { useProgressNotifications } from '@/hooks/journey/useProgressNotifications';
 import { WelcomeHeader } from './dashboard/WelcomeHeader';
 import { AchievementsDisplay } from './dashboard/AchievementsDisplay';
 import { ProgressTracker } from './dashboard/ProgressTracker';
 import { NextStepRecommendation } from './dashboard/NextStepRecommendation';
 import { ModuleGrid } from './dashboard/ModuleGrid';
 import { JourneyCompletionCard } from './dashboard/JourneyCompletionCard';
+import { ProgressNotifications } from './ProgressNotifications';
 
 export default function ProgressiveDashboard() {
   const navigate = useNavigate();
@@ -25,6 +27,12 @@ export default function ProgressiveDashboard() {
     getEarnedAchievements
   } = useProgressiveJourney();
 
+  const { 
+    notifications, 
+    addNotification, 
+    removeNotification 
+  } = useProgressNotifications();
+
   const steps = getJourneySteps();
   const nextStep = getNextStep();
   const completedSteps = getCompletedStepsCount();
@@ -36,6 +44,21 @@ export default function ProgressiveDashboard() {
   const { getAvailableModules } = useAvailableModules(steps, profileCompleteness, isJourneyComplete());
   const availableModules = getAvailableModules();
   const newModulesCount = availableModules.filter(m => m.isNew).length;
+
+  // Show notifications for newly unlocked modules
+  useEffect(() => {
+    const unlockedModules = availableModules.filter(m => m.isNew && m.available);
+    
+    unlockedModules.forEach(module => {
+      if (module.id !== 'profile') { // Don't show notification for profile
+        addNotification({
+          type: 'module_unlocked',
+          title: `${module.title} Desbloqueado`,
+          message: `Ahora puedes acceder a: ${module.description}`
+        });
+      }
+    });
+  }, [availableModules, addNotification]);
 
   // Solo redirigir si realmente no hay nada configurado
   useEffect(() => {
@@ -118,6 +141,12 @@ export default function ProgressiveDashboard() {
           />
         )}
       </div>
+
+      {/* Progress Notifications */}
+      <ProgressNotifications
+        notifications={notifications}
+        onRemove={removeNotification}
+      />
     </UnifiedAppLayout>
   );
 }

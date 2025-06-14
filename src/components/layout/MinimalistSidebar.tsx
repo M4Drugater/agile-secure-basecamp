@@ -14,7 +14,8 @@ import {
   User,
   Settings,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Lock
 } from 'lucide-react';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 
@@ -32,7 +33,8 @@ const coreNavItems = [
     icon: MessageSquare,
     badge: 'IA',
     description: 'Tu mentor inteligente personalizado',
-    requiresStep: 'knowledge'
+    requiresStep: 'knowledge',
+    lockedMessage: 'Sube documentos primero'
   }
 ];
 
@@ -43,7 +45,8 @@ const activeModulesItems = [
     icon: Shield,
     badge: 'IA',
     description: 'Análisis competitivo con agentes CDV, CIA y CIR',
-    requiresStep: 'chat'
+    requiresStep: 'chat',
+    lockedMessage: 'Completa tu primer chat'
   },
   { 
     title: 'Generador de Contenido', 
@@ -51,14 +54,16 @@ const activeModulesItems = [
     icon: FileText,
     badge: 'IA',
     description: 'Creación de contenido profesional',
-    requiresStep: 'chat'
+    requiresStep: 'chat',
+    lockedMessage: 'Completa tu primer chat'
   },
   { 
     title: 'Base de Conocimiento', 
     href: '/knowledge', 
     icon: BookOpen,
     description: 'Gestión de documentos y recursos',
-    requiresStep: 'profile'
+    requiresStep: 'profile',
+    lockedMessage: 'Completa tu perfil primero'
   }
 ];
 
@@ -89,6 +94,7 @@ interface NavSectionProps {
     description?: string;
     alwaysShow?: boolean;
     requiresStep?: string;
+    lockedMessage?: string;
   }>;
   isCollapsed: boolean;
   completionStates: Record<string, boolean>;
@@ -100,42 +106,53 @@ function NavSection({ title, items, isCollapsed, completionStates, isJourneyComp
   const location = useLocation();
 
   // Filter items based on journey progress
-  const availableItems = items.filter(item => {
+  const visibleItems = items.filter(item => {
     // Always show if marked as such or journey is complete
     if (item.alwaysShow || isJourneyComplete) return true;
     
-    // Show if required step is completed
-    if (item.requiresStep) {
-      return completionStates[item.requiresStep];
-    }
-    
-    return true;
+    // Show if required step is completed OR show as locked
+    return true; // We show all items but mark some as locked
   });
 
-  // Don't render section if no items are available
-  if (availableItems.length === 0) return null;
+  // Don't render section if no items are visible
+  if (visibleItems.length === 0) return null;
 
   if (isCollapsed) {
     return (
       <div className="space-y-1">
-        {availableItems.map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.href;
+          const isLocked = item.requiresStep && !completionStates[item.requiresStep] && !isJourneyComplete;
           
           return (
-            <Link key={item.href} to={item.href}>
-              <Button
-                variant={isActive ? "secondary" : "ghost"}
-                size="sm"
-                className={cn(
-                  "w-full justify-center p-2 h-10",
-                  isActive && "bg-blue-50 text-blue-700 border-blue-200"
-                )}
-                title={item.title}
-              >
-                <Icon className="h-5 w-5" />
-              </Button>
-            </Link>
+            <div key={item.href}>
+              {isLocked ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-center p-2 h-10 opacity-50 cursor-not-allowed"
+                  title={item.lockedMessage || `Requiere: ${item.requiresStep}`}
+                  disabled
+                >
+                  <Lock className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Link to={item.href}>
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    size="sm"
+                    className={cn(
+                      "w-full justify-center p-2 h-10",
+                      isActive && "bg-blue-50 text-blue-700 border-blue-200"
+                    )}
+                    title={item.title}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           );
         })}
       </div>
@@ -156,38 +173,65 @@ function NavSection({ title, items, isCollapsed, completionStates, isJourneyComp
       
       {isOpen && (
         <div className="space-y-1">
-          {availableItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
+            const isLocked = item.requiresStep && !completionStates[item.requiresStep] && !isJourneyComplete;
             
             return (
-              <Link key={item.href} to={item.href}>
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "w-full justify-start h-auto p-3",
-                    isActive && "bg-blue-50 text-blue-700 border-blue-200"
-                  )}
-                >
-                  <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {item.description}
+              <div key={item.href}>
+                {isLocked ? (
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start h-auto p-3 opacity-50 cursor-not-allowed"
+                      disabled
+                    >
+                      <Lock className="h-4 w-4 mr-3 flex-shrink-0" />
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{item.title}</span>
+                          <Badge variant="outline" className="text-xs px-1.5 py-0">
+                            Bloqueado
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {item.lockedMessage || `Requiere: ${item.requiresStep}`}
+                        </div>
                       </div>
-                    )}
+                    </Button>
                   </div>
-                </Button>
-              </Link>
+                ) : (
+                  <Link to={item.href}>
+                    <Button
+                      variant={isActive ? "secondary" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "w-full justify-start h-auto p-3",
+                        isActive && "bg-blue-50 text-blue-700 border-blue-200"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 mr-3 flex-shrink-0" />
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {item.description}
+                          </div>
+                        )}
+                      </div>
+                    </Button>
+                  </Link>
+                )}
+              </div>
             );
           })}
         </div>

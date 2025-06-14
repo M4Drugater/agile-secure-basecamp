@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMessageHandling } from './useMessageHandling';
 import { useContextBuilder } from './useContextBuilder';
 import { useConversationState } from './useConversationState';
+import { useAutoStepCompletion } from '@/hooks/journey/useAutoStepCompletion';
 import { ChatMessage } from './types';
 
 interface AttachedFile {
@@ -25,6 +26,17 @@ export function useClipoginoChat() {
     startNewConversation: startNewConv,
     selectConversation: selectConv,
   } = useConversationState();
+
+  // Auto-complete chat step after first successful message exchange
+  const shouldCompleteChat = messages.length >= 2 && 
+    messages.some(m => m.role === 'user') && 
+    messages.some(m => m.role === 'assistant');
+
+  useAutoStepCompletion({
+    stepId: 'chat',
+    shouldComplete: shouldCompleteChat,
+    completionMessage: '¡Has tenido tu primera conversación con CLIPOGINO! Ahora puedes acceder a más módulos de IA.'
+  });
 
   const sendMessage = async (input: string, attachedFiles?: AttachedFile[]) => {
     if ((!input.trim() && (!attachedFiles || attachedFiles.length === 0)) || !user || isLoading) return;
@@ -98,6 +110,8 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       
       // Save assistant message to database
       await saveMessageToHistory(assistantMessage, conversationId);
+
+      console.log('Chat interaction completed - checking for step completion...');
 
     } catch (error) {
       console.error('Error in sendMessage:', error);

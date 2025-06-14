@@ -24,21 +24,30 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       documents: documents?.length || 0,
       userKnowledgeFiles: userKnowledgeFiles?.length || 0,
       profile_completeness: profile?.profile_completeness,
-      userJourney
+      userJourney,
+      fullProfile: profile
     });
 
     // Check multiple sources for knowledge files
     const hasKnowledgeFiles = (documents && documents.length > 0) || 
                              (userKnowledgeFiles && userKnowledgeFiles.length > 0);
 
+    // Enhanced profile completion check
+    const profileComplete = !!(
+      profile?.full_name && 
+      profile?.industry && 
+      profile?.current_position &&
+      (profile?.profile_completeness || 0) >= 70
+    );
+
     const newStates = {
-      // Profile: completado si el perfil tiene información básica
-      profile: !!(profile?.full_name && profile?.industry && (profile?.profile_completeness || 0) >= 50),
+      // Profile: completado si el perfil tiene información suficiente
+      profile: profileComplete,
       
-      // Knowledge: completado si tiene al menos un archivo subido (check multiple sources)
+      // Knowledge: completado si tiene al menos un archivo subido
       knowledge: hasKnowledgeFiles,
       
-      // Chat: usar el estado del journey
+      // Chat: usar el estado del journey O detectar si ha enviado mensajes
       chat: userJourney?.first_chat_completed || false,
       
       // Agents: usar el estado del journey  

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { UserJourney } from './journey/types';
 import { useJourneyData } from './journey/useJourneyData';
 import { useJourneySteps } from './journey/useJourneySteps';
+import { useProgressNotifications } from './journey/useProgressNotifications';
 
 export function useProgressiveJourney() {
   const { userJourney, isLoading, updateJourney } = useJourneyData();
@@ -15,10 +16,13 @@ export function useProgressiveJourney() {
     getTotalStepsCount
   } = useJourneySteps(userJourney);
 
+  const { addNotification } = useProgressNotifications();
   const [lastCompletedStep, setLastCompletedStep] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
   const completeStep = (stepId: string) => {
+    console.log(`Completing step: ${stepId}`);
+    
     const updates: Partial<UserJourney> = {};
     
     switch (stepId) {
@@ -45,7 +49,10 @@ export function useProgressiveJourney() {
     setLastCompletedStep(stepId);
     setShowCelebration(true);
     
+    // Update in database
     updateJourney.mutate(updates);
+
+    console.log(`Step ${stepId} completion updates:`, updates);
   };
 
   const dismissCelebration = () => {

@@ -33,7 +33,8 @@ export function useAvailableModules(
     console.log('Available modules calculation:', {
       completedStepIds,
       profileCompleteness,
-      isJourneyComplete
+      isJourneyComplete,
+      stepsDetails: steps.map(s => ({ id: s.id, completed: s.completed, title: s.title }))
     });
     
     // Perfil - siempre disponible
@@ -48,7 +49,7 @@ export function useAvailableModules(
       isNew: false
     });
 
-    // Base de conocimiento - disponible después de completar el perfil
+    // Base de conocimiento - SOLO disponible después de completar el perfil
     if (completedStepIds.includes('profile')) {
       modules.push({
         id: 'knowledge',
@@ -63,52 +64,48 @@ export function useAvailableModules(
       });
     }
 
-    // Solo mostrar módulos avanzados si el journey está completo o muy avanzado
-    if (isJourneyComplete || completedStepIds.length >= 3) {
-      // CLIPOGINO - disponible después de subir documentos
-      if (completedStepIds.includes('knowledge')) {
-        modules.push({
-          id: 'chat',
-          title: 'CLIPOGINO',
-          description: 'Tu mentor de IA personalizado para desarrollo profesional',
-          icon: MessageSquare,
-          route: '/chat',
-          available: true,
-          badge: 'IA',
-          isNew: !completedStepIds.includes('chat'),
-          highlight: !completedStepIds.includes('chat')
-        });
-      }
+    // CLIPOGINO - SOLO disponible después de subir al menos un documento
+    if (completedStepIds.includes('knowledge')) {
+      modules.push({
+        id: 'chat',
+        title: 'CLIPOGINO',
+        description: 'Tu mentor de IA personalizado para desarrollo profesional',
+        icon: MessageSquare,
+        route: '/chat',
+        available: true,
+        badge: 'IA',
+        isNew: !completedStepIds.includes('chat'),
+        highlight: !completedStepIds.includes('chat')
+      });
+    }
 
-      // Inteligencia competitiva - después del primer chat
-      if (completedStepIds.includes('chat')) {
-        modules.push({
-          id: 'competitive',
-          title: 'Inteligencia Competitiva',
-          description: 'Análisis de mercado con agentes CDV, CIA y CIR',
-          icon: Shield,
-          route: '/competitive-intelligence',
-          available: true,
-          badge: 'Agentes IA',
-          isNew: !completedStepIds.includes('agents'),
-          highlight: !completedStepIds.includes('agents')
-        });
-      }
+    // Módulos avanzados - SOLO después de usar CLIPOGINO al menos una vez
+    if (completedStepIds.includes('chat')) {
+      // Inteligencia competitiva
+      modules.push({
+        id: 'competitive',
+        title: 'Inteligencia Competitiva',
+        description: 'Análisis de mercado con agentes CDV, CIA y CIR',
+        icon: Shield,
+        route: '/competitive-intelligence',
+        available: true,
+        badge: 'Agentes IA',
+        isNew: !completedStepIds.includes('agents'),
+        highlight: !completedStepIds.includes('agents')
+      });
 
-      // Generador de contenido - después de usar chat
-      if (completedStepIds.includes('chat')) {
-        modules.push({
-          id: 'content',
-          title: 'Generador de Contenido',
-          description: 'Crea contenido profesional con asistencia de IA',
-          icon: FileText,
-          route: '/content-generator',
-          available: true,
-          badge: 'IA',
-          isNew: !completedStepIds.includes('content'),
-          highlight: !completedStepIds.includes('content')
-        });
-      }
+      // Generador de contenido
+      modules.push({
+        id: 'content',
+        title: 'Generador de Contenido',
+        description: 'Crea contenido profesional con asistencia de IA',
+        icon: FileText,
+        route: '/content-generator',
+        available: true,
+        badge: 'IA',
+        isNew: !completedStepIds.includes('content'),
+        highlight: !completedStepIds.includes('content')
+      });
     }
 
     return modules;
