@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 interface CostUsage {
   dailyUsage: number;
@@ -25,79 +26,80 @@ interface CostMonitoringHook {
 export function useCostMonitoring(): CostMonitoringHook {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [usage, setUsage] = useState<CostUsage | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUsage = async () => {
-    if (!user) return;
+  // Use React Query for better caching and error handling
+  const { data: usage, isLoading, refetch } = useQuery({
+    queryKey: ['cost-monitoring', user?.id],
+    queryFn: async (): Promise<CostUsage> => {
+      if (!user) throw new Error('User not authenticated');
 
-    try {
-      setIsLoading(true);
-      
-      // Get user's current daily usage using RPC function
-      const { data: dailyData, error: dailyError } = await supabase.rpc('get_user_daily_cost', { 
-        user_uuid: user.id 
-      });
+      try {
+        // Parallel fetch for better performance
+        const [dailyResult, monthlyResult, configResult] = await Promise.allSettled([
+          supabase.rpc('get_user_daily_cost', { user_uuid: user.id }),
+          supabase
+            .from('ai_usage_logs')
+            .select('total_cost')
+            .eq('user_id', user.id)
+            .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+            .eq('status', 'success'),
+          supabase
+            .from('cost_monitoring_config')
+            .select('per_user_daily_limit, monthly_limit')
+            .eq('is_active', true)
+            .single()
+        ]);
 
-      if (dailyError) {
-        console.error('Error fetching daily usage:', dailyError);
-        return;
+        const dailyUsage = dailyResult.status === 'fulfilled' 
+          ? parseFloat(String(dailyResult.value.data || '0'))
+          : 0;
+
+        const monthlyUsage = monthlyResult.status === 'fulfilled'
+          ? (monthlyResult.value.data?.reduce((sum: number, log: any) => 
+              sum + parseFloat(log.total_cost), 0) || 0)
+          : 0;
+
+        const config = configResult.status === 'fulfilled' 
+          ? configResult.value.data 
+          : null;
+
+        const dailyLimit = config?.per_user_daily_limit || 5.0;
+        const monthlyLimit = config?.monthly_limit || 1000.0;
+
+        return {
+          dailyUsage,
+          monthlyUsage,
+          dailyLimit,
+          monthlyLimit,
+          dailyPercentage: (dailyUsage / dailyLimit) * 100,
+          monthlyPercentage: (monthlyUsage / monthlyLimit) * 100,
+        };
+      } catch (error) {
+        console.error('Error fetching cost usage:', error);
+        throw error;
       }
-
-      // Get monthly usage using direct query with type assertion
-      const { data: monthlyData, error: monthlyError } = await (supabase as any)
-        .from('ai_usage_logs')
-        .select('total_cost')
-        .eq('user_id', user.id)
-        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
-        .eq('status', 'success');
-
-      if (monthlyError) {
-        console.error('Error fetching monthly usage:', monthlyError);
-        return;
-      }
-
-      // Get current limits using type assertion
-      const { data: configData, error: configError } = await (supabase as any)
-        .from('cost_monitoring_config')
-        .select('per_user_daily_limit, monthly_limit')
-        .eq('is_active', true)
-        .single();
-
-      if (configError) {
-        console.error('Error fetching config:', configError);
-        return;
-      }
-
-      const dailyUsage = parseFloat(String(dailyData || '0'));
-      const monthlyUsage = monthlyData?.reduce((sum: number, log: any) => sum + parseFloat(log.total_cost), 0) || 0;
-      const dailyLimit = configData?.per_user_daily_limit || 5.0;
-      const monthlyLimit = configData?.monthly_limit || 1000.0;
-
-      const newUsage: CostUsage = {
-        dailyUsage,
-        monthlyUsage,
-        dailyLimit,
-        monthlyLimit,
-        dailyPercentage: (dailyUsage / dailyLimit) * 100,
-        monthlyPercentage: (monthlyUsage / monthlyLimit) * 100,
-      };
-
-      setUsage(newUsage);
-    } catch (error) {
-      console.error('Error fetching cost usage:', error);
+    },
+    enabled: !!user,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    retry: 2,
+    onError: (error) => {
+      console.error('Cost monitoring error:', error);
       toast({
         title: 'Usage Monitoring Error',
         description: 'Unable to fetch current usage data.',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
 
   const isNearLimit = usage ? (usage.dailyPercentage > 80 || usage.monthlyPercentage > 80) : false;
   const isOverLimit = usage ? (usage.dailyPercentage >= 100 || usage.monthlyPercentage >= 100) : false;
+
+  const refreshUsage = async () => {
+    await refetch();
+  };
 
   const checkBeforeAction = (estimatedCost = 0.01): boolean => {
     if (!usage) return true;
@@ -134,18 +136,8 @@ export function useCostMonitoring(): CostMonitoringHook {
     return true;
   };
 
-  useEffect(() => {
-    if (user) {
-      refreshUsage();
-      
-      // Set up periodic refresh every 5 minutes
-      const interval = setInterval(refreshUsage, 5 * 60 * 1000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
-
   return {
-    usage,
+    usage: usage || null,
     isLoading,
     isNearLimit,
     isOverLimit,
