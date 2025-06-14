@@ -12,8 +12,11 @@ import {
   BarChart3,
   FileText,
   Lightbulb,
-  TrendingUp
+  TrendingUp,
+  Zap,
+  Brain
 } from 'lucide-react';
+import { useAgentMessageHandling } from '@/hooks/competitive-intelligence/useAgentMessageHandling';
 
 interface Message {
   id: string;
@@ -21,6 +24,7 @@ interface Message {
   content: string;
   timestamp: Date;
   messageType?: 'text' | 'analysis' | 'report' | 'insight';
+  metadata?: any;
 }
 
 interface AgentChatProps {
@@ -30,45 +34,84 @@ interface AgentChatProps {
     industry: string;
     analysisFocus: string;
     objectives: string;
+    sessionId?: string;
   };
 }
 
 export function AgentChat({ agentId, sessionConfig }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { sendMessageToAgent, isProcessing } = useAgentMessageHandling();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const agentPersonalities = {
     cdv: {
-      name: 'CDV',
-      welcomeMessage: 'Hello! I\'m CDV, your Data Visualization specialist. I excel at transforming complex competitive data into clear, actionable visual insights. Ready to create some compelling charts and analysis?',
-      responseStyle: 'analytical and data-focused'
+      name: 'CDV - Competitor Discovery & Validator',
+      welcomeMessage: `Hello! I'm CDV, your Competitor Discovery & Validator specialist. I excel at discovering, analyzing, and validating competitive threats and opportunities in your market.
+
+I can help you with:
+• **Competitor Discovery**: Finding direct, indirect, and emerging competitors
+• **Competitive Validation**: Verifying competitor capabilities and market positions  
+• **Market Opportunity Analysis**: Identifying gaps and strategic opportunities
+• **Threat Assessment**: Evaluating competitive risks and strategic implications
+
+Based on your profile, I can see you're in ${sessionConfig.industry || 'your industry'}${sessionConfig.companyName ? ` and interested in analyzing ${sessionConfig.companyName}` : ''}. Let's discover and validate your competitive landscape!
+
+What specific competitive intelligence would you like me to help you discover and validate?`,
+      responseStyle: 'discovery and validation focused',
+      icon: BarChart3,
+      color: 'text-blue-600'
     },
     cia: {
-      name: 'CIA',
-      welcomeMessage: 'Greetings! I\'m CIA, your Intelligence Analysis expert. I specialize in strategic analysis, threat assessment, and competitive intelligence gathering. Let\'s uncover some strategic insights!',
-      responseStyle: 'strategic and intelligence-focused'
+      name: 'CIA - Intelligence Analysis',
+      welcomeMessage: `Greetings! I'm CIA, your Competitive Intelligence Analysis expert. I specialize in strategic analysis, threat assessment, and transforming competitive data into actionable strategic insights.
+
+My analytical capabilities include:
+• **Strategic Analysis**: SWOT, Porter's Five Forces, strategic positioning
+• **Threat Intelligence**: Competitive threat assessment and risk evaluation
+• **Market Intelligence**: Industry dynamics and competitive trend analysis
+• **Strategic Scenarios**: What-if analysis and strategic planning support
+
+Given your background in ${sessionConfig.industry || 'your industry'}, I can provide deep strategic intelligence tailored to your market context and business objectives.
+
+What strategic competitive intelligence questions can I analyze for you?`,
+      responseStyle: 'strategic and intelligence-focused',
+      icon: Brain,
+      color: 'text-purple-600'
     },
     cir: {
-      name: 'CIR',
-      welcomeMessage: 'Welcome! I\'m CIR, your Reporting specialist. I focus on creating actionable reports and strategic recommendations that drive business decisions. Ready to generate some impactful insights?',
-      responseStyle: 'executive and action-oriented'
+      name: 'CIR - Intelligence Reporting',
+      welcomeMessage: `Welcome! I'm CIR, your Competitive Intelligence Reporting specialist. I focus on creating actionable reports, strategic recommendations, and executive decision-support documents.
+
+I excel at delivering:
+• **Executive Reports**: Clear, concise intelligence for leadership decisions
+• **Strategic Recommendations**: Actionable competitive response strategies
+• **Decision Support**: Structured analysis for strategic choices
+• **Implementation Plans**: Detailed roadmaps for competitive actions
+
+I understand you're working on ${sessionConfig.analysisFocus || 'competitive analysis'}${sessionConfig.companyName ? ` for ${sessionConfig.companyName}` : ''}. I'll ensure my reports are tailored to drive your specific business decisions.
+
+What type of competitive intelligence report would be most valuable for your current needs?`,
+      responseStyle: 'executive and action-oriented',
+      icon: FileText,
+      color: 'text-green-600'
     }
   };
 
   useEffect(() => {
-    // Initialize with welcome message
+    // Initialize with personalized welcome message
     const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
-    const welcomeMessage: Message = {
-      id: '1',
-      role: 'assistant',
-      content: agent.welcomeMessage,
-      timestamp: new Date(),
-      messageType: 'text'
-    };
-    setMessages([welcomeMessage]);
-  }, [agentId]);
+    if (agent) {
+      const welcomeMessage: Message = {
+        id: '1',
+        role: 'assistant',
+        content: agent.welcomeMessage,
+        timestamp: new Date(),
+        messageType: 'text'
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [agentId, sessionConfig]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -76,80 +119,8 @@ export function AgentChat({ agentId, sessionConfig }: AgentChatProps) {
     }
   }, [messages]);
 
-  const generateAgentResponse = (userInput: string, agentId: string): string => {
-    const { companyName, industry, analysisFocus } = sessionConfig;
-    
-    const responses = {
-      cdv: [
-        `Based on your request about ${companyName || 'the target company'}, I can create several data visualizations. Would you like me to generate:
-
-• **Market Share Analysis** - Competitive positioning chart
-• **Performance Trends** - Historical data visualization  
-• **Feature Comparison** - Product/service benchmarking chart
-• **Pricing Analysis** - Competitive pricing landscape
-
-Which visualization would be most valuable for your ${analysisFocus || 'analysis'}?`,
-
-        `Excellent! For ${industry || 'this industry'} analysis, I recommend starting with a comprehensive data visualization approach:
-
-📊 **Available Visualization Types:**
-- Bubble charts for market positioning
-- Trend lines for performance tracking
-- Heat maps for competitive intensity
-- Scatter plots for correlation analysis
-
-Let me know what specific data points you'd like me to visualize, and I'll create compelling charts that reveal competitive insights.`
-      ],
-      cia: [
-        `Analyzing ${companyName || 'the target company'} from a strategic intelligence perspective. Here's my initial assessment framework:
-
-🎯 **Intelligence Gathering Areas:**
-• Market positioning and strategic moves
-• Competitive threats and opportunities  
-• Financial performance indicators
-• Innovation and R&D investments
-
-For ${industry || 'this sector'}, I'd recommend focusing on ${analysisFocus || 'key strategic elements'}. What specific intelligence areas would you like me to investigate first?`,
-
-        `From an intelligence analysis standpoint, I'm seeing several strategic patterns in ${industry || 'this market'}. Here's what I recommend investigating:
-
-🔍 **Priority Intelligence Requirements:**
-- Competitive response patterns
-- Market entry/exit strategies
-- Partnership and acquisition activities
-- Technology adoption trends
-
-Would you like me to conduct a deep-dive analysis on any of these areas?`
-      ],
-      cir: [
-        `Perfect! I'll prepare a comprehensive report on ${companyName || 'your target company'}. Here's my reporting framework:
-
-📋 **Report Structure:**
-• **Executive Summary** - Key findings and implications
-• **Strategic Recommendations** - Actionable next steps
-• **Competitive Landscape** - Market positioning analysis
-• **Risk Assessment** - Potential threats and opportunities
-
-For ${analysisFocus || 'your focus area'}, I recommend prioritizing actionable insights that drive immediate business value. What's your primary decision-making timeline?`,
-
-        `Excellent! I'm structuring a strategic report that will provide clear, actionable insights for ${industry || 'your industry'}:
-
-📊 **Key Report Sections:**
-- Current competitive position
-- Strategic recommendations (short & long-term)
-- Market opportunity assessment
-- Implementation roadmap
-
-This report will be designed for executive decision-making. Would you like me to emphasize any particular strategic angle?`
-      ]
-    };
-
-    const agentResponses = responses[agentId as keyof typeof responses];
-    return agentResponses[Math.floor(Math.random() * agentResponses.length)];
-  };
-
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isProcessing) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -161,23 +132,31 @@ This report will be designed for executive decision-making. Would you like me to
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setIsProcessing(true);
 
-    // Simulate AI processing
-    setTimeout(() => {
-      const assistantResponse = generateAgentResponse(inputValue, agentId);
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: assistantResponse,
-        timestamp: new Date(),
-        messageType: 'analysis'
-      };
+    try {
+      // Send to enhanced agent system
+      const assistantMessage = await sendMessageToAgent(
+        inputValue,
+        agentId,
+        { ...sessionConfig, sessionId: sessionConfig.sessionId || `session_${Date.now()}` },
+        messages
+      );
 
       setMessages(prev => [...prev, assistantMessage]);
-      setIsProcessing(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your request. Please try again or rephrase your question.',
+        timestamp: new Date(),
+        messageType: 'text'
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -198,22 +177,39 @@ This report will be designed for executive decision-making. Would you like me to
 
   const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
 
+  if (!agent) {
+    return (
+      <Card className="h-[600px] flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <Bot className="h-12 w-12 mx-auto mb-4" />
+          <p>Agent not found. Please select a valid agent.</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="h-[600px] flex flex-col">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-3">
-          <Bot className="h-5 w-5 text-blue-600" />
+          <agent.icon className={`h-5 w-5 ${agent.color}`} />
           Chat with {agent.name}
           <Badge variant="outline" className="ml-auto">
-            <TrendingUp className="h-3 w-3 mr-1" />
-            Intelligence Mode
+            <Zap className="h-3 w-3 mr-1" />
+            Enhanced AI
           </Badge>
         </CardTitle>
-        {sessionConfig.companyName && (
-          <div className="flex gap-2 mt-2">
-            <Badge variant="secondary">Target: {sessionConfig.companyName}</Badge>
-            {sessionConfig.industry && <Badge variant="outline">{sessionConfig.industry}</Badge>}
-            {sessionConfig.analysisFocus && <Badge variant="outline">{sessionConfig.analysisFocus}</Badge>}
+        {(sessionConfig.companyName || sessionConfig.industry || sessionConfig.analysisFocus) && (
+          <div className="flex gap-2 mt-2 flex-wrap">
+            {sessionConfig.companyName && (
+              <Badge variant="secondary">Target: {sessionConfig.companyName}</Badge>
+            )}
+            {sessionConfig.industry && (
+              <Badge variant="outline">{sessionConfig.industry}</Badge>
+            )}
+            {sessionConfig.analysisFocus && (
+              <Badge variant="outline">{sessionConfig.analysisFocus}</Badge>
+            )}
           </div>
         )}
       </CardHeader>
@@ -227,7 +223,7 @@ This report will be designed for executive decision-making. Would you like me to
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-4 rounded-lg ${
+                  className={`max-w-[85%] p-4 rounded-lg ${
                     message.role === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-900'
@@ -239,6 +235,11 @@ This report will be designed for executive decision-making. Would you like me to
                       <span className="text-xs font-medium opacity-70">
                         {agent.name} • {message.messageType || 'response'}
                       </span>
+                      {message.metadata?.cost && (
+                        <Badge variant="outline" className="ml-auto text-xs">
+                          ${message.metadata.cost.toFixed(4)}
+                        </Badge>
+                      )}
                     </div>
                   )}
                   <div className="prose prose-sm max-w-none">
@@ -246,8 +247,9 @@ This report will be designed for executive decision-making. Would you like me to
                       dangerouslySetInnerHTML={{
                         __html: message.content
                           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
                           .replace(/•/g, '•')
-                          .replace(/📊|🎯|🔍|📋/g, '')
+                          .replace(/\n/g, '<br/>')
                       }}
                     />
                   </div>
@@ -274,7 +276,7 @@ This report will be designed for executive decision-making. Would you like me to
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={`Ask ${agent.name} for competitive intelligence...`}
+              placeholder={`Ask ${agent.name.split(' - ')[0]} for competitive intelligence...`}
               disabled={isProcessing}
               className="flex-1"
             />
@@ -286,6 +288,9 @@ This report will be designed for executive decision-making. Would you like me to
               <Send className="h-4 w-4" />
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Enhanced with your profile, knowledge base, and contextual intelligence
+          </p>
         </div>
       </CardContent>
     </Card>

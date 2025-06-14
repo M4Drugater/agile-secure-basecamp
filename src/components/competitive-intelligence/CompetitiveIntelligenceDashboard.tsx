@@ -22,27 +22,27 @@ import { InsightsHub } from './InsightsHub';
 const agents = [
   {
     id: 'cdv',
-    name: 'CDV - Data Visualization',
-    description: 'Transforms complex competitive data into visual insights',
-    icon: Eye,
+    name: 'CDV - Competitor Discovery & Validator',
+    description: 'Discovers, analyzes, and validates competitive threats and opportunities',
+    icon: Target,
     color: 'bg-blue-500',
-    features: ['Data Visualization', 'Market Mapping', 'Trend Analysis']
+    features: ['Competitor Discovery', 'Competitive Validation', 'Market Opportunity Analysis', 'Threat Assessment']
   },
   {
     id: 'cia',
     name: 'CIA - Intelligence Analysis',
-    description: 'Provides strategic intelligence and market analysis',
+    description: 'Provides strategic intelligence and comprehensive market analysis',
     icon: Brain,
     color: 'bg-purple-500',
-    features: ['Strategic Analysis', 'Risk Assessment', 'Market Intelligence']
+    features: ['Strategic Analysis', 'Risk Assessment', 'Market Intelligence', 'Scenario Planning']
   },
   {
     id: 'cir',
-    name: 'CIR - Reporting & Recommendations',
+    name: 'CIR - Intelligence Reporting',
     description: 'Generates actionable reports and strategic recommendations',
     icon: Target,
     color: 'bg-green-500',
-    features: ['Executive Reports', 'Action Plans', 'Strategic Recommendations']
+    features: ['Executive Reports', 'Action Plans', 'Strategic Recommendations', 'Decision Support']
   }
 ];
 
