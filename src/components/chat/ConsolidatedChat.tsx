@@ -35,7 +35,7 @@ export function ConsolidatedChat() {
   const { user } = useAuth();
   const { isLoading, selectedModel, setSelectedModel, sendMessageToAI } = useMessageHandling();
   const { buildFullContextString, getContextSummary, hasProfileContext } = useConsolidatedContext();
-  const { getJourneySteps } = useProgressiveJourney();
+  const { getJourneySteps, completeStep } = useProgressiveJourney();
   const { documents } = useKnowledgeBase();
   const {
     messages,
@@ -54,6 +54,7 @@ export function ConsolidatedChat() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showKnowledgePanel, setShowKnowledgePanel] = useState(true);
   const [showContextDetails, setShowContextDetails] = useState(false);
+  const [hasChatStepCompleted, setHasChatStepCompleted] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Check if chat step is completed
@@ -61,6 +62,36 @@ export function ConsolidatedChat() {
   const chatStep = journeySteps.find(step => step.id === 'chat');
   const hasCompletedChat = chatStep?.completed || false;
   const hasKnowledgeFiles = (documents && documents.length > 0) || false;
+
+  console.log('ConsolidatedChat - Journey Debug:', {
+    chatStepCompleted: hasCompletedChat,
+    messagesCount: messages.length,
+    hasChatStepCompleted,
+    chatStep: chatStep ? { id: chatStep.id, completed: chatStep.completed } : null
+  });
+
+  // Auto-complete chat step after successful conversation
+  useEffect(() => {
+    // Check if we have a successful conversation (user message + AI response)
+    const hasUserMessage = messages.some(m => m.role === 'user');
+    const hasAssistantMessage = messages.some(m => m.role === 'assistant');
+    const shouldCompleteChat = hasUserMessage && hasAssistantMessage && messages.length >= 2;
+
+    console.log('Chat step completion check:', {
+      hasUserMessage,
+      hasAssistantMessage,
+      messagesLength: messages.length,
+      shouldCompleteChat,
+      hasCompletedChat,
+      hasChatStepCompleted
+    });
+
+    if (shouldCompleteChat && !hasCompletedChat && !hasChatStepCompleted) {
+      console.log('Auto-completing chat step...');
+      setHasChatStepCompleted(true);
+      completeStep('chat');
+    }
+  }, [messages, hasCompletedChat, hasChatStepCompleted, completeStep]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -120,6 +151,8 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       
       // Save assistant message to database
       await saveMessageToHistory(assistantMessage, conversationId);
+
+      console.log('Chat interaction completed successfully');
 
     } catch (error) {
       console.error('Error in sendMessage:', error);

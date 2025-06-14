@@ -24,7 +24,7 @@ export const coreNavItems = [
     badge: 'IA',
     description: 'Tu mentor inteligente personalizado',
     requiresStep: 'knowledge',
-    lockedMessage: 'Sube documentos primero'
+    lockedMessage: 'Primero sube documentos a tu base de conocimiento'
   }
 ];
 
@@ -36,7 +36,7 @@ export const activeModulesItems = [
     badge: 'IA',
     description: 'Análisis competitivo con agentes CDV, CIA y CIR',
     requiresStep: 'chat',
-    lockedMessage: 'Completa tu primer chat'
+    lockedMessage: 'Primero completa una conversación con CLIPOGINO'
   },
   { 
     title: 'Generador de Contenido', 
@@ -45,7 +45,7 @@ export const activeModulesItems = [
     badge: 'IA',
     description: 'Creación de contenido profesional',
     requiresStep: 'chat',
-    lockedMessage: 'Completa tu primer chat'
+    lockedMessage: 'Primero completa una conversación con CLIPOGINO'
   },
   { 
     title: 'Base de Conocimiento', 
@@ -53,7 +53,7 @@ export const activeModulesItems = [
     icon: BookOpen,
     description: 'Gestión de documentos y recursos',
     requiresStep: 'profile',
-    lockedMessage: 'Completa tu perfil primero'
+    lockedMessage: 'Primero completa tu perfil profesional'
   }
 ];
 

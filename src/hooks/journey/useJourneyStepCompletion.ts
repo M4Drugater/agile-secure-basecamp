@@ -40,6 +40,9 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       (profile?.profile_completeness || 0) >= 70
     );
 
+    // Enhanced chat completion check
+    const chatComplete = userJourney?.first_chat_completed || false;
+
     const newStates = {
       // Profile: completado si el perfil tiene información suficiente
       profile: profileComplete,
@@ -47,8 +50,8 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       // Knowledge: completado si tiene al menos un archivo subido
       knowledge: hasKnowledgeFiles,
       
-      // Chat: usar el estado del journey O detectar si ha enviado mensajes
-      chat: userJourney?.first_chat_completed || false,
+      // Chat: usar el estado del journey con logging mejorado
+      chat: chatComplete,
       
       // Agents: usar el estado del journey  
       agents: userJourney?.cdv_introduced || false,
@@ -57,7 +60,19 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       content: userJourney?.first_content_created || false
     };
 
-    console.log('Computed completion states:', newStates);
+    console.log('Computed completion states:', {
+      previous: completionStates,
+      new: newStates,
+      userJourneyChat: userJourney?.first_chat_completed,
+      changes: {
+        profile: completionStates.profile !== newStates.profile,
+        knowledge: completionStates.knowledge !== newStates.knowledge,
+        chat: completionStates.chat !== newStates.chat,
+        agents: completionStates.agents !== newStates.agents,
+        content: completionStates.content !== newStates.content
+      }
+    });
+
     setCompletionStates(newStates);
   }, [profile, documents, userKnowledgeFiles, userJourney]);
 
