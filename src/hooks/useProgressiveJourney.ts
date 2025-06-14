@@ -4,9 +4,12 @@ import { UserJourney } from './journey/types';
 import { useJourneyData } from './journey/useJourneyData';
 import { useJourneySteps } from './journey/useJourneySteps';
 import { useProgressNotifications } from './journey/useProgressNotifications';
+import { useJourneyInitialization } from './journey/useJourneyInitialization';
 
 export function useProgressiveJourney() {
   const { userJourney, isLoading, updateJourney } = useJourneyData();
+  const { isInitialized } = useJourneyInitialization();
+  
   const { 
     getJourneySteps, 
     getNextStep, 
@@ -20,8 +23,13 @@ export function useProgressiveJourney() {
   const [lastCompletedStep, setLastCompletedStep] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  const completeStep = (stepId: string) => {
+  const completeStep = async (stepId: string) => {
     console.log(`Completing step: ${stepId}`);
+    
+    if (!isInitialized) {
+      console.warn('Journey not initialized yet, skipping step completion');
+      return;
+    }
     
     const updates: Partial<UserJourney> = {};
     
@@ -49,10 +57,13 @@ export function useProgressiveJourney() {
     setLastCompletedStep(stepId);
     setShowCelebration(true);
     
-    // Update in database
-    updateJourney.mutate(updates);
-
-    console.log(`Step ${stepId} completion updates:`, updates);
+    try {
+      // Update in database
+      await updateJourney.mutate(updates);
+      console.log(`Step ${stepId} completion updates:`, updates);
+    } catch (error) {
+      console.error(`Error completing step ${stepId}:`, error);
+    }
   };
 
   const dismissCelebration = () => {
@@ -69,7 +80,7 @@ export function useProgressiveJourney() {
 
   return {
     userJourney,
-    isLoading,
+    isLoading: isLoading || !isInitialized,
     getJourneySteps,
     getNextStep,
     getCurrentStepIndex,
@@ -82,6 +93,7 @@ export function useProgressiveJourney() {
     showCelebration,
     dismissCelebration,
     getEarnedAchievements,
+    isInitialized
   };
 }
 

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -35,7 +34,7 @@ export function ConsolidatedChat() {
   const { user } = useAuth();
   const { isLoading, selectedModel, setSelectedModel, sendMessageToAI } = useMessageHandling();
   const { buildFullContextString, getContextSummary, hasProfileContext } = useConsolidatedContext();
-  const { getJourneySteps, completeStep } = useProgressiveJourney();
+  const { getJourneySteps, completeStep, isInitialized } = useProgressiveJourney();
   const { documents } = useKnowledgeBase();
   const {
     messages,
@@ -67,11 +66,17 @@ export function ConsolidatedChat() {
     chatStepCompleted: hasCompletedChat,
     messagesCount: messages.length,
     hasChatStepCompleted,
+    isInitialized,
     chatStep: chatStep ? { id: chatStep.id, completed: chatStep.completed } : null
   });
 
   // Auto-complete chat step after successful conversation
   useEffect(() => {
+    if (!isInitialized) {
+      console.log('Journey not initialized yet, skipping chat completion check');
+      return;
+    }
+
     // Check if we have a successful conversation (user message + AI response)
     const hasUserMessage = messages.some(m => m.role === 'user');
     const hasAssistantMessage = messages.some(m => m.role === 'assistant');
@@ -83,7 +88,8 @@ export function ConsolidatedChat() {
       messagesLength: messages.length,
       shouldCompleteChat,
       hasCompletedChat,
-      hasChatStepCompleted
+      hasChatStepCompleted,
+      isInitialized
     });
 
     if (shouldCompleteChat && !hasCompletedChat && !hasChatStepCompleted) {
@@ -91,7 +97,7 @@ export function ConsolidatedChat() {
       setHasChatStepCompleted(true);
       completeStep('chat');
     }
-  }, [messages, hasCompletedChat, hasChatStepCompleted, completeStep]);
+  }, [messages, hasCompletedChat, hasChatStepCompleted, completeStep, isInitialized]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {

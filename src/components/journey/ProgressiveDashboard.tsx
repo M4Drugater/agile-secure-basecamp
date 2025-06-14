@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
@@ -24,7 +23,9 @@ export default function ProgressiveDashboard() {
     userJourney,
     getCompletedStepsCount,
     getTotalStepsCount,
-    getEarnedAchievements
+    getEarnedAchievements,
+    isInitialized,
+    isLoading
   } = useProgressiveJourney();
 
   const { 
@@ -44,6 +45,22 @@ export default function ProgressiveDashboard() {
   const { getAvailableModules } = useAvailableModules(steps, profileCompleteness, isJourneyComplete());
   const availableModules = getAvailableModules();
   const newModulesCount = availableModules.filter(m => m.isNew).length;
+
+  // Show loading while journey is being initialized
+  if (isLoading || !isInitialized) {
+    return (
+      <UnifiedAppLayout>
+        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Inicializando tu progreso...</p>
+            </div>
+          </div>
+        </div>
+      </UnifiedAppLayout>
+    );
+  }
 
   // Show notifications for newly unlocked modules
   useEffect(() => {
