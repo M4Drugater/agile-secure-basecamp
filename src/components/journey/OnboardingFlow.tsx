@@ -39,14 +39,23 @@ export default function OnboardingFlow() {
   }, [isJourneyComplete, showCelebration, navigate]);
 
   const handleStepClick = (step: any) => {
-    // Allow navigation to any step, not just unlocked ones
     if (step.route) {
+      // For non-mandatory steps (chat, agents, content), auto-complete on click
+      if (['chat', 'agents', 'content'].includes(step.id) && !step.completed) {
+        console.log(`Auto-completing ${step.id} step on click`);
+        completeStep(step.id);
+      }
       navigate(step.route);
     }
   };
 
   const handleSkipToNext = () => {
     if (nextStep?.route) {
+      // Auto-complete if it's a non-mandatory step
+      if (['chat', 'agents', 'content'].includes(nextStep.id) && !nextStep.completed) {
+        console.log(`Auto-completing ${nextStep.id} step on skip`);
+        completeStep(nextStep.id);
+      }
       navigate(nextStep.route);
     }
   };

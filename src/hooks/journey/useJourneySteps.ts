@@ -10,13 +10,19 @@ export function useJourneySteps(userJourney: UserJourney | null) {
     return JOURNEY_STEPS.map((step, index) => {
       const isCompleted = completionStates[step.id as keyof typeof completionStates];
       
-      // Determinar si está bloqueado basado en el paso anterior
+      // New simplified locking logic:
+      // - Profile and Knowledge are mandatory and unlock sequentially
+      // - Chat, Agents, Content can be visited anytime (no locking)
       let locked = false;
-      if (index > 0) {
-        const previousStep = JOURNEY_STEPS[index - 1];
-        const previousCompleted = completionStates[previousStep.id as keyof typeof completionStates];
-        locked = !previousCompleted;
+      
+      if (step.id === 'knowledge') {
+        // Knowledge is unlocked only after profile is completed
+        locked = !completionStates.profile;
+      } else if (['chat', 'agents', 'content'].includes(step.id)) {
+        // These steps are always unlocked for easier access
+        locked = false;
       }
+      // Profile is never locked (first step)
 
       return {
         ...step,
@@ -28,6 +34,17 @@ export function useJourneySteps(userJourney: UserJourney | null) {
 
   const getNextStep = (): JourneyStep | null => {
     const steps = getJourneySteps();
+    
+    // First, check for mandatory incomplete steps
+    const mandatoryIncomplete = steps.find(step => 
+      ['profile', 'knowledge'].includes(step.id) && !step.completed && !step.locked
+    );
+    
+    if (mandatoryIncomplete) {
+      return mandatoryIncomplete;
+    }
+    
+    // Then, check for any other incomplete steps
     return steps.find(step => !step.completed && !step.locked) || null;
   };
 

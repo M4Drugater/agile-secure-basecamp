@@ -5,10 +5,14 @@ import { useJourneyData } from './journey/useJourneyData';
 import { useJourneySteps } from './journey/useJourneySteps';
 import { useProgressNotifications } from './journey/useProgressNotifications';
 import { useJourneyInitialization } from './journey/useJourneyInitialization';
+import { useAutoPageCompletion } from './journey/useAutoPageCompletion';
 
 export function useProgressiveJourney() {
   const { userJourney, isLoading, updateJourney } = useJourneyData();
   const { isInitialized } = useJourneyInitialization();
+  
+  // Auto-complete steps when user visits specific pages
+  useAutoPageCompletion();
   
   const { 
     getJourneySteps, 
