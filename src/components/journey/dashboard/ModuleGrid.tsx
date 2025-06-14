@@ -4,41 +4,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  User, 
-  BookOpen, 
-  MessageSquare, 
-  Shield, 
-  FileText, 
   Lock,
   Sparkles,
   ArrowRight
 } from 'lucide-react';
 
-interface Module {
+interface ModuleItem {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<any>;
   route: string;
   available: boolean;
   completed: boolean;
   isNew?: boolean;
-  completionRate?: number;
+  completion?: number;
+  badge?: string;
+  highlight?: boolean;
 }
 
 interface ModuleGridProps {
-  modules: Module[];
+  modules: ModuleItem[];
   onModuleClick: (route: string) => void;
 }
-
-const MODULE_ICONS = {
-  profile: User,
-  knowledge: BookOpen,
-  chat: MessageSquare,
-  agents: Shield,
-  content: FileText,
-  intelligence: Shield
-};
 
 export function ModuleGrid({ modules, onModuleClick }: ModuleGridProps) {
   const getDataTourAttribute = (moduleId: string) => {
@@ -71,7 +59,7 @@ export function ModuleGrid({ modules, onModuleClick }: ModuleGridProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules.map((module) => {
-          const Icon = MODULE_ICONS[module.icon as keyof typeof MODULE_ICONS] || FileText;
+          const Icon = module.icon;
           const tourAttribute = getDataTourAttribute(module.id);
           
           return (
@@ -125,6 +113,11 @@ export function ModuleGrid({ modules, onModuleClick }: ModuleGridProps) {
                         Bloqueado
                       </Badge>
                     )}
+                    {module.badge && (
+                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                        {module.badge}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 
@@ -138,16 +131,16 @@ export function ModuleGrid({ modules, onModuleClick }: ModuleGridProps) {
                   {module.description}
                 </CardDescription>
                 
-                {module.completionRate !== undefined && (
+                {module.completion !== undefined && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs">
                       <span>Progreso</span>
-                      <span>{module.completionRate}%</span>
+                      <span>{module.completion}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1.5">
                       <div 
                         className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
-                        style={{ width: `${module.completionRate}%` }}
+                        style={{ width: `${module.completion}%` }}
                       />
                     </div>
                   </div>
