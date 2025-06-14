@@ -37,12 +37,12 @@ export default function ProgressiveDashboard() {
   const availableModules = getAvailableModules();
   const newModulesCount = availableModules.filter(m => m.isNew).length;
 
-  // Only redirect to onboarding if very low completion
+  // Solo redirigir si realmente no hay nada configurado
   useEffect(() => {
-    if (profileCompleteness < 20 && !userJourney?.profile_completed && completedSteps === 0) {
+    if (profileCompleteness < 10 && completedSteps === 0 && !profile?.full_name) {
       navigate('/onboarding');
     }
-  }, [profile, userJourney, navigate, completedSteps, profileCompleteness]);
+  }, [profile, completedSteps, profileCompleteness, navigate]);
 
   const handleModuleClick = (route: string) => {
     navigate(route);
@@ -70,7 +70,7 @@ export default function ProgressiveDashboard() {
     navigate('/competitive-intelligence');
   };
 
-  const userName = profile?.full_name?.split(' ')[0] || 'Professional';
+  const userName = profile?.full_name?.split(' ')[0] || 'Profesional';
 
   return (
     <UnifiedAppLayout>

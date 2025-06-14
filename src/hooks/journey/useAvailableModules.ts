@@ -4,8 +4,7 @@ import {
   BookOpen, 
   MessageSquare, 
   Shield, 
-  FileText,
-  TrendingUp
+  FileText
 } from 'lucide-react';
 import { JourneyStep } from './types';
 
@@ -31,11 +30,11 @@ export function useAvailableModules(
     const modules: ModuleItem[] = [];
     const completedStepIds = steps.filter(s => s.completed).map(s => s.id);
     
-    // Always show profile
+    // Perfil - siempre disponible
     modules.push({
       id: 'profile',
-      title: 'Your Profile',
-      description: 'Manage your professional information',
+      title: 'Tu Perfil',
+      description: 'Gestiona tu información profesional y objetivos',
       icon: User,
       route: '/profile',
       available: true,
@@ -43,76 +42,62 @@ export function useAvailableModules(
       isNew: false
     });
 
-    // Show knowledge after profile is started (30% completion)
+    // Base de conocimiento - disponible después de empezar el perfil
     if (profileCompleteness >= 30 || completedStepIds.includes('profile')) {
       modules.push({
         id: 'knowledge',
-        title: 'Knowledge Base',
-        description: 'Upload and manage your documents',
+        title: 'Base de Conocimiento',
+        description: 'Sube y gestiona tus documentos profesionales',
         icon: BookOpen,
         route: '/knowledge',
         available: true,
         isNew: !completedStepIds.includes('knowledge'),
-        badge: completedStepIds.includes('profile') && !completedStepIds.includes('knowledge') ? 'Newly Unlocked' : undefined
+        badge: completedStepIds.includes('profile') && !completedStepIds.includes('knowledge') ? 'Desbloqueado' : undefined
       });
     }
 
-    // Show chat after knowledge setup or profile completion
+    // CLIPOGINO - disponible después de subir documentos o completar perfil
     if (completedStepIds.includes('profile') || completedStepIds.includes('knowledge')) {
       modules.push({
         id: 'chat',
-        title: 'CLIPOGINO AI Mentor',
-        description: 'Chat with your personalized AI assistant',
+        title: 'CLIPOGINO',
+        description: 'Tu mentor de IA personalizado para desarrollo profesional',
         icon: MessageSquare,
         route: '/chat',
         available: true,
-        badge: 'AI Powered',
+        badge: 'IA',
         isNew: !completedStepIds.includes('chat'),
         highlight: completedStepIds.includes('knowledge') && !completedStepIds.includes('chat')
       });
     }
 
-    // Show competitive intelligence after first chat
+    // Inteligencia competitiva - después del primer chat
     if (completedStepIds.includes('chat')) {
       modules.push({
         id: 'competitive',
-        title: 'Competitive Intelligence',
-        description: 'CDV, CIA, and CIR agents for market analysis',
+        title: 'Inteligencia Competitiva',
+        description: 'Análisis de mercado con agentes CDV, CIA y CIR',
         icon: Shield,
         route: '/competitive-intelligence',
         available: true,
-        badge: 'AI Agents',
+        badge: 'Agentes IA',
         isNew: !completedStepIds.includes('agents'),
         highlight: completedStepIds.includes('chat') && !completedStepIds.includes('agents')
       });
     }
 
-    // Show content creation after competitive intelligence discovery
+    // Generador de contenido - después de usar chat
     if (completedStepIds.includes('chat')) {
       modules.push({
         id: 'content',
-        title: 'Content Creation',
-        description: 'Generate professional content with AI',
+        title: 'Generador de Contenido',
+        description: 'Crea contenido profesional con asistencia de IA',
         icon: FileText,
         route: '/content-generator',
         available: true,
+        badge: 'IA',
         isNew: !completedStepIds.includes('content'),
         highlight: completedStepIds.includes('agents') && !completedStepIds.includes('content')
-      });
-    }
-
-    // Advanced features (available after completing main journey)
-    if (isJourneyComplete) {
-      modules.push({
-        id: 'trends',
-        title: 'Trends Discovery',
-        description: 'Real-time Reddit trends analysis',
-        icon: TrendingUp,
-        route: '/trends',
-        available: true,
-        badge: 'Live Data',
-        isNew: true,
-        highlight: true
       });
     }
 

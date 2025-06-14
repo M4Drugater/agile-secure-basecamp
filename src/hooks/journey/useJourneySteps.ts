@@ -1,51 +1,26 @@
 
 import { JourneyStep, UserJourney } from './types';
 import { JOURNEY_STEPS } from './journeySteps';
-import { useAuth } from '@/contexts/AuthContext';
+import { useJourneyStepCompletion } from './useJourneyStepCompletion';
 
 export function useJourneySteps(userJourney: UserJourney | null) {
-  const { profile } = useAuth();
+  const completionStates = useJourneyStepCompletion(userJourney);
 
   const getJourneySteps = (): JourneyStep[] => {
-    if (!userJourney) {
-      return JOURNEY_STEPS.map((step, index) => ({
-        ...step,
-        completed: false,
-        locked: index > 0
-      }));
-    }
-
     return JOURNEY_STEPS.map((step, index) => {
-      let completed = false;
+      const isCompleted = completionStates[step.id as keyof typeof completionStates];
+      
+      // Determinar si está bloqueado basado en el paso anterior
       let locked = false;
-
-      switch (step.id) {
-        case 'profile':
-          // More generous profile completion check
-          completed = userJourney.profile_completed || (profile?.profile_completeness || 0) >= 50;
-          locked = false;
-          break;
-        case 'knowledge':
-          completed = userJourney.knowledge_setup;
-          locked = !userJourney.profile_completed && (profile?.profile_completeness || 0) < 50;
-          break;
-        case 'chat':
-          completed = userJourney.first_chat_completed;
-          locked = !userJourney.knowledge_setup;
-          break;
-        case 'agents':
-          completed = userJourney.cdv_introduced;
-          locked = !userJourney.first_chat_completed;
-          break;
-        case 'content':
-          completed = userJourney.first_content_created;
-          locked = !userJourney.cdv_introduced;
-          break;
+      if (index > 0) {
+        const previousStep = JOURNEY_STEPS[index - 1];
+        const previousCompleted = completionStates[previousStep.id as keyof typeof completionStates];
+        locked = !previousCompleted;
       }
 
       return {
         ...step,
-        completed,
+        completed: isCompleted,
         locked
       };
     });
