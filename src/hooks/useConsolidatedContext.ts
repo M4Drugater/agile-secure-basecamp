@@ -1,8 +1,10 @@
 
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useKnowledgeFileRetrieval } from './useKnowledgeFileRetrieval';
+import { useMockContextBuilders } from './useMockContextBuilders';
+import { useContextSummary, type ContextSummary } from './useContextSummary';
 
 export interface ConsolidatedContext {
   profile: string;
@@ -13,31 +15,21 @@ export interface ConsolidatedContext {
   conversations: string;
 }
 
-export interface ContextSummary {
-  hasProfile: boolean;
-  knowledgeCount: number;
-  contentCount: number;
-  learningCount: number;
-  activityCount: number;
-  conversationCount: number;
-  totalItems: number;
-  quality: 'basic' | 'good' | 'excellent';
-}
-
-interface KnowledgeFile {
-  id: string;
-  title: string;
-  document_category: string;
-  extracted_content: string | null;
-}
+export type { ContextSummary };
 
 export function useConsolidatedContext() {
   const { user } = useAuth();
-  const [knowledgeCount, setKnowledgeCount] = useState(0);
-  const [contentCount, setContentCount] = useState(0);
-  const [learningCount, setLearningCount] = useState(0);
-  const [activityCount, setActivityCount] = useState(0);
-  const [conversationCount, setConversationCount] = useState(0);
+  const { buildKnowledgeContext, knowledgeCount } = useKnowledgeFileRetrieval();
+  const {
+    buildContentContext,
+    buildLearningContext,
+    buildActivityContext,
+    buildConversationContext,
+    contentCount,
+    learningCount,
+    activityCount,
+    conversationCount,
+  } = useMockContextBuilders();
 
   // Profile Context
   const profileQuery = useQuery({
@@ -85,77 +77,6 @@ Skill Gaps: ${profile.skill_gaps?.join(', ') || 'Not specified'}
 `;
   };
 
-  const retrieveRelevantKnowledge = async (userMessage: string): Promise<KnowledgeFile[]> => {
-    try {
-      if (!user) return [];
-      
-      const { data, error } = await supabase
-        .from('user_knowledge_files')
-        .select(`
-          id,
-          title,
-          document_category,
-          extracted_content
-        `)
-        .eq('user_id', user.id)
-        .eq('processing_status', 'completed')
-        .limit(5);
-
-      if (error) throw error;
-      return (data || []) as KnowledgeFile[];
-    } catch (error) {
-      console.error('Error retrieving knowledge:', error);
-      return [];
-    }
-  };
-
-  const buildKnowledgeContext = async (userMessage: string): Promise<string> => {
-    try {
-      const relevantKnowledge = await retrieveRelevantKnowledge(userMessage);
-      setKnowledgeCount(relevantKnowledge.length);
-      
-      if (!relevantKnowledge || relevantKnowledge.length === 0) return '';
-
-      let context = `\n=== RELEVANT KNOWLEDGE BASE ===\n`;
-      relevantKnowledge.forEach((item, index) => {
-        context += `${index + 1}. ${item.title}
-   Category: ${item.document_category}
-   Content: ${item.extracted_content?.substring(0, 200)}${item.extracted_content && item.extracted_content.length > 200 ? '...' : ''}
-`;
-      });
-
-      return context;
-    } catch (error) {
-      console.error('Error building knowledge context:', error);
-      setKnowledgeCount(0);
-      return '';
-    }
-  };
-
-  const buildContentContext = (): string => {
-    // Simplified content context - would connect to actual content data
-    setContentCount(3); // Mock data
-    return `\n=== CONTENT CREATION CONTEXT ===\nRecent content types: Blog posts, Social media, Marketing copy\n`;
-  };
-
-  const buildLearningContext = (): string => {
-    // Simplified learning context - would connect to actual learning data
-    setLearningCount(2); // Mock data
-    return `\n=== LEARNING CONTEXT ===\nActive learning paths: Professional Development, AI Skills\n`;
-  };
-
-  const buildActivityContext = (): string => {
-    // Simplified activity context - would connect to actual activity data
-    setActivityCount(5); // Mock data
-    return `\n=== USER ACTIVITY CONTEXT ===\nRecent activities: Chat sessions, Content generation, Knowledge uploads\n`;
-  };
-
-  const buildConversationContext = (): string => {
-    // Simplified conversation context - would connect to actual conversation data
-    setConversationCount(3); // Mock data
-    return `\n=== CONVERSATION CONTEXT ===\nRecent topics: Professional development, Content strategy, Learning goals\n`;
-  };
-
   const buildFullContext = async (userMessage: string): Promise<ConsolidatedContext> => {
     const knowledgeContext = await buildKnowledgeContext(userMessage);
     
@@ -183,30 +104,20 @@ Skill Gaps: ${profile.skill_gaps?.join(', ') || 'Not specified'}
     return fullContext;
   };
 
-  const getContextSummary = (): ContextSummary => {
-    const totalItems = knowledgeCount + contentCount + learningCount + activityCount + conversationCount;
-    let quality: 'basic' | 'good' | 'excellent' = 'basic';
-    
-    if (totalItems >= 10) quality = 'excellent';
-    else if (totalItems >= 5) quality = 'good';
-
-    return {
-      hasProfile: !!profileQuery.data,
-      knowledgeCount,
-      contentCount,
-      learningCount,
-      activityCount,
-      conversationCount,
-      totalItems,
-      quality,
-    };
-  };
+  const contextSummary = useContextSummary({
+    hasProfile: !!profileQuery.data,
+    knowledgeCount,
+    contentCount,
+    learningCount,
+    activityCount,
+    conversationCount,
+  });
 
   return {
     buildFullContext,
     buildFullContextString,
     buildKnowledgeContext,
-    getContextSummary,
+    getContextSummary: () => contextSummary,
     hasProfileContext: !!profileQuery.data,
     isLoadingProfile: profileQuery.isLoading,
   };
