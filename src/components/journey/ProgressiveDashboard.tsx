@@ -2,27 +2,15 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  User, 
-  BookOpen, 
-  MessageSquare, 
-  Shield, 
-  FileText,
-  CheckCircle,
-  ArrowRight,
-  Sparkles,
-  Target,
-  TrendingUp,
-  Lock,
-  Star
-} from 'lucide-react';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useAuth } from '@/contexts/AuthContext';
-import { AchievementBadge } from './AchievementBadge';
+import { useAvailableModules } from '@/hooks/journey/useAvailableModules';
+import { WelcomeHeader } from './dashboard/WelcomeHeader';
+import { AchievementsDisplay } from './dashboard/AchievementsDisplay';
+import { ProgressTracker } from './dashboard/ProgressTracker';
+import { NextStepRecommendation } from './dashboard/NextStepRecommendation';
+import { ModuleGrid } from './dashboard/ModuleGrid';
+import { JourneyCompletionCard } from './dashboard/JourneyCompletionCard';
 
 export default function ProgressiveDashboard() {
   const navigate = useNavigate();
@@ -43,333 +31,91 @@ export default function ProgressiveDashboard() {
   const totalSteps = getTotalStepsCount();
   const progressPercentage = (completedSteps / totalSteps) * 100;
   const earnedAchievements = getEarnedAchievements();
+  const profileCompleteness = profile?.profile_completeness || 0;
+
+  const { getAvailableModules } = useAvailableModules(steps, profileCompleteness, isJourneyComplete());
+  const availableModules = getAvailableModules();
+  const newModulesCount = availableModules.filter(m => m.isNew).length;
 
   // Only redirect to onboarding if very low completion
   useEffect(() => {
-    const profileCompleteness = profile?.profile_completeness || 0;
     if (profileCompleteness < 20 && !userJourney?.profile_completed && completedSteps === 0) {
       navigate('/onboarding');
     }
-  }, [profile, userJourney, navigate, completedSteps]);
+  }, [profile, userJourney, navigate, completedSteps, profileCompleteness]);
 
-  const getAvailableModules = () => {
-    const modules = [];
-    const completedStepIds = steps.filter(s => s.completed).map(s => s.id);
-    
-    // Always show profile
-    modules.push({
-      id: 'profile',
-      title: 'Your Profile',
-      description: 'Manage your professional information',
-      icon: User,
-      route: '/profile',
-      available: true,
-      completion: profile?.profile_completeness || 0,
-      isNew: false
-    });
-
-    // Show knowledge after profile is started (30% completion)
-    if ((profile?.profile_completeness || 0) >= 30 || completedStepIds.includes('profile')) {
-      modules.push({
-        id: 'knowledge',
-        title: 'Knowledge Base',
-        description: 'Upload and manage your documents',
-        icon: BookOpen,
-        route: '/knowledge',
-        available: true,
-        isNew: !completedStepIds.includes('knowledge'),
-        badge: completedStepIds.includes('profile') && !completedStepIds.includes('knowledge') ? 'Newly Unlocked' : undefined
-      });
-    }
-
-    // Show chat after knowledge setup or profile completion
-    if (completedStepIds.includes('profile') || completedStepIds.includes('knowledge')) {
-      modules.push({
-        id: 'chat',
-        title: 'CLIPOGINO AI Mentor',
-        description: 'Chat with your personalized AI assistant',
-        icon: MessageSquare,
-        route: '/chat',
-        available: true,
-        badge: 'AI Powered',
-        isNew: !completedStepIds.includes('chat'),
-        highlight: completedStepIds.includes('knowledge') && !completedStepIds.includes('chat')
-      });
-    }
-
-    // Show competitive intelligence after first chat
-    if (completedStepIds.includes('chat')) {
-      modules.push({
-        id: 'competitive',
-        title: 'Competitive Intelligence',
-        description: 'CDV, CIA, and CIR agents for market analysis',
-        icon: Shield,
-        route: '/competitive-intelligence',
-        available: true,
-        badge: 'AI Agents',
-        isNew: !completedStepIds.includes('agents'),
-        highlight: completedStepIds.includes('chat') && !completedStepIds.includes('agents')
-      });
-    }
-
-    // Show content creation after competitive intelligence discovery
-    if (completedStepIds.includes('chat')) {
-      modules.push({
-        id: 'content',
-        title: 'Content Creation',
-        description: 'Generate professional content with AI',
-        icon: FileText,
-        route: '/content-generator',
-        available: true,
-        isNew: !completedStepIds.includes('content'),
-        highlight: completedStepIds.includes('agents') && !completedStepIds.includes('content')
-      });
-    }
-
-    // Advanced features (available after completing main journey)
-    if (isJourneyComplete()) {
-      modules.push({
-        id: 'trends',
-        title: 'Trends Discovery',
-        description: 'Real-time Reddit trends analysis',
-        icon: TrendingUp,
-        route: '/trends',
-        available: true,
-        badge: 'Live Data',
-        isNew: true,
-        highlight: true
-      });
-    }
-
-    return modules;
+  const handleModuleClick = (route: string) => {
+    navigate(route);
   };
 
-  const availableModules = getAvailableModules();
-  const newModulesCount = availableModules.filter(m => m.isNew).length;
+  const handleCompleteSetup = () => {
+    navigate('/onboarding');
+  };
+
+  const handleContinueNext = () => {
+    if (nextStep?.route) {
+      navigate(nextStep.route);
+    }
+  };
+
+  const handleGetStarted = () => {
+    navigate(nextStep?.route || '/onboarding');
+  };
+
+  const handleStartChat = () => {
+    navigate('/chat');
+  };
+
+  const handleExploreAgents = () => {
+    navigate('/competitive-intelligence');
+  };
+
+  const userName = profile?.full_name?.split(' ')[0] || 'Professional';
 
   return (
     <UnifiedAppLayout>
       <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                Welcome back, {profile?.full_name?.split(' ')[0] || 'Professional'}! 👋
-                {newModulesCount > 0 && (
-                  <Badge className="bg-green-500 animate-pulse">
-                    {newModulesCount} New!
-                  </Badge>
-                )}
-              </h1>
-              <p className="text-muted-foreground">
-                {isJourneyComplete() 
-                  ? 'Your AI-powered workspace is ready for professional growth'
-                  : `Continue your setup to unlock more AI-powered features (${completedSteps}/${totalSteps} completed)`
-                }
-              </p>
-            </div>
-            {!isJourneyComplete() && (
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/onboarding')}
-                className="flex items-center gap-2"
-              >
-                <Target className="h-4 w-4" />
-                Complete Setup
-              </Button>
-            )}
-          </div>
+        <WelcomeHeader
+          userName={userName}
+          isJourneyComplete={isJourneyComplete()}
+          completedSteps={completedSteps}
+          totalSteps={totalSteps}
+          newModulesCount={newModulesCount}
+          onCompleteSetup={handleCompleteSetup}
+        />
 
-          {/* Achievements Row */}
-          {earnedAchievements.length > 0 && (
-            <Card className="mb-6 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Star className="h-5 w-5 text-purple-600" />
-                    <span className="font-semibold">Your Achievements</span>
-                  </div>
-                  <div className="flex gap-2">
-                    {earnedAchievements.map((achievement) => (
-                      <AchievementBadge 
-                        key={achievement} 
-                        type={achievement} 
-                        earned={true} 
-                        size="sm"
-                        showLabel={false} 
-                      />
-                    ))}
-                    {isJourneyComplete() && (
-                      <AchievementBadge 
-                        type="master" 
-                        earned={true} 
-                        size="sm"
-                        showLabel={false} 
-                      />
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        <AchievementsDisplay
+          earnedAchievements={earnedAchievements}
+          isJourneyComplete={isJourneyComplete()}
+        />
 
-          {/* Progress Bar (only show if not complete) */}
-          {!isJourneyComplete() && (
-            <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold">Setup Progress</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {completedSteps} of {totalSteps} steps completed
-                    </p>
-                  </div>
-                  <Badge className="bg-blue-500">
-                    {Math.round(progressPercentage)}% Complete
-                  </Badge>
-                </div>
-                <Progress value={progressPercentage} className="mb-3" />
-                {nextStep && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Next: {nextStep.title}</span>
-                    <Button 
-                      size="sm" 
-                      onClick={() => navigate(nextStep.route || '/onboarding')}
-                      className="flex items-center gap-1"
-                    >
-                      Continue
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Quick Actions for Next Step */}
-        {nextStep && (
-          <Card className="mb-8 border-2 border-orange-200 bg-orange-50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-800">
-                <Sparkles className="h-5 w-5" />
-                Recommended Next Step
-              </CardTitle>
-              <CardDescription>
-                Complete this step to unlock more AI-powered features
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{nextStep.title}</h4>
-                  <p className="text-sm text-muted-foreground">{nextStep.description}</p>
-                </div>
-                <Button onClick={() => navigate(nextStep.route || '/onboarding')}>
-                  Get Started
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {!isJourneyComplete() && (
+          <ProgressTracker
+            completedSteps={completedSteps}
+            totalSteps={totalSteps}
+            progressPercentage={progressPercentage}
+            nextStep={nextStep}
+            onContinueNext={handleContinueNext}
+          />
         )}
 
-        {/* Available Modules Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {availableModules.map((module) => {
-            const Icon = module.icon;
-            
-            return (
-              <Card 
-                key={module.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  module.available ? 'hover:scale-105' : 'opacity-60'
-                } ${module.highlight ? 'ring-2 ring-blue-300 bg-blue-50' : ''} ${
-                  module.isNew ? 'animate-pulse' : ''
-                }`}
-                onClick={() => module.available && navigate(module.route)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {module.badge && (
-                        <Badge variant="secondary" className="text-xs">
-                          {module.badge}
-                        </Badge>
-                      )}
-                      {module.isNew && (
-                        <Badge className="bg-green-500 text-xs animate-pulse">
-                          New!
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <CardTitle className="text-lg">{module.title}</CardTitle>
-                  <CardDescription>{module.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {module.completion !== undefined && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Completion</span>
-                        <span>{module.completion}%</span>
-                      </div>
-                      <Progress value={module.completion} className="h-2" />
-                    </div>
-                  )}
-                  {module.available && (
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm text-green-600 flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" />
-                        Available
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-blue-500" />
-                    </div>
-                  )}
-                  {!module.available && (
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <Lock className="h-3 w-3" />
-                        Complete previous steps
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {nextStep && (
+          <NextStepRecommendation
+            nextStep={nextStep}
+            onGetStarted={handleGetStarted}
+          />
+        )}
 
-        {/* Journey Complete Celebration */}
+        <ModuleGrid
+          modules={availableModules}
+          onModuleClick={handleModuleClick}
+        />
+
         {isJourneyComplete() && (
-          <Card className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Setup Complete! 🎉</h3>
-              <p className="text-muted-foreground mb-4">
-                You've unlocked the full power of LAIGENT. Your AI-powered professional development journey begins now!
-              </p>
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <AchievementBadge type="master" earned={true} size="lg" showLabel={true} />
-              </div>
-              <div className="flex items-center justify-center gap-3">
-                <Button onClick={() => navigate('/chat')}>
-                  Start with CLIPOGINO
-                  <MessageSquare className="h-4 w-4 ml-2" />
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/competitive-intelligence')}>
-                  Explore AI Agents
-                  <Shield className="h-4 w-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <JourneyCompletionCard
+            onStartChat={handleStartChat}
+            onExploreAgents={handleExploreAgents}
+          />
         )}
       </div>
     </UnifiedAppLayout>
