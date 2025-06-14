@@ -24,6 +24,13 @@ export interface ContextSummary {
   quality: 'basic' | 'good' | 'excellent';
 }
 
+interface KnowledgeFile {
+  id: string;
+  title: string;
+  document_category: string;
+  extracted_content: string | null;
+}
+
 export function useConsolidatedContext() {
   const { user } = useAuth();
   const [knowledgeCount, setKnowledgeCount] = useState(0);
@@ -78,19 +85,24 @@ Skill Gaps: ${profile.skill_gaps?.join(', ') || 'Not specified'}
 `;
   };
 
-  const retrieveRelevantKnowledge = async (userMessage: string) => {
+  const retrieveRelevantKnowledge = async (userMessage: string): Promise<KnowledgeFile[]> => {
     try {
       if (!user) return [];
       
       const { data, error } = await supabase
         .from('user_knowledge_files')
-        .select('*')
+        .select(`
+          id,
+          title,
+          document_category,
+          extracted_content
+        `)
         .eq('user_id', user.id)
-        .eq('status', 'processed')
+        .eq('processing_status', 'completed')
         .limit(5);
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as KnowledgeFile[];
     } catch (error) {
       console.error('Error retrieving knowledge:', error);
       return [];
@@ -107,8 +119,8 @@ Skill Gaps: ${profile.skill_gaps?.join(', ') || 'Not specified'}
       let context = `\n=== RELEVANT KNOWLEDGE BASE ===\n`;
       relevantKnowledge.forEach((item, index) => {
         context += `${index + 1}. ${item.title}
-   Category: ${item.category}
-   Content: ${item.extracted_content?.substring(0, 200)}${item.extracted_content?.length > 200 ? '...' : ''}
+   Category: ${item.document_category}
+   Content: ${item.extracted_content?.substring(0, 200)}${item.extracted_content && item.extracted_content.length > 200 ? '...' : ''}
 `;
       });
 
