@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Brain, BarChart3, Settings, Monitor } from 'lucide-react';
+import { MessageSquare, Brain, BarChart3, Settings, Monitor, Globe } from 'lucide-react';
 import { AgentInfoPanel } from './AgentInfoPanel';
 import { AgentConfigurationPanel } from './AgentConfigurationPanel';
 import { AgentChat } from './AgentChat';
 import { StrategicAnalysisPanel } from './StrategicAnalysisPanel';
 import { ExecutiveDashboard } from './ExecutiveDashboard';
 import { ContinuousMonitoringPanel } from './ContinuousMonitoringPanel';
+import { RealTimeIntelligencePanel } from './RealTimeIntelligencePanel';
 
 interface SessionConfig {
   companyName: string;
@@ -28,7 +29,7 @@ export function EnhancedAgentWorkspace({
   sessionConfig, 
   setSessionConfig 
 }: EnhancedAgentWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('realtime');
   const [analysisData, setAnalysisData] = useState({});
 
   const agentCapabilities = {
@@ -67,13 +68,18 @@ export function EnhancedAgentWorkspace({
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">McKinsey-Level Analysis</Badge>
-          <Badge variant="default">Enhanced AI Engine</Badge>
+          <Badge variant="default">Real-Time Intelligence</Badge>
+          <Badge className="bg-green-600">Enhanced AI Engine</Badge>
         </div>
       </div>
 
-      {/* Enhanced Workspace Tabs */}
+      {/* Enhanced Workspace Tabs with Real-Time Intelligence */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="realtime" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Real-Time Intel
+          </TabsTrigger>
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Agent Chat
@@ -88,13 +94,20 @@ export function EnhancedAgentWorkspace({
           </TabsTrigger>
           <TabsTrigger value="monitoring" className="flex items-center gap-2">
             <Monitor className="h-4 w-4" />
-            Continuous Monitoring
+            Monitoring
           </TabsTrigger>
           <TabsTrigger value="config" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Configuration
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="realtime" className="space-y-0">
+          <RealTimeIntelligencePanel 
+            companyName={sessionConfig.companyName}
+            industry={sessionConfig.industry}
+          />
+        </TabsContent>
 
         <TabsContent value="chat" className="space-y-0">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -149,6 +162,20 @@ export function EnhancedAgentWorkspace({
                         {specialty}
                       </div>
                     ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Real-Time Capabilities</h4>
+                  <div className="space-y-1">
+                    <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                      Live Web Search & Analysis
+                    </div>
+                    <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                      Financial Data Retrieval
+                    </div>
+                    <div className="p-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
+                      Market Intelligence Monitoring
+                    </div>
                   </div>
                 </div>
               </div>
