@@ -6,7 +6,7 @@ import { UserJourney } from './types';
 
 export function useJourneyStepCompletion(userJourney: UserJourney | null) {
   const { profile } = useAuth();
-  const { userFiles } = useKnowledgeBase();
+  const { documents } = useKnowledgeBase();
   
   const [completionStates, setCompletionStates] = useState({
     profile: false,
@@ -22,7 +22,7 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       profile: !!(profile?.full_name && profile?.industry && (profile?.profile_completeness || 0) >= 50),
       
       // Knowledge: completado si tiene al menos un archivo subido
-      knowledge: userFiles && userFiles.length > 0,
+      knowledge: documents && documents.length > 0,
       
       // Chat: usar el estado del journey
       chat: userJourney?.first_chat_completed || false,
@@ -35,7 +35,7 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
     };
 
     setCompletionStates(newStates);
-  }, [profile, userFiles, userJourney]);
+  }, [profile, documents, userJourney]);
 
   return completionStates;
 }
