@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
@@ -46,6 +47,27 @@ export default function ProgressiveDashboard() {
   const availableModules = getAvailableModules();
   const newModulesCount = availableModules.filter(m => m.isNew).length;
 
+  // All useEffect hooks must be called before any conditional logic
+  useEffect(() => {
+    const unlockedModules = availableModules.filter(m => m.isNew && m.available);
+    
+    unlockedModules.forEach(module => {
+      if (module.id !== 'profile') { // Don't show notification for profile
+        addNotification({
+          type: 'module_unlocked',
+          title: `${module.title} Desbloqueado`,
+          message: `Ahora puedes acceder a: ${module.description}`
+        });
+      }
+    });
+  }, [availableModules, addNotification]);
+
+  useEffect(() => {
+    if (profileCompleteness < 10 && completedSteps === 0 && !profile?.full_name) {
+      navigate('/onboarding');
+    }
+  }, [profile, completedSteps, profileCompleteness, navigate]);
+
   // Show loading while journey is being initialized
   if (isLoading || !isInitialized) {
     return (
@@ -61,28 +83,6 @@ export default function ProgressiveDashboard() {
       </UnifiedAppLayout>
     );
   }
-
-  // Show notifications for newly unlocked modules
-  useEffect(() => {
-    const unlockedModules = availableModules.filter(m => m.isNew && m.available);
-    
-    unlockedModules.forEach(module => {
-      if (module.id !== 'profile') { // Don't show notification for profile
-        addNotification({
-          type: 'module_unlocked',
-          title: `${module.title} Desbloqueado`,
-          message: `Ahora puedes acceder a: ${module.description}`
-        });
-      }
-    });
-  }, [availableModules, addNotification]);
-
-  // Solo redirigir si realmente no hay nada configurado
-  useEffect(() => {
-    if (profileCompleteness < 10 && completedSteps === 0 && !profile?.full_name) {
-      navigate('/onboarding');
-    }
-  }, [profile, completedSteps, profileCompleteness, navigate]);
 
   const handleModuleClick = (route: string) => {
     navigate(route);
