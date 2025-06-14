@@ -40,8 +40,8 @@ export function EnhancedAgentWorkspace({
     },
     cir: {
       name: 'Competitive Intelligence Retriever', 
-      frameworks: ['Financial Analysis', 'Operational Metrics', 'Market Intelligence'],
-      specialties: ['Data Intelligence', 'Market Metrics', 'Performance Benchmarking', 'Financial Analysis']
+      frameworks: ['Real-Time Analysis', 'Market Intelligence', 'Web Data Mining'],
+      specialties: ['Live Data Intelligence', 'Market Metrics', 'Performance Benchmarking', 'Real-Time Analysis']
     },
     cia: {
       name: 'Competitive Intelligence Analysis',
@@ -67,7 +67,7 @@ export function EnhancedAgentWorkspace({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">McKinsey-Level Analysis</Badge>
+          <Badge variant="outline">Perplexity-Powered</Badge>
           <Badge variant="default">Real-Time Intelligence</Badge>
           <Badge className="bg-green-600">Enhanced AI Engine</Badge>
         </div>
@@ -168,13 +168,13 @@ export function EnhancedAgentWorkspace({
                   <h4 className="font-medium mb-2">Real-Time Capabilities</h4>
                   <div className="space-y-1">
                     <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-                      Live Web Search & Analysis
+                      Live Web Search & Analysis (Perplexity)
                     </div>
                     <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                      Financial Data Retrieval
+                      Real-Time Market Intelligence
                     </div>
                     <div className="p-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
-                      Market Intelligence Monitoring
+                      Competitive Intelligence Monitoring
                     </div>
                   </div>
                 </div>

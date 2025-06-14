@@ -41,7 +41,7 @@ serve(async (req) => {
       timeframe
     });
 
-    // Perplexity search for real-time web data
+    // Perplexity search for real-time web data and financial information
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -53,13 +53,28 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are an elite competitive intelligence analyst. Provide precise, actionable intelligence with:
-            1. Executive Summary (2-3 sentences)
-            2. Key Findings (3-5 bullet points)
-            3. Strategic Implications (business impact)
-            4. Competitive Threats/Opportunities
-            5. Recommended Actions
-            6. Data Sources and Confidence Level`
+            content: `You are an elite competitive intelligence analyst with access to real-time web data. Provide comprehensive analysis including:
+            
+            FOR ALL SEARCH TYPES:
+            1. Executive Summary (3-4 sentences)
+            2. Key Findings (5-7 bullet points with specific data)
+            3. Strategic Implications (business impact analysis)
+            4. Competitive Landscape Assessment
+            5. Market Context and Trends
+            6. Risk Factors and Opportunities
+            7. Recommended Actions
+            8. Data Sources and Confidence Level
+            
+            FOR FINANCIAL SEARCHES, ALSO INCLUDE:
+            - Stock price movements and trading volume
+            - Financial metrics and ratios
+            - Earnings reports and revenue data
+            - Market capitalization changes
+            - Analyst ratings and price targets
+            - Peer comparison data
+            - Financial news and events
+            
+            Use specific numbers, dates, and sources wherever possible. Format as a comprehensive intelligence report.`
           },
           {
             role: 'user',
@@ -68,7 +83,7 @@ serve(async (req) => {
         ],
         temperature: 0.2,
         top_p: 0.9,
-        max_tokens: 2000,
+        max_tokens: 3000,
         return_images: false,
         return_related_questions: true,
         search_domain_filter: getSearchDomains(searchType),
@@ -86,45 +101,53 @@ serve(async (req) => {
     const webSearchResults = perplexityData.choices[0]?.message?.content;
     const relatedQuestions = perplexityData.related_questions || [];
 
-    // OpenAI analysis for strategic insights
-    const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a McKinsey-level strategic analyst. Analyze the web search results and provide:
-            1. Strategic Analysis using Porter's Five Forces
-            2. Competitive Positioning Assessment
-            3. Market Opportunity Identification
-            4. Risk Assessment Matrix
-            5. Implementation Roadmap
-            
-            Focus on ${companyName} in the ${industry} industry.`
+    // OpenAI analysis for strategic insights if available
+    let strategicAnalysis = '';
+    if (openAIApiKey) {
+      try {
+        const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIApiKey}`,
+            'Content-Type': 'application/json',
           },
-          {
-            role: 'user',
-            content: `Web Search Results: ${webSearchResults}\n\nProvide strategic analysis for competitive intelligence.`
-          }
-        ],
-        temperature: 0.3,
-        max_tokens: 1500,
-      }),
-    });
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              {
+                role: 'system',
+                content: `You are a McKinsey-level strategic analyst. Analyze the web search results and provide:
+                1. Strategic Analysis using Porter's Five Forces
+                2. Competitive Positioning Assessment
+                3. Market Opportunity Identification
+                4. Risk Assessment Matrix
+                5. Implementation Roadmap
+                
+                Focus on ${companyName} in the ${industry} industry.`
+              },
+              {
+                role: 'user',
+                content: `Web Search Results: ${webSearchResults}\n\nProvide strategic analysis for competitive intelligence.`
+              }
+            ],
+            temperature: 0.3,
+            max_tokens: 1500,
+          }),
+        });
 
-    if (!analysisResponse.ok) {
-      throw new Error(`OpenAI API error: ${analysisResponse.statusText}`);
+        if (analysisResponse.ok) {
+          const analysisData = await analysisResponse.json();
+          strategicAnalysis = analysisData.choices[0]?.message?.content;
+        }
+      } catch (error) {
+        console.log('OpenAI analysis failed, using Perplexity results only:', error);
+        strategicAnalysis = 'Strategic analysis powered by Perplexity intelligence.';
+      }
+    } else {
+      strategicAnalysis = 'Strategic analysis powered by Perplexity intelligence.';
     }
 
-    const analysisData = await analysisResponse.json();
-    const strategicAnalysis = analysisData.choices[0]?.message?.content;
-
-    // Extract insights and metrics
+    // Extract insights and metrics from the comprehensive search results
     const insights = extractInsights(webSearchResults, strategicAnalysis);
     const metrics = extractMetrics(webSearchResults);
     const threats = extractThreats(webSearchResults);
@@ -184,23 +207,23 @@ function buildEnhancedQuery(query: string, companyName: string, industry: string
   };
 
   const searchTypeMap = {
-    'news': `latest news and announcements about ${companyName} and competitors in ${industry}`,
-    'financial': `financial performance, earnings, revenue, market cap updates for ${companyName} and ${industry} sector`,
-    'competitive': `competitive moves, partnerships, product launches by ${companyName} competitors in ${industry}`,
-    'market': `market trends, industry analysis, market share changes in ${industry} sector`,
-    'regulatory': `regulatory changes, compliance, legal issues affecting ${companyName} and ${industry}`
+    'news': `latest news, announcements, press releases about ${companyName} and competitors in ${industry}`,
+    'financial': `financial performance, earnings, revenue, stock price, market cap, financial ratios, analyst ratings for ${companyName} and ${industry} sector companies`,
+    'competitive': `competitive moves, partnerships, product launches, market share changes by ${companyName} competitors in ${industry}`,
+    'market': `market trends, industry analysis, market size, growth rates, disruptions in ${industry} sector`,
+    'regulatory': `regulatory changes, compliance, legal issues, policy changes affecting ${companyName} and ${industry}`
   };
 
-  return `${query} ${searchTypeMap[searchType]} in the ${timeframeMap[timeframe]}. Focus on strategic implications for ${companyName} operating in ${industry} industry.`;
+  return `${query} ${searchTypeMap[searchType]} in the ${timeframeMap[timeframe]}. Provide comprehensive analysis with specific data, numbers, and strategic implications for ${companyName} operating in ${industry} industry.`;
 }
 
 function getSearchDomains(searchType: string): string[] {
   const domainMap = {
-    'news': ['reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com'],
-    'financial': ['sec.gov', 'bloomberg.com', 'marketwatch.com', 'yahoo.com'],
-    'competitive': ['techcrunch.com', 'venturebeat.com', 'crunchbase.com'],
-    'market': ['gartner.com', 'forrester.com', 'idc.com'],
-    'regulatory': ['sec.gov', 'fda.gov', 'ftc.gov']
+    'news': ['reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com', 'cnbc.com', 'marketwatch.com'],
+    'financial': ['sec.gov', 'bloomberg.com', 'marketwatch.com', 'yahoo.com', 'morningstar.com', 'finviz.com'],
+    'competitive': ['techcrunch.com', 'venturebeat.com', 'crunchbase.com', 'businesswire.com'],
+    'market': ['gartner.com', 'forrester.com', 'idc.com', 'mckinsey.com', 'bcg.com'],
+    'regulatory': ['sec.gov', 'fda.gov', 'ftc.gov', 'europa.eu']
   };
   
   return domainMap[searchType] || [];
@@ -219,10 +242,22 @@ function getRecencyFilter(timeframe: string): string {
 }
 
 function extractInsights(webResults: string, analysis: string): any[] {
-  // Extract key insights from the combined results
   const insights = [];
+  const combinedText = webResults + ' ' + analysis;
   
-  if (webResults.includes('launch') || webResults.includes('announce')) {
+  // Financial insights
+  if (combinedText.includes('earnings') || combinedText.includes('revenue') || combinedText.includes('profit')) {
+    insights.push({
+      type: 'financial_performance',
+      title: 'Financial Performance Update',
+      description: 'Recent financial data and performance metrics identified',
+      impact: 'high',
+      confidence: 0.85
+    });
+  }
+  
+  // Product/service launches
+  if (combinedText.includes('launch') || combinedText.includes('announce') || combinedText.includes('release')) {
     insights.push({
       type: 'product_launch',
       title: 'New Product/Service Launch Detected',
@@ -232,23 +267,36 @@ function extractInsights(webResults: string, analysis: string): any[] {
     });
   }
   
-  if (webResults.includes('partnership') || webResults.includes('acquisition')) {
+  // Strategic moves
+  if (combinedText.includes('partnership') || combinedText.includes('acquisition') || combinedText.includes('merger')) {
     insights.push({
       type: 'strategic_move',
-      title: 'Strategic Partnership/Acquisition Activity',
+      title: 'Strategic Partnership/M&A Activity',
       description: 'M&A or partnership activity in the competitive landscape',
       impact: 'high',
       confidence: 0.9
     });
   }
   
-  if (webResults.includes('funding') || webResults.includes('investment')) {
+  // Market trends
+  if (combinedText.includes('growth') || combinedText.includes('trend') || combinedText.includes('market share')) {
     insights.push({
-      type: 'funding',
-      title: 'Investment/Funding Activity',
-      description: 'New funding rounds or investment activity detected',
+      type: 'market_trend',
+      title: 'Market Trend Analysis',
+      description: 'Significant market trends and growth patterns identified',
       impact: 'medium',
-      confidence: 0.7
+      confidence: 0.75
+    });
+  }
+  
+  // Regulatory changes
+  if (combinedText.includes('regulation') || combinedText.includes('compliance') || combinedText.includes('policy')) {
+    insights.push({
+      type: 'regulatory',
+      title: 'Regulatory Environment Changes',
+      description: 'Regulatory changes that may impact business operations',
+      impact: 'high',
+      confidence: 0.8
     });
   }
   
@@ -256,33 +304,43 @@ function extractInsights(webResults: string, analysis: string): any[] {
 }
 
 function extractMetrics(webResults: string): any {
-  // Extract quantitative metrics
   return {
     marketMovement: extractMarketData(webResults),
-    competitorCount: extractCompetitorMentions(webResults),
+    competitorMentions: extractCompetitorMentions(webResults),
     sentimentScore: calculateSentiment(webResults),
-    newsVolume: extractNewsVolume(webResults)
+    newsVolume: extractNewsVolume(webResults),
+    financialMetrics: extractFinancialMetrics(webResults)
   };
 }
 
 function extractThreats(webResults: string): any[] {
   const threats = [];
+  const lowerResults = webResults.toLowerCase();
   
-  if (webResults.toLowerCase().includes('competition') || webResults.toLowerCase().includes('rival')) {
+  if (lowerResults.includes('competition') || lowerResults.includes('rival') || lowerResults.includes('compete')) {
     threats.push({
       type: 'competitive',
       severity: 'medium',
-      description: 'Increased competitive activity detected',
+      description: 'Increased competitive pressure detected in market analysis',
       probability: 0.7
     });
   }
   
-  if (webResults.toLowerCase().includes('regulation') || webResults.toLowerCase().includes('compliance')) {
+  if (lowerResults.includes('regulation') || lowerResults.includes('compliance') || lowerResults.includes('ban')) {
     threats.push({
       type: 'regulatory',
       severity: 'high',
-      description: 'Regulatory changes may impact business',
+      description: 'Regulatory changes may create compliance challenges',
       probability: 0.6
+    });
+  }
+  
+  if (lowerResults.includes('decline') || lowerResults.includes('decrease') || lowerResults.includes('fall')) {
+    threats.push({
+      type: 'market_decline',
+      severity: 'medium',
+      description: 'Market decline indicators identified in analysis',
+      probability: 0.5
     });
   }
   
@@ -291,22 +349,32 @@ function extractThreats(webResults: string): any[] {
 
 function extractOpportunities(webResults: string): any[] {
   const opportunities = [];
+  const lowerResults = webResults.toLowerCase();
   
-  if (webResults.toLowerCase().includes('market growth') || webResults.toLowerCase().includes('expansion')) {
+  if (lowerResults.includes('growth') || lowerResults.includes('expansion') || lowerResults.includes('increase')) {
     opportunities.push({
       type: 'market_expansion',
       potential: 'high',
-      description: 'Market expansion opportunities identified',
+      description: 'Market growth and expansion opportunities identified',
       feasibility: 0.8
     });
   }
   
-  if (webResults.toLowerCase().includes('partnership') || webResults.toLowerCase().includes('collaboration')) {
+  if (lowerResults.includes('partnership') || lowerResults.includes('collaboration') || lowerResults.includes('alliance')) {
     opportunities.push({
       type: 'strategic_partnership',
       potential: 'medium',
-      description: 'Strategic partnership opportunities available',
+      description: 'Strategic partnership opportunities available in market',
       feasibility: 0.7
+    });
+  }
+  
+  if (lowerResults.includes('innovation') || lowerResults.includes('technology') || lowerResults.includes('digital')) {
+    opportunities.push({
+      type: 'innovation',
+      potential: 'high',
+      description: 'Technology and innovation opportunities in the market',
+      feasibility: 0.75
     });
   }
   
@@ -314,22 +382,25 @@ function extractOpportunities(webResults: string): any[] {
 }
 
 function calculateConfidence(webResults: string): number {
-  // Simple confidence calculation based on data richness
-  const factorCount = [
+  const qualityFactors = [
     webResults.includes('$'),
     webResults.includes('%'),
-    webResults.includes('million'),
-    webResults.includes('billion'),
-    webResults.length > 1000
+    webResults.includes('million') || webResults.includes('billion'),
+    webResults.length > 1500,
+    webResults.includes('source:') || webResults.includes('according to'),
+    /\d{4}/.test(webResults) // Contains year
   ].filter(Boolean).length;
   
-  return Math.min(0.6 + (factorCount * 0.1), 0.95);
+  return Math.min(0.6 + (qualityFactors * 0.08), 0.95);
 }
 
 function extractSources(webResults: string): string[] {
-  // Extract source domains mentioned in results
   const sources = [];
-  const commonSources = ['reuters', 'bloomberg', 'wsj', 'techcrunch', 'sec.gov'];
+  const commonSources = [
+    'reuters', 'bloomberg', 'wsj', 'financial times', 'cnbc', 
+    'marketwatch', 'yahoo finance', 'sec.gov', 'techcrunch', 
+    'crunchbase', 'gartner', 'forrester'
+  ];
   
   commonSources.forEach(source => {
     if (webResults.toLowerCase().includes(source)) {
@@ -342,19 +413,19 @@ function extractSources(webResults: string): string[] {
 
 function extractMarketData(results: string): any {
   return {
-    trend: results.includes('up') || results.includes('growth') ? 'positive' : 'neutral',
-    volatility: results.includes('volatile') ? 'high' : 'low'
+    trend: results.includes('up') || results.includes('growth') || results.includes('increase') ? 'positive' : 'neutral',
+    volatility: results.includes('volatile') || results.includes('fluctuat') ? 'high' : 'low'
   };
 }
 
 function extractCompetitorMentions(results: string): number {
-  const commonCompetitors = ['Apple', 'Google', 'Microsoft', 'Amazon', 'Meta', 'Tesla', 'Netflix'];
-  return commonCompetitors.filter(comp => results.includes(comp)).length;
+  const commonTerms = ['competitor', 'rival', 'versus', 'compared to', 'market leader'];
+  return commonTerms.filter(term => results.toLowerCase().includes(term)).length;
 }
 
 function calculateSentiment(results: string): number {
-  const positiveWords = ['growth', 'success', 'launch', 'innovation', 'expansion'];
-  const negativeWords = ['decline', 'loss', 'challenges', 'issues', 'problems'];
+  const positiveWords = ['growth', 'success', 'launch', 'innovation', 'expansion', 'profit', 'gain'];
+  const negativeWords = ['decline', 'loss', 'challenges', 'issues', 'problems', 'fall', 'decrease'];
   
   const positive = positiveWords.filter(word => results.toLowerCase().includes(word)).length;
   const negative = negativeWords.filter(word => results.toLowerCase().includes(word)).length;
@@ -363,7 +434,25 @@ function calculateSentiment(results: string): number {
 }
 
 function extractNewsVolume(results: string): string {
-  if (results.length > 2000) return 'high';
-  if (results.length > 1000) return 'medium';
+  if (results.length > 3000) return 'high';
+  if (results.length > 1500) return 'medium';
   return 'low';
+}
+
+function extractFinancialMetrics(results: string): any {
+  const metrics = {};
+  
+  // Extract stock price mentions
+  const stockPriceMatch = results.match(/\$[\d,]+\.?\d*/g);
+  if (stockPriceMatch) {
+    metrics.stockPrices = stockPriceMatch.slice(0, 3);
+  }
+  
+  // Extract percentage changes
+  const percentageMatch = results.match(/[\+\-]?\d+\.?\d*%/g);
+  if (percentageMatch) {
+    metrics.percentageChanges = percentageMatch.slice(0, 3);
+  }
+  
+  return metrics;
 }

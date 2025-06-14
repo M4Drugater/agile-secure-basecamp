@@ -90,7 +90,7 @@ export function useRealTimeWebSearch() {
 
   const searchFinancialUpdates = async (companyName: string, industry: string) => {
     return performWebSearch({
-      query: `financial performance earnings`,
+      query: `financial performance earnings revenue stock price ${companyName}`,
       companyName,
       industry,
       searchType: 'financial',
