@@ -62,7 +62,8 @@ Work Environment: ${profile.work_environment || 'Not specified'}
         if (doc.content) {
           context += `Document: ${doc.title}\n`;
           context += `Category: ${doc.category}\n`;
-          if (doc.summary) context += `Summary: ${doc.summary}\n`;
+          // Use title as summary since summary field doesn't exist in system_knowledge_base
+          context += `Summary: ${doc.title}\n`;
           context += `Content: ${doc.content.substring(0, 1000)}...\n`;
           context += '\n';
         }

@@ -92,15 +92,22 @@ export function useAgentMessageHandling() {
 
   const saveConversationToDatabase = async (
     sessionId: string,
-    messages: Message[]
+    messages: Message[],
+    agentType: string,
+    sessionConfig: any
   ) => {
     try {
-      // Save conversation state
+      // Save conversation state with all required fields
       const { error: sessionError } = await supabase
         .from('competitive_intelligence_sessions')
         .upsert({
           id: sessionId,
           user_id: user?.id,
+          agent_type: agentType,
+          session_name: sessionConfig.sessionName || `${agentType.toUpperCase()} Session`,
+          company_name: sessionConfig.companyName || null,
+          industry: sessionConfig.industry || null,
+          analysis_focus: sessionConfig.analysisFocus || null,
           updated_at: new Date().toISOString(),
           status: 'active'
         });
