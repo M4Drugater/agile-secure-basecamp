@@ -1,126 +1,129 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthContextProvider } from '@/contexts/AuthContext';
+import { QueryClient } from '@tanstack/react-query';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Landing from "./pages/Landing";
-import Profile from "./pages/Profile";
-import Chat from "./pages/Chat";
-import AssistedModel from "./pages/AssistedModel";
-import ContentGenerator from "./pages/ContentGenerator";
-import ContentLibrary from "./pages/ContentLibrary";
-import ContentAnalytics from "./pages/ContentAnalytics";
-import KnowledgeBase from "./pages/KnowledgeBase";
-import LearningManagement from "./pages/LearningManagement";
-import Admin from "./pages/Admin";
-import Billing from "./pages/Billing";
-import TrendsDiscovery from "./pages/TrendsDiscovery";
-import ResearchWorkbench from "./pages/ResearchWorkbench";
-import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Page imports
+import LandingPage from '@/pages/Landing';
+import AuthForm from '@/components/auth/AuthForm';
+import IndexPage from '@/pages/Index';
+import ProfilePage from '@/pages/Profile';
+import KnowledgeBasePage from '@/pages/KnowledgeBase';
+import ContentGeneratorPage from '@/pages/ContentGenerator';
+import ContentLibraryPage from '@/pages/ContentLibrary';
+import ChatPage from '@/pages/Chat';
+import EnhancedChatPage from '@/pages/EnhancedChat';
+import AssistedModelPage from '@/pages/AssistedModel';
+import LearningManagementPage from '@/pages/LearningManagement';
+import ResearchWorkbenchPage from '@/pages/ResearchWorkbench';
+import OptimizedResearchWorkbenchPage from '@/pages/OptimizedResearchWorkbench';
+import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligence';
+import CDVDiscoveryPage from '@/pages/CDVDiscovery';
+import TrendsDiscoveryPage from '@/pages/TrendsDiscovery';
+import ContentAnalyticsPage from '@/pages/ContentAnalytics';
+import BillingPage from '@/pages/Billing';
+import AdminPage from '@/pages/Admin';
+import NotFoundPage from '@/pages/NotFound';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/landing" element={<Landing />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              } />
-              <Route path="/modelo-asistido" element={
-                <ProtectedRoute>
-                  <AssistedModel />
-                </ProtectedRoute>
-              } />
-              <Route path="/content/generator" element={
-                <ProtectedRoute>
-                  <ContentGenerator />
-                </ProtectedRoute>
-              } />
-              <Route path="/content/library" element={
-                <ProtectedRoute>
-                  <ContentLibrary />
-                </ProtectedRoute>
-              } />
-              <Route path="/content/analytics" element={
-                <ProtectedRoute>
-                  <ContentAnalytics />
-                </ProtectedRoute>
-              } />
-              <Route path="/knowledge" element={
-                <ProtectedRoute>
-                  <KnowledgeBase />
-                </ProtectedRoute>
-              } />
-              <Route path="/learning" element={
-                <ProtectedRoute>
-                  <LearningManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/trends" element={
-                <ProtectedRoute>
-                  <TrendsDiscovery />
-                </ProtectedRoute>
-              } />
-              <Route path="/research" element={
-                <ProtectedRoute>
-                  <ResearchWorkbench />
-                </ProtectedRoute>
-              } />
-              <Route path="/competitive-intelligence" element={
-                <ProtectedRoute>
-                  <CompetitiveIntelligence />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              } />
-              <Route path="/billing" element={
-                <ProtectedRoute>
-                  <Billing />
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <AuthContextProvider>
+        <QueryClient>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<AuthForm />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <IndexPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/knowledge" element={
+              <ProtectedRoute>
+                <KnowledgeBasePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-generator" element={
+              <ProtectedRoute>
+                <ContentGeneratorPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-library" element={
+              <ProtectedRoute>
+                <ContentLibraryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <ChatPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/enhanced-chat" element={
+              <ProtectedRoute>
+                <EnhancedChatPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/assisted-model" element={
+              <ProtectedRoute>
+                <AssistedModelPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/learning" element={
+              <ProtectedRoute>
+                <LearningManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/research" element={
+              <ProtectedRoute>
+                <ResearchWorkbenchPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/optimized-research" element={
+              <ProtectedRoute>
+                <OptimizedResearchWorkbenchPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/competitive-intelligence" element={
+              <ProtectedRoute>
+                <CompetitiveIntelligencePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/cdv-discovery" element={
+              <ProtectedRoute>
+                <CDVDiscoveryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/trends" element={
+              <ProtectedRoute>
+                <TrendsDiscoveryPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/content-analytics" element={
+              <ProtectedRoute>
+                <ContentAnalyticsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/billing" element={
+              <ProtectedRoute>
+                <BillingPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPage />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </QueryClient>
+      </AuthContextProvider>
+    </BrowserRouter>
   );
 }
 
