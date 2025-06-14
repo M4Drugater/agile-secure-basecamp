@@ -141,7 +141,7 @@ Content Extract: ${af.uploadData.extracted_content?.substring(0, 1000)}${af.uplo
     startNewConversation,
     selectConversation,
     hasProfileContext: contextSummary.hasProfile,
-    knowledgeRecommendations,
+    knowledgeRecommendations: knowledgeRecommendations || [],
     contextSummary,
   };
 }

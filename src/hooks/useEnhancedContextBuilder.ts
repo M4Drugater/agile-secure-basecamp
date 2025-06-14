@@ -14,9 +14,18 @@ interface EnhancedContext {
   conversations: string;
 }
 
+interface ContextSummary {
+  hasProfile: boolean;
+  knowledgeCount: number;
+  contentCount: number;
+  learningCount: number;
+  activityCount: number;
+  conversationCount: number;
+}
+
 export function useEnhancedContextBuilder() {
   const { buildProfileContextString, hasProfileContext } = useProfileContextBuilder();
-  const { buildKnowledgeContextString } = useKnowledgeContextBuilder();
+  const { buildKnowledgeContextString, knowledgeCount } = useKnowledgeContextBuilder();
   const { buildContentContext, buildLearningContext, contentCount, learningCount } = useContentLearningContext();
   const { buildActivityContext, activityCount } = useUserActivityContext();
   const { buildConversationContext, conversationCount } = useConversationContext();
@@ -48,14 +57,14 @@ export function useEnhancedContextBuilder() {
     return fullContext;
   };
 
-  const getContextSummary = () => {
+  const getContextSummary = (): ContextSummary => {
     return {
-      hasProfile: hasProfileContext,
-      knowledgeCount: 0, // This will be filled by knowledge context builder
-      contentCount,
-      learningCount,
-      activityCount,
-      conversationCount,
+      hasProfile: hasProfileContext || false,
+      knowledgeCount: knowledgeCount || 0,
+      contentCount: contentCount || 0,
+      learningCount: learningCount || 0,
+      activityCount: activityCount || 0,
+      conversationCount: conversationCount || 0,
     };
   };
 

@@ -1,12 +1,15 @@
 
+import { useState, useEffect } from 'react';
 import { useKnowledgeRetrieval } from './useKnowledgeRetrieval';
 
 export function useKnowledgeContextBuilder() {
   const { retrieveRelevantKnowledge } = useKnowledgeRetrieval();
+  const [knowledgeCount, setKnowledgeCount] = useState(0);
 
   const buildKnowledgeContextString = async (userMessage: string): Promise<string> => {
     try {
       const relevantKnowledge = await retrieveRelevantKnowledge(userMessage);
+      setKnowledgeCount(relevantKnowledge.length);
       
       if (!relevantKnowledge || relevantKnowledge.length === 0) return '';
 
@@ -23,12 +26,13 @@ export function useKnowledgeContextBuilder() {
       return context;
     } catch (error) {
       console.error('Error building knowledge context:', error);
+      setKnowledgeCount(0);
       return '';
     }
   };
 
   return {
     buildKnowledgeContextString,
-    knowledgeCount: 0, // This could be enhanced to return actual count
+    knowledgeCount,
   };
 }

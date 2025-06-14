@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -71,23 +70,35 @@ export function EliteClipoginoInterface() {
   };
 
   const getContextQualityColor = () => {
-    const totalItems = contextSummary.knowledgeCount + contextSummary.contentCount + contextSummary.learningCount;
+    const totalItems = (contextSummary?.knowledgeCount || 0) + (contextSummary?.contentCount || 0) + (contextSummary?.learningCount || 0);
     if (totalItems >= 15) return 'bg-emerald-500';
     if (totalItems >= 8) return 'bg-yellow-500';
     return 'bg-orange-500';
   };
 
   const getContextQualityLabel = () => {
-    const totalItems = contextSummary.knowledgeCount + contextSummary.contentCount + contextSummary.learningCount;
+    const totalItems = (contextSummary?.knowledgeCount || 0) + (contextSummary?.contentCount || 0) + (contextSummary?.learningCount || 0);
     if (totalItems >= 15) return 'Elite';
     if (totalItems >= 8) return 'Advanced';
     return 'Developing';
   };
 
   const getExperienceLevel = () => {
-    if (contextSummary.knowledgeCount >= 10 && contextSummary.activityCount >= 20) return 'Executive';
-    if (contextSummary.knowledgeCount >= 5 && contextSummary.activityCount >= 10) return 'Senior Professional';
+    const knowledgeCount = contextSummary?.knowledgeCount || 0;
+    const activityCount = contextSummary?.activityCount || 0;
+    
+    if (knowledgeCount >= 10 && activityCount >= 20) return 'Executive';
+    if (knowledgeCount >= 5 && activityCount >= 10) return 'Senior Professional';
     return 'Emerging Leader';
+  };
+
+  // Safe access to context summary values
+  const safeContextSummary = {
+    knowledgeCount: contextSummary?.knowledgeCount || 0,
+    contentCount: contextSummary?.contentCount || 0,
+    learningCount: contextSummary?.learningCount || 0,
+    activityCount: contextSummary?.activityCount || 0,
+    conversationCount: contextSummary?.conversationCount || 0,
   };
 
   return (
@@ -120,7 +131,7 @@ export function EliteClipoginoInterface() {
               <div>
                 <strong>Context Quality: {getContextQualityLabel()}</strong>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {contextSummary.knowledgeCount} knowledge assets, {contextSummary.activityCount} interactions
+                  {safeContextSummary.knowledgeCount} knowledge assets, {safeContextSummary.activityCount} interactions
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${getContextQualityColor()}`}></div>
@@ -169,23 +180,23 @@ export function EliteClipoginoInterface() {
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-emerald-600">{contextSummary.knowledgeCount}</div>
+                <div className="text-2xl font-bold text-emerald-600">{safeContextSummary.knowledgeCount}</div>
                 <div className="text-sm text-muted-foreground">Knowledge Assets</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-blue-600">{contextSummary.contentCount}</div>
+                <div className="text-2xl font-bold text-blue-600">{safeContextSummary.contentCount}</div>
                 <div className="text-sm text-muted-foreground">Strategic Content</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-orange-600">{contextSummary.learningCount}</div>
+                <div className="text-2xl font-bold text-orange-600">{safeContextSummary.learningCount}</div>
                 <div className="text-sm text-muted-foreground">Learning Paths</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-purple-600">{contextSummary.activityCount}</div>
+                <div className="text-2xl font-bold text-purple-600">{safeContextSummary.activityCount}</div>
                 <div className="text-sm text-muted-foreground">Elite Interactions</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-red-600">{contextSummary.conversationCount}</div>
+                <div className="text-2xl font-bold text-red-600">{safeContextSummary.conversationCount}</div>
                 <div className="text-sm text-muted-foreground">Strategic Sessions</div>
               </div>
             </div>
@@ -234,7 +245,7 @@ export function EliteClipoginoInterface() {
                     Elite Context
                   </Badge>
                   
-                  {knowledgeRecommendations.length > 0 && (
+                  {knowledgeRecommendations && knowledgeRecommendations.length > 0 && (
                     <Badge variant="outline" className="ml-2 border-emerald-500 text-emerald-700">
                       <BookOpen className="h-3 w-3 mr-1" />
                       Knowledge Enhanced
@@ -303,7 +314,7 @@ export function EliteClipoginoInterface() {
         </div>
 
         {/* Enhanced Knowledge Panel */}
-        {showKnowledgePanel && knowledgeRecommendations.length > 0 && (
+        {showKnowledgePanel && knowledgeRecommendations && knowledgeRecommendations.length > 0 && (
           <KnowledgeRecommendations
             recommendations={knowledgeRecommendations}
             onViewResource={(resource) => console.log('Elite knowledge view:', resource)}
