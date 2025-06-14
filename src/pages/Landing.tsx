@@ -8,15 +8,20 @@ import { Sparkles, Brain, FileText, BookOpen, Users, ArrowRight } from 'lucide-r
 import { useEffect } from 'react';
 
 export default function Landing() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to appropriate page
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      const profileCompleteness = profile?.profile_completeness || 0;
+      if (profileCompleteness < 30) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, profile, navigate]);
 
   if (user) return null; // Don't render while redirecting
 
@@ -50,7 +55,7 @@ export default function Landing() {
             <span className="text-2xl font-heading font-bold">LAIGENT</span>
           </div>
           <Button 
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/login')}
             variant="outline" 
             className="bg-white/10 border-white/20 text-white hover:bg-white/20"
           >
@@ -76,11 +81,11 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
               <Button 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/login')}
                 size="lg"
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 text-lg rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300"
               >
-                Start Free
+                Start Your Journey
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button 
@@ -147,7 +152,7 @@ export default function Landing() {
               their career growth with AI-powered tools and insights.
             </p>
             <Button 
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/login')}
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-12 py-4 text-lg rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300"
             >

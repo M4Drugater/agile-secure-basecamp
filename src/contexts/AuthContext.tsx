@@ -120,6 +120,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Named export for compatibility
+export const AuthContextProvider = AuthProvider;
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

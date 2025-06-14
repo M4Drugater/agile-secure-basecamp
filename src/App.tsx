@@ -1,12 +1,13 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthContextProvider } from '@/contexts/AuthContext';
-import { QueryClient } from '@tanstack/react-query';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 // Page imports
 import LandingPage from '@/pages/Landing';
-import AuthForm from '@/components/auth/AuthForm';
+import { AuthForm } from '@/components/auth/AuthForm';
 import IndexPage from '@/pages/Index';
 import ProfilePage from '@/pages/Profile';
 import KnowledgeBasePage from '@/pages/KnowledgeBase';
@@ -26,17 +27,28 @@ import BillingPage from '@/pages/Billing';
 import AdminPage from '@/pages/Admin';
 import NotFoundPage from '@/pages/NotFound';
 
+// Progressive Journey Components
+import OnboardingFlow from '@/components/journey/OnboardingFlow';
+import ProgressiveDashboard from '@/components/journey/ProgressiveDashboard';
+
+const queryClient = new QueryClient();
+
 function App() {
   return (
     <BrowserRouter>
-      <AuthContextProvider>
-        <QueryClient>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthForm />} />
+            <Route path="/onboarding" element={
+              <ProtectedRoute>
+                <OnboardingFlow />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
-                <IndexPage />
+                <ProgressiveDashboard />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
@@ -121,8 +133,8 @@ function App() {
             } />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </QueryClient>
-      </AuthContextProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
