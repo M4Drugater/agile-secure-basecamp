@@ -1,31 +1,17 @@
 
-import { useProfileContextBuilder } from '@/hooks/useProfileContextBuilder';
-import { useKnowledgeContextBuilder } from '@/hooks/useKnowledgeContextBuilder';
+import { useContextBuilder as useNewContextBuilder } from '@/hooks/context/useContextBuilder';
 
 export function useContextBuilder() {
-  const { buildProfileContextString, hasProfileContext } = useProfileContextBuilder();
-  const { buildKnowledgeContextString } = useKnowledgeContextBuilder();
+  const { buildFullContextString, getContextSummary } = useNewContextBuilder();
 
   const buildFullContext = async (userMessage: string): Promise<string> => {
-    let fullContext = '';
-    
-    // Add profile context
-    const profileContext = buildProfileContextString();
-    if (profileContext) {
-      fullContext += profileContext;
-    }
-    
-    // Add knowledge context
-    const knowledgeContext = await buildKnowledgeContextString(userMessage);
-    if (knowledgeContext) {
-      fullContext += knowledgeContext;
-    }
-    
-    return fullContext;
+    return await buildFullContextString(userMessage);
   };
+
+  const contextSummary = getContextSummary();
 
   return {
     buildFullContext,
-    hasProfileContext,
+    hasProfileContext: contextSummary.hasProfile,
   };
 }

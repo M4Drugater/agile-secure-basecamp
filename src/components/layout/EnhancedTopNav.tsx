@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,14 +15,14 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEnhancedContextBuilder } from '@/hooks/useEnhancedContextBuilder';
+import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 import { toast } from '@/hooks/use-toast';
 
 export function EnhancedTopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { getContextSummary } = useEnhancedContextBuilder();
+  const { getContextSummary } = useContextBuilder();
   
   const contextSummary = getContextSummary();
 
