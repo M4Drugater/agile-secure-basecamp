@@ -2149,6 +2149,19 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      upsert_user_journey: {
+        Args: {
+          p_user_id: string
+          p_current_step?: number
+          p_completed_steps?: string[]
+          p_profile_completed?: boolean
+          p_knowledge_setup?: boolean
+          p_first_chat_completed?: boolean
+          p_first_content_created?: boolean
+          p_cdv_introduced?: boolean
+        }
+        Returns: string
+      }
       user_has_org_access: {
         Args: { org_id: string; required_role?: string }
         Returns: boolean

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useJourneyData } from './useJourneyData';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,58 +7,49 @@ import { supabase } from '@/integrations/supabase/client';
 export function useJourneyInitialization() {
   const { user, profile } = useAuth();
   const { userJourney, updateJourney } = useJourneyData();
+  const initializationRef = useRef(false);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user || userJourney !== null) return;
+    // Reset initialization flag when user changes
+    if (userIdRef.current !== user?.id) {
+      initializationRef.current = false;
+      userIdRef.current = user?.id || null;
+    }
 
-    // Auto-initialize journey for users without a record
+    // Skip if no user, already initialized, or journey already exists
+    if (!user || initializationRef.current || userJourney !== null) {
+      return;
+    }
+
     const initializeJourney = async () => {
       try {
-        console.log('Initializing journey for user:', user.id);
-        
-        // Check if user has existing conversations (retroactive detection)
-        const { data: conversations } = await supabase
-          .from('chat_conversations')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
+        // Mark as initializing to prevent duplicate attempts
+        initializationRef.current = true;
 
-        const hasExistingConversations = conversations && conversations.length > 0;
-        
-        // Check if user has knowledge files
-        const { data: knowledgeFiles } = await supabase
-          .from('user_knowledge_files')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('processing_status', 'completed')
-          .limit(1);
+        // Use the new safe upsert function to prevent constraint violations
+        const { data, error } = await supabase.rpc('upsert_user_journey', {
+          p_user_id: user.id,
+          p_current_step: 0,
+          p_completed_steps: [],
+          p_profile_completed: false,
+          p_knowledge_setup: false,
+          p_first_chat_completed: false,
+          p_first_content_created: false,
+          p_cdv_introduced: false
+        });
 
-        const hasKnowledgeFiles = knowledgeFiles && knowledgeFiles.length > 0;
+        if (error) {
+          console.error('Journey initialization error:', error);
+          initializationRef.current = false; // Reset on error
+          return;
+        }
 
-        // Determine profile completion status
-        const profileCompleted = !!(
-          profile?.full_name && 
-          profile?.industry && 
-          profile?.current_position &&
-          (profile?.profile_completeness || 0) >= 70
-        );
-
-        const initialJourneyData = {
-          current_step: hasExistingConversations ? 3 : (hasKnowledgeFiles ? 2 : (profileCompleted ? 1 : 0)),
-          profile_completed: profileCompleted,
-          knowledge_setup: hasKnowledgeFiles,
-          first_chat_completed: hasExistingConversations, // Auto-heal for existing conversations
-          first_content_created: false,
-          cdv_introduced: false
-        };
-
-        console.log('Creating initial journey with data:', initialJourneyData);
-
-        await updateJourney.mutate(initialJourneyData);
-        
-        console.log('Journey initialized successfully');
+        // Optionally trigger a refetch of journey data
+        // The updateJourney mutation will handle cache invalidation
       } catch (error) {
-        console.error('Error initializing journey:', error);
+        console.error('Journey initialization failed:', error);
+        initializationRef.current = false; // Reset on error
       }
     };
 

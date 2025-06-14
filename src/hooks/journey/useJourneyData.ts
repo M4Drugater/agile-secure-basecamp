@@ -32,6 +32,8 @@ export function useJourneyData() {
       }
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false, // Reduce unnecessary refetches
   });
 
   const updateJourney = useMutation({
@@ -39,15 +41,17 @@ export function useJourneyData() {
       if (!user) throw new Error('User not authenticated');
 
       try {
-        const { data, error } = await supabase
-          .from('user_journey')
-          .upsert({
-            user_id: user.id,
-            ...updates,
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+        // Use the safe upsert function to prevent constraint violations
+        const { data, error } = await supabase.rpc('upsert_user_journey', {
+          p_user_id: user.id,
+          p_current_step: updates.current_step,
+          p_completed_steps: updates.completed_steps,
+          p_profile_completed: updates.profile_completed,
+          p_knowledge_setup: updates.knowledge_setup,
+          p_first_chat_completed: updates.first_chat_completed,
+          p_first_content_created: updates.first_content_created,
+          p_cdv_introduced: updates.cdv_introduced
+        });
 
         if (error) throw error;
         return data;
@@ -59,6 +63,9 @@ export function useJourneyData() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userJourney', user?.id] });
     },
+    onError: (error) => {
+      console.error('Journey update failed:', error);
+    }
   });
 
   return {

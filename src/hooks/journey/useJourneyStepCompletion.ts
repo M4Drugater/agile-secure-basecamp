@@ -21,30 +21,24 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
 
   useEffect(() => {
     const calculateCompletionStates = async () => {
-      // Debug logging to understand what's happening
-      console.log('Journey Step Completion Debug:', {
-        documents: documents?.length || 0,
-        userKnowledgeFiles: userKnowledgeFiles?.length || 0,
-        profile_completeness: profile?.profile_completeness,
-        userJourney,
-        fullProfile: profile
-      });
-
+      // Only log in development or when there are actual issues
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
       // Check multiple sources for knowledge files
       const hasKnowledgeFiles = (documents && documents.length > 0) || 
                                (userKnowledgeFiles && userKnowledgeFiles.length > 0);
 
-      // Profile completion check - now requires 80% completion
+      // Profile completion check - requires 80% completion
       const profileComplete = !!(
         profile?.full_name && 
         profile?.industry &&
-        (profile?.profile_completeness || 0) >= 80 // Increased to 80%
+        (profile?.profile_completeness || 0) >= 80
       );
 
       // Chat completion - mark as complete when journey record exists and user has visited chat
       let chatComplete = userJourney?.first_chat_completed || false;
       
-      // Auto-complete chat if user has any conversation history
+      // Auto-complete chat if user has any conversation history (only check once)
       if (!chatComplete && userJourney && profile?.id) {
         try {
           const { data: conversations, error } = await supabase
@@ -54,11 +48,15 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
             .limit(1);
           
           if (!error && conversations && conversations.length > 0) {
-            console.log('Found existing conversations, auto-completing chat step');
+            if (isDevelopment) {
+              console.log('Auto-completing chat step - found existing conversations');
+            }
             chatComplete = true;
           }
         } catch (error) {
-          console.error('Error checking for existing conversations:', error);
+          if (isDevelopment) {
+            console.error('Error checking conversations:', error);
+          }
         }
       }
 
@@ -67,7 +65,6 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       
       if (!agentsComplete && profile?.id) {
         try {
-          // Check if user has any competitive intelligence sessions
           const { data: ciSessions, error } = await supabase
             .from('competitive_intelligence_sessions')
             .select('id')
@@ -75,11 +72,15 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
             .limit(1);
           
           if (!error && ciSessions && ciSessions.length > 0) {
-            console.log('Found CI sessions, marking agents step as complete');
+            if (isDevelopment) {
+              console.log('Auto-completing agents step - found CI sessions');
+            }
             agentsComplete = true;
           }
         } catch (error) {
-          console.error('Error checking for CI sessions:', error);
+          if (isDevelopment) {
+            console.error('Error checking CI sessions:', error);
+          }
         }
       }
 
@@ -88,7 +89,6 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       
       if (!contentComplete && profile?.id) {
         try {
-          // Check if user has any generated content
           const { data: content, error } = await supabase
             .from('content_items')
             .select('id')
@@ -96,48 +96,42 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
             .limit(1);
           
           if (!error && content && content.length > 0) {
-            console.log('Found generated content, marking content step as complete');
+            if (isDevelopment) {
+              console.log('Auto-completing content step - found generated content');
+            }
             contentComplete = true;
           }
         } catch (error) {
-          console.error('Error checking for generated content:', error);
+          if (isDevelopment) {
+            console.error('Error checking content:', error);
+          }
         }
       }
 
       const newStates = {
-        // Profile: requires 80% completion
         profile: profileComplete,
-        
-        // Knowledge: requires at least one file uploaded (mandatory)
         knowledge: hasKnowledgeFiles,
-        
-        // Chat: auto-complete when user visits or has conversations
         chat: chatComplete,
-        
-        // Agents: auto-complete when user visits or has CI sessions
         agents: agentsComplete,
-        
-        // Content: auto-complete when user visits or has generated content
         content: contentComplete
       };
 
-      console.log('Computed completion states:', {
-        previous: completionStates,
-        new: newStates,
-        changes: {
-          profile: completionStates.profile !== newStates.profile,
-          knowledge: completionStates.knowledge !== newStates.knowledge,
-          chat: completionStates.chat !== newStates.chat,
-          agents: completionStates.agents !== newStates.agents,
-          content: completionStates.content !== newStates.content
+      // Only log changes in development
+      if (isDevelopment) {
+        const hasChanges = Object.keys(newStates).some(
+          key => completionStates[key as keyof typeof completionStates] !== newStates[key as keyof typeof newStates]
+        );
+        
+        if (hasChanges) {
+          console.log('Journey completion states updated:', newStates);
         }
-      });
+      }
 
       setCompletionStates(newStates);
     };
 
     calculateCompletionStates();
-  }, [profile, documents, userKnowledgeFiles, userJourney]);
+  }, [profile, documents, userKnowledgeFiles, userJourney, completionStates]);
 
   return completionStates;
 }
