@@ -13,6 +13,10 @@ import { NextStepRecommendation } from './dashboard/NextStepRecommendation';
 import { ModuleGrid } from './dashboard/ModuleGrid';
 import { JourneyCompletionCard } from './dashboard/JourneyCompletionCard';
 import { ProgressNotifications } from './ProgressNotifications';
+import { TourProvider } from '@/contexts/TourContext';
+import { TourOverlay } from '@/components/tour/TourOverlay';
+import { TourTrigger } from '@/components/tour/TourTrigger';
+import { DASHBOARD_TOUR_STEPS } from '@/components/tour/tourSteps';
 
 export default function ProgressiveDashboard() {
   const navigate = useNavigate();
@@ -113,57 +117,69 @@ export default function ProgressiveDashboard() {
   const userName = profile?.full_name?.split(' ')[0] || 'Profesional';
 
   return (
-    <UnifiedAppLayout>
-      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-        <WelcomeHeader
-          userName={userName}
-          isJourneyComplete={isJourneyComplete()}
-          completedSteps={completedSteps}
-          totalSteps={totalSteps}
-          newModulesCount={newModulesCount}
-          onCompleteSetup={handleCompleteSetup}
+    <TourProvider steps={DASHBOARD_TOUR_STEPS}>
+      <UnifiedAppLayout>
+        <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+          <div data-tour="welcome-header">
+            <WelcomeHeader
+              userName={userName}
+              isJourneyComplete={isJourneyComplete()}
+              completedSteps={completedSteps}
+              totalSteps={totalSteps}
+              newModulesCount={newModulesCount}
+              onCompleteSetup={handleCompleteSetup}
+            />
+          </div>
+
+          {/* Tour trigger section */}
+          <div className="mb-6 text-center">
+            <TourTrigger />
+          </div>
+
+          <AchievementsDisplay
+            earnedAchievements={earnedAchievements}
+            isJourneyComplete={isJourneyComplete()}
+          />
+
+          {!isJourneyComplete() && (
+            <ProgressTracker
+              completedSteps={completedSteps}
+              totalSteps={totalSteps}
+              progressPercentage={progressPercentage}
+              nextStep={nextStep}
+              onContinueNext={handleContinueNext}
+            />
+          )}
+
+          {nextStep && (
+            <NextStepRecommendation
+              nextStep={nextStep}
+              onGetStarted={handleGetStarted}
+            />
+          )}
+
+          <ModuleGrid
+            modules={availableModules}
+            onModuleClick={handleModuleClick}
+          />
+
+          {isJourneyComplete() && (
+            <JourneyCompletionCard
+              onStartChat={handleStartChat}
+              onExploreAgents={handleExploreAgents}
+            />
+          )}
+        </div>
+
+        {/* Progress Notifications */}
+        <ProgressNotifications
+          notifications={notifications}
+          onRemove={removeNotification}
         />
 
-        <AchievementsDisplay
-          earnedAchievements={earnedAchievements}
-          isJourneyComplete={isJourneyComplete()}
-        />
-
-        {!isJourneyComplete() && (
-          <ProgressTracker
-            completedSteps={completedSteps}
-            totalSteps={totalSteps}
-            progressPercentage={progressPercentage}
-            nextStep={nextStep}
-            onContinueNext={handleContinueNext}
-          />
-        )}
-
-        {nextStep && (
-          <NextStepRecommendation
-            nextStep={nextStep}
-            onGetStarted={handleGetStarted}
-          />
-        )}
-
-        <ModuleGrid
-          modules={availableModules}
-          onModuleClick={handleModuleClick}
-        />
-
-        {isJourneyComplete() && (
-          <JourneyCompletionCard
-            onStartChat={handleStartChat}
-            onExploreAgents={handleExploreAgents}
-          />
-        )}
-      </div>
-
-      {/* Progress Notifications */}
-      <ProgressNotifications
-        notifications={notifications}
-        onRemove={removeNotification}
-      />
-    </UnifiedAppLayout>
+        {/* Tour Overlay */}
+        <TourOverlay />
+      </UnifiedAppLayout>
+    </TourProvider>
   );
 }

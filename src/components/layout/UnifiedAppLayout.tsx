@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MinimalistSidebar } from './MinimalistSidebar';
+import { UnifiedSidebar } from './UnifiedSidebar';
 import { UnifiedTopNav } from './UnifiedTopNav';
 
 interface UnifiedAppLayoutProps {
@@ -9,9 +9,14 @@ interface UnifiedAppLayoutProps {
 
 export function UnifiedAppLayout({ children }: UnifiedAppLayoutProps) {
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      <MinimalistSidebar />
-      <div className="flex-1 flex flex-col">
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div data-tour="sidebar">
+        <UnifiedSidebar />
+      </div>
+
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         <UnifiedTopNav />
         <main className="flex-1 overflow-auto">
           {children}
