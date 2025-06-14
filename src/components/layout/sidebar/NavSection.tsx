@@ -22,23 +22,21 @@ export function NavSection({
 }: NavSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
 
-  // Filter items based on journey progress
-  const visibleItems = items.filter(item => {
-    // Always show if marked as such or journey is complete
-    if (item.alwaysShow || isJourneyComplete) return true;
-    
-    // Show if required step is completed OR show as locked
-    return true; // We show all items but mark some as locked
-  });
+  // Mostrar TODOS los items, no filtrar ninguno
+  const visibleItems = items;
 
-  // Don't render section if no items are visible
+  // No renderizar la sección solo si no hay items definidos
   if (visibleItems.length === 0) return null;
 
   if (isCollapsed) {
     return (
       <div className="space-y-1">
         {visibleItems.map((item) => {
-          const isLocked = item.requiresStep && !completionStates[item.requiresStep] && !isJourneyComplete;
+          // Determinar si está bloqueado basado en el paso requerido
+          const isLocked = !item.alwaysShow && 
+                          item.requiresStep && 
+                          !completionStates[item.requiresStep] && 
+                          !isJourneyComplete;
           
           return (
             <NavItemComponent
@@ -68,7 +66,11 @@ export function NavSection({
       {isOpen && (
         <div className="space-y-1">
           {visibleItems.map((item) => {
-            const isLocked = item.requiresStep && !completionStates[item.requiresStep] && !isJourneyComplete;
+            // Determinar si está bloqueado basado en el paso requerido
+            const isLocked = !item.alwaysShow && 
+                            item.requiresStep && 
+                            !completionStates[item.requiresStep] && 
+                            !isJourneyComplete;
             
             return (
               <NavItemComponent

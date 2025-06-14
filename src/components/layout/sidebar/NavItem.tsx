@@ -26,7 +26,7 @@ export function NavItemComponent({ item, isCollapsed, isLocked }: NavItemProps) 
             variant="ghost"
             size="sm"
             className="w-full justify-center p-2 h-10 opacity-50 cursor-not-allowed"
-            title={item.lockedMessage || `Requiere: ${item.requiresStep}`}
+            title={item.lockedMessage || `Requiere completar: ${item.requiresStep}`}
             disabled
           >
             <Lock className="h-5 w-5" />
@@ -57,19 +57,19 @@ export function NavItemComponent({ item, isCollapsed, isLocked }: NavItemProps) 
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start h-auto p-3 opacity-50 cursor-not-allowed"
+            className="w-full justify-start h-auto p-3 opacity-60 cursor-not-allowed"
             disabled
           >
-            <Lock className="h-4 w-4 mr-3 flex-shrink-0" />
+            <Lock className="h-4 w-4 mr-3 flex-shrink-0 text-muted-foreground" />
             <div className="flex-1 text-left">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{item.title}</span>
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
+                <span className="text-sm font-medium text-muted-foreground">{item.title}</span>
+                <Badge variant="outline" className="text-xs px-1.5 py-0 bg-gray-50 text-gray-500 border-gray-300">
                   Bloqueado
                 </Badge>
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                {item.lockedMessage || `Requiere: ${item.requiresStep}`}
+                {item.lockedMessage || `Completa el paso anterior primero`}
               </div>
             </div>
           </Button>
