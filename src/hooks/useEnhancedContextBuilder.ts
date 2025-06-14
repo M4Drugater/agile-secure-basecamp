@@ -15,8 +15,8 @@ interface EnhancedContext {
 }
 
 export function useEnhancedContextBuilder() {
-  const { buildProfileContext, hasProfile } = useProfileContextBuilder();
-  const { buildKnowledgeContextString, knowledgeCount } = useKnowledgeContextBuilder();
+  const { buildProfileContextString, hasProfileContext } = useProfileContextBuilder();
+  const { buildKnowledgeContextString } = useKnowledgeContextBuilder();
   const { buildContentContext, buildLearningContext, contentCount, learningCount } = useContentLearningContext();
   const { buildActivityContext, activityCount } = useUserActivityContext();
   const { buildConversationContext, conversationCount } = useConversationContext();
@@ -25,7 +25,7 @@ export function useEnhancedContextBuilder() {
     const knowledgeContext = await buildKnowledgeContextString(userMessage);
     
     return {
-      profile: buildProfileContext(),
+      profile: buildProfileContextString(),
       knowledge: knowledgeContext,
       content: buildContentContext(),
       learning: buildLearningContext(),
@@ -50,8 +50,8 @@ export function useEnhancedContextBuilder() {
 
   const getContextSummary = () => {
     return {
-      hasProfile,
-      knowledgeCount,
+      hasProfile: hasProfileContext,
+      knowledgeCount: 0, // This will be filled by knowledge context builder
       contentCount,
       learningCount,
       activityCount,

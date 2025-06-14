@@ -62,14 +62,14 @@ export function EnhancedClipoginoChat() {
   };
 
   const getContextQualityColor = () => {
-    const totalItems = contextSummary.knowledgeCount + contextSummary.contentCount + contextSummary.learningCount;
+    const totalItems = (contextSummary.knowledgeCount || 0) + (contextSummary.contentCount || 0) + (contextSummary.learningCount || 0);
     if (totalItems >= 10) return 'bg-green-500';
     if (totalItems >= 5) return 'bg-yellow-500';
     return 'bg-red-500';
   };
 
   const getContextQualityLabel = () => {
-    const totalItems = contextSummary.knowledgeCount + contextSummary.contentCount + contextSummary.learningCount;
+    const totalItems = (contextSummary.knowledgeCount || 0) + (contextSummary.contentCount || 0) + (contextSummary.learningCount || 0);
     if (totalItems >= 10) return 'Excellent';
     if (totalItems >= 5) return 'Good';
     return 'Basic';
@@ -96,8 +96,8 @@ export function EnhancedClipoginoChat() {
               <div>
                 <strong>Context Quality: {getContextQualityLabel()}</strong>
                 <p className="text-sm text-muted-foreground mt-1">
-                  CLIPOGINO has access to {contextSummary.knowledgeCount} knowledge items, 
-                  {contextSummary.contentCount} content pieces, and {contextSummary.activityCount} recent activities.
+                  CLIPOGINO has access to {contextSummary.knowledgeCount || 0} knowledge items, 
+                  {contextSummary.contentCount || 0} content pieces, and {contextSummary.activityCount || 0} recent activities.
                 </p>
               </div>
               <div className={`w-3 h-3 rounded-full ${getContextQualityColor()}`}></div>
@@ -112,7 +112,7 @@ export function EnhancedClipoginoChat() {
               <div>
                 <strong>AI Enhancement: Active</strong>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Enhanced context building with {contextSummary.conversationCount} recent conversations
+                  Enhanced context building with {contextSummary.conversationCount || 0} recent conversations
                   and comprehensive activity tracking.
                 </p>
               </div>
@@ -135,23 +135,23 @@ export function EnhancedClipoginoChat() {
           <CardContent className="pt-6">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-blue-600">{contextSummary.knowledgeCount}</div>
+                <div className="text-2xl font-bold text-blue-600">{contextSummary.knowledgeCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Knowledge Items</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-green-600">{contextSummary.contentCount}</div>
+                <div className="text-2xl font-bold text-green-600">{contextSummary.contentCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Content Created</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-orange-600">{contextSummary.learningCount}</div>
+                <div className="text-2xl font-bold text-orange-600">{contextSummary.learningCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Learning Paths</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-purple-600">{contextSummary.activityCount}</div>
+                <div className="text-2xl font-bold text-purple-600">{contextSummary.activityCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Recent Activities</div>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl font-bold text-red-600">{contextSummary.conversationCount}</div>
+                <div className="text-2xl font-bold text-red-600">{contextSummary.conversationCount || 0}</div>
                 <div className="text-sm text-muted-foreground">Conversations</div>
               </div>
             </div>

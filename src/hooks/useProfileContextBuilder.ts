@@ -2,14 +2,14 @@
 import { useProfileContext } from './useProfileContext';
 
 export function useProfileContextBuilder() {
-  const { data: profileContext } = useProfileContext();
+  const profileContext = useProfileContext();
 
-  const buildProfileContext = (): string => {
+  const buildProfileContextString = (): string => {
     if (!profileContext) return '';
 
     let context = `
 === USER PROFILE CONTEXT ===
-Personal Information:
+Professional Background:
 - Name: ${profileContext.full_name || 'Not specified'}
 - Current Position: ${profileContext.current_position || 'Not specified'}
 - Company: ${profileContext.company || 'Not specified'}
@@ -20,32 +20,34 @@ Personal Information:
 Career Goals:
 - Target Position: ${profileContext.target_position || 'Not specified'}
 - Target Industry: ${profileContext.target_industry || 'Not specified'}
-- Target Salary Range: ${profileContext.target_salary_range || 'Not specified'}
 - Career Goals: ${profileContext.career_goals?.join(', ') || 'Not specified'}
 
-Skills & Learning:
-- Current Skills: ${profileContext.current_skills?.join(', ') || 'Not specified'}
-- Skill Gaps: ${profileContext.skill_gaps?.join(', ') || 'Not specified'}
-- Learning Priorities: ${profileContext.learning_priorities?.join(', ') || 'Not specified'}
+Learning Preferences:
 - Learning Style: ${profileContext.learning_style || 'Not specified'}
-
-Communication Preferences:
 - Communication Style: ${profileContext.communication_style || 'Not specified'}
 - Feedback Preference: ${profileContext.feedback_preference || 'Not specified'}
-- Work Environment: ${profileContext.work_environment || 'Not specified'}
 `;
+
+    if (profileContext.current_skills?.length) {
+      context += `\nCurrent Skills: ${profileContext.current_skills.join(', ')}`;
+    }
+
+    if (profileContext.skill_gaps?.length) {
+      context += `\nSkill Gaps: ${profileContext.skill_gaps.join(', ')}`;
+    }
 
     return context;
   };
 
-  const buildProfileContextString = (): string => {
-    return buildProfileContext();
-  };
+  // Legacy method name for backward compatibility
+  const buildProfileContext = buildProfileContextString;
+
+  const hasProfileContext = !!profileContext;
 
   return {
-    buildProfileContext,
     buildProfileContextString,
-    hasProfile: !!profileContext,
-    hasProfileContext: !!profileContext,
+    buildProfileContext, // Legacy support
+    hasProfileContext,
+    hasProfile: hasProfileContext, // Alternative name
   };
 }

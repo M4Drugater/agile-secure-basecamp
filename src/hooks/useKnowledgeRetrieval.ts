@@ -1,74 +1,81 @@
 
-import { useKnowledgeBase } from './useKnowledgeBase';
+import { useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
-export interface KnowledgeSearchResult {
+interface KnowledgeItem {
   id: string;
   title: string;
-  content?: string;
-  summary?: string;
-  category?: string;
-  source: string;
-  difficulty_level?: string;
-  estimated_duration_hours?: number;
-  enrollment_count?: number;
-  tags?: string[];
+  content: string;
+  category: string;
   relevance_score?: number;
 }
 
-interface KnowledgeItem {
-  title: string;
-  category: string;
-  content: string;
-}
-
 export function useKnowledgeRetrieval() {
-  const { documents } = useKnowledgeBase();
+  const { user } = useAuth();
 
-  const searchKnowledge = async (query: string, limit: number = 5): Promise<KnowledgeSearchResult[]> => {
-    if (!documents || documents.length === 0) {
-      return [];
-    }
+  const retrieveRelevantKnowledge = useCallback(async (query: string): Promise<KnowledgeItem[]> => {
+    if (!user || !query.trim()) return [];
 
-    // Simple text-based search implementation
-    const searchTerms = query.toLowerCase().split(' ');
-    
-    const results = documents
-      .filter(doc => {
-        const searchText = `${doc.title} ${doc.content || ''} ${doc.description || ''}`.toLowerCase();
-        return searchTerms.some(term => searchText.includes(term));
-      })
-      .map(doc => ({
-        id: doc.id,
-        title: doc.title,
-        content: doc.content,
-        summary: doc.summary,
-        category: doc.document_type,
-        source: 'personal',
-        tags: doc.tags || [],
-        relevance_score: 0.8, // Simplified relevance scoring
-      }))
-      .slice(0, limit);
-
-    return results;
-  };
-
-  const retrieveRelevantKnowledge = async (userMessage: string): Promise<KnowledgeItem[]> => {
     try {
-      const results = await searchKnowledge(userMessage, 5);
-      
-      return results.map(result => ({
-        title: result.title,
-        category: result.category || 'General',
-        content: result.content || result.summary || '',
-      }));
+      // First try to get relevant knowledge from user's personal files
+      const { data: userKnowledge, error: userError } = await supabase
+        .from('user_knowledge_files')
+        .select('id, title, content, file_type')
+        .eq('user_id', user.id)
+        .eq('processing_status', 'completed')
+        .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+        .limit(5);
+
+      if (userError) {
+        console.error('Error fetching user knowledge:', userError);
+      }
+
+      // Then try to get relevant system knowledge
+      const { data: systemKnowledge, error: systemError } = await supabase
+        .from('system_knowledge_base')
+        .select('id, title, content, category')
+        .eq('is_active', true)
+        .or(`title.ilike.%${query}%,content.ilike.%${query}%,category.ilike.%${query}%`)
+        .limit(5);
+
+      if (systemError) {
+        console.error('Error fetching system knowledge:', systemError);
+      }
+
+      // Combine and format the results
+      const knowledge: KnowledgeItem[] = [];
+
+      if (userKnowledge) {
+        userKnowledge.forEach(item => {
+          knowledge.push({
+            id: item.id,
+            title: item.title,
+            content: item.content || '',
+            category: item.file_type || 'personal',
+          });
+        });
+      }
+
+      if (systemKnowledge) {
+        systemKnowledge.forEach(item => {
+          knowledge.push({
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            category: item.category,
+          });
+        });
+      }
+
+      return knowledge;
     } catch (error) {
       console.error('Error retrieving relevant knowledge:', error);
       return [];
     }
-  };
+  }, [user]);
 
   return {
-    searchKnowledge,
     retrieveRelevantKnowledge,
   };
 }

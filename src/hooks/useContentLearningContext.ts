@@ -1,25 +1,24 @@
 
 import { useContentItems } from './useContentItems';
-import { useLearningProgress } from './useLearningProgress';
+import { useLearningPaths } from './useLearningPaths';
 
 export function useContentLearningContext() {
-  const contentQuery = useContentItems();
-  const contentItems = (contentQuery as any)?.contentItems || [];
-  
-  const learningQuery = useLearningProgress();
-  const learningData = (learningQuery as any)?.userProgress || [];
+  const { contentItems } = useContentItems();
+  const { learningPaths } = useLearningPaths();
 
   const buildContentContext = (): string => {
     if (!contentItems || contentItems.length === 0) return '';
 
     let context = `
-=== CREATED CONTENT (${contentItems.length} items) ===
+=== USER CONTENT LIBRARY ===
 Recent content created by user:
 `;
-    contentItems.slice(0, 5).forEach((item: any) => {
-      context += `• ${item.title} (${item.content_type}) - ${item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown date'}
-  Status: ${item.status || 'Unknown'}
-  Topics: ${item.tags?.join(', ') || 'No tags'}
+    
+    contentItems.slice(0, 5).forEach((item, index) => {
+      context += `${index + 1}. ${item.title} (${item.content_type})
+   Status: ${item.status}
+   Created: ${new Date(item.created_at).toLocaleDateString()}
+   Tags: ${item.tags?.join(', ') || 'None'}
 `;
     });
 
@@ -27,15 +26,18 @@ Recent content created by user:
   };
 
   const buildLearningContext = (): string => {
-    if (!learningData || learningData.length === 0) return '';
+    if (!learningPaths || learningPaths.length === 0) return '';
 
     let context = `
-=== LEARNING PROGRESS ===
+=== LEARNING PATHS ===
+User's learning journey:
 `;
-    learningData.forEach((progress: any) => {
-      context += `• Learning Path: Progress ${progress.progress_percentage || 0}%
-  Status: ${progress.status || 'In progress'}
-  Last Activity: ${progress.last_activity_at ? new Date(progress.last_activity_at).toLocaleDateString() : 'Never'}
+    
+    learningPaths.slice(0, 3).forEach((path, index) => {
+      context += `${index + 1}. ${path.title}
+   Difficulty: ${path.difficulty_level}
+   Progress: Active learning path
+   Description: ${path.description?.substring(0, 100) || 'No description'}...
 `;
     });
 
@@ -43,11 +45,9 @@ Recent content created by user:
   };
 
   return {
-    contentItems,
-    learningData,
     buildContentContext,
     buildLearningContext,
     contentCount: contentItems?.length || 0,
-    learningCount: learningData?.length || 0,
+    learningCount: learningPaths?.length || 0,
   };
 }
