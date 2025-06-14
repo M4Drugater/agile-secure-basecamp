@@ -97,16 +97,13 @@ export function useRealTimeDataRetrieval() {
         confidenceScore: 85 + Math.random() * 10 // 85-95% confidence
       };
 
-      // Log data retrieval for audit
-      if (supabase) {
-        await supabase.from('competitive_intelligence_logs').insert({
-          action: 'data_retrieval',
-          company_name: companyName,
-          data_sources: dataSources.filter(ds => ds.status === 'active').map(ds => ds.name),
-          confidence_score: mockData.confidenceScore,
-          retrieved_at: new Date().toISOString()
-        });
-      }
+      // Log data retrieval for audit - using console.log for now since competitive_intelligence_logs table doesn't exist
+      console.log('Competitor data retrieved:', {
+        companyName: companyName,
+        dataSources: dataSources.filter(ds => ds.status === 'active').map(ds => ds.name),
+        confidenceScore: mockData.confidenceScore,
+        retrievedAt: new Date().toISOString()
+      });
 
       return mockData;
     } catch (error) {

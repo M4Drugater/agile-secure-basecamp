@@ -162,17 +162,14 @@ export function useExecutiveDashboard() {
         lastUpdated: new Date()
       };
 
-      // Log dashboard generation
-      if (supabase) {
-        await supabase.from('competitive_intelligence_logs').insert({
-          action: 'dashboard_generated',
-          company_name: companyContext.companyName,
-          metrics_count: kpiMetrics.length,
-          threats_count: competitiveThreats.length,
-          opportunities_count: strategicOpportunities.length,
-          generated_at: new Date().toISOString()
-        });
-      }
+      // Log dashboard generation - using console.log for now since competitive_intelligence_logs table doesn't exist
+      console.log('Executive dashboard generated:', {
+        companyName: companyContext.companyName,
+        metricsCount: kpiMetrics.length,
+        threatsCount: competitiveThreats.length,
+        opportunitiesCount: strategicOpportunities.length,
+        generatedAt: new Date().toISOString()
+      });
 
       return dashboardData;
     } catch (error) {
