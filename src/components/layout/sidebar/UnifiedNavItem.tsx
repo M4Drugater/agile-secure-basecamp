@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { UnifiedNavItem } from './unifiedNavigationItems';
+import type { UnifiedNavItem } from './unifiedNavigationItems';
 
 interface UnifiedNavItemProps {
   item: UnifiedNavItem;
