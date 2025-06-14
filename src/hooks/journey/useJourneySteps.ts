@@ -21,12 +21,13 @@ export function useJourneySteps(userJourney: UserJourney | null) {
 
       switch (step.id) {
         case 'profile':
-          completed = userJourney.profile_completed || (profile?.profile_completeness || 0) >= 70;
+          // More generous profile completion check
+          completed = userJourney.profile_completed || (profile?.profile_completeness || 0) >= 50;
           locked = false;
           break;
         case 'knowledge':
           completed = userJourney.knowledge_setup;
-          locked = !userJourney.profile_completed && (profile?.profile_completeness || 0) < 70;
+          locked = !userJourney.profile_completed && (profile?.profile_completeness || 0) < 50;
           break;
         case 'chat':
           completed = userJourney.first_chat_completed;
@@ -67,10 +68,21 @@ export function useJourneySteps(userJourney: UserJourney | null) {
     return steps.every(step => step.completed);
   };
 
+  const getCompletedStepsCount = (): number => {
+    const steps = getJourneySteps();
+    return steps.filter(step => step.completed).length;
+  };
+
+  const getTotalStepsCount = (): number => {
+    return JOURNEY_STEPS.length;
+  };
+
   return {
     getJourneySteps,
     getNextStep,
     getCurrentStepIndex,
-    isJourneyComplete
+    isJourneyComplete,
+    getCompletedStepsCount,
+    getTotalStepsCount
   };
 }

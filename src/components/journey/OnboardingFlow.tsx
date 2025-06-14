@@ -17,6 +17,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
+import { StepCompletionCelebration } from './StepCompletionCelebration';
+import { AchievementBadge } from './AchievementBadge';
 
 const STEP_ICONS = {
   profile: User,
@@ -28,18 +30,33 @@ const STEP_ICONS = {
 
 export default function OnboardingFlow() {
   const navigate = useNavigate();
-  const { getJourneySteps, getNextStep, isJourneyComplete } = useProgressiveJourney();
+  const { 
+    getJourneySteps, 
+    getNextStep, 
+    isJourneyComplete,
+    getCompletedStepsCount,
+    getTotalStepsCount,
+    lastCompletedStep,
+    showCelebration,
+    dismissCelebration,
+    getEarnedAchievements
+  } = useProgressiveJourney();
 
   const steps = getJourneySteps();
   const nextStep = getNextStep();
-  const completedSteps = steps.filter(step => step.completed).length;
-  const progressPercentage = (completedSteps / steps.length) * 100;
+  const completedSteps = getCompletedStepsCount();
+  const totalSteps = getTotalStepsCount();
+  const progressPercentage = (completedSteps / totalSteps) * 100;
+  const earnedAchievements = getEarnedAchievements();
 
+  // Only redirect if completely done AND user dismisses celebration
   useEffect(() => {
-    if (isJourneyComplete()) {
-      navigate('/dashboard');
+    if (isJourneyComplete() && !showCelebration) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => navigate('/dashboard'), 1000);
+      return () => clearTimeout(timer);
     }
-  }, [isJourneyComplete, navigate]);
+  }, [isJourneyComplete, showCelebration, navigate]);
 
   const handleStepClick = (step: any) => {
     if (!step.locked && step.route) {
@@ -52,6 +69,24 @@ export default function OnboardingFlow() {
       navigate(nextStep.route);
     }
   };
+
+  const handleCelebrationContinue = () => {
+    dismissCelebration();
+    if (nextStep?.route) {
+      navigate(nextStep.route);
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleViewProgress = () => {
+    dismissCelebration();
+    navigate('/dashboard');
+  };
+
+  const completedStepData = lastCompletedStep 
+    ? steps.find(s => s.id === lastCompletedStep)
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -72,10 +107,25 @@ export default function OnboardingFlow() {
           <div className="max-w-md mx-auto">
             <div className="flex justify-between text-sm mb-2">
               <span>Setup Progress</span>
-              <span>{completedSteps}/{steps.length} completed</span>
+              <span>{completedSteps}/{totalSteps} completed</span>
             </div>
             <Progress value={progressPercentage} className="h-3" />
           </div>
+
+          {/* Achievement Badges */}
+          {earnedAchievements.length > 0 && (
+            <div className="flex justify-center gap-2 mt-4">
+              <span className="text-sm text-muted-foreground mr-2">Earned:</span>
+              {earnedAchievements.map((achievement) => (
+                <AchievementBadge 
+                  key={achievement} 
+                  type={achievement} 
+                  earned={true} 
+                  size="sm" 
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Next Step Highlight */}
@@ -155,9 +205,16 @@ export default function OnboardingFlow() {
 
                     <div className="flex items-center gap-2">
                       {step.completed && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          Complete
-                        </Badge>
+                        <>
+                          <AchievementBadge 
+                            type={step.id as 'profile' | 'knowledge' | 'chat' | 'agents' | 'content'} 
+                            earned={true} 
+                            size="sm" 
+                          />
+                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            Complete
+                          </Badge>
+                        </>
                       )}
                       {step.locked && (
                         <Badge variant="outline" className="text-gray-500">
@@ -186,6 +243,17 @@ export default function OnboardingFlow() {
           </Button>
         </div>
       </div>
+
+      {/* Celebration Modal */}
+      {showCelebration && completedStepData && (
+        <StepCompletionCelebration
+          completedStep={completedStepData}
+          nextStep={nextStep}
+          totalCompleted={completedSteps}
+          onContinue={handleCelebrationContinue}
+          onViewProgress={handleViewProgress}
+        />
+      )}
     </div>
   );
 }

@@ -16,10 +16,13 @@ import {
   ArrowRight,
   Sparkles,
   Target,
-  TrendingUp
+  TrendingUp,
+  Lock,
+  Star
 } from 'lucide-react';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useAuth } from '@/contexts/AuthContext';
+import { AchievementBadge } from './AchievementBadge';
 
 export default function ProgressiveDashboard() {
   const navigate = useNavigate();
@@ -28,26 +31,32 @@ export default function ProgressiveDashboard() {
     getJourneySteps, 
     getNextStep, 
     isJourneyComplete, 
-    userJourney 
+    userJourney,
+    getCompletedStepsCount,
+    getTotalStepsCount,
+    getEarnedAchievements
   } = useProgressiveJourney();
 
   const steps = getJourneySteps();
   const nextStep = getNextStep();
-  const completedSteps = steps.filter(step => step.completed).length;
-  const progressPercentage = (completedSteps / steps.length) * 100;
+  const completedSteps = getCompletedStepsCount();
+  const totalSteps = getTotalStepsCount();
+  const progressPercentage = (completedSteps / totalSteps) * 100;
+  const earnedAchievements = getEarnedAchievements();
 
-  // Redirect to onboarding if profile completion is too low
+  // Only redirect to onboarding if very low completion
   useEffect(() => {
     const profileCompleteness = profile?.profile_completeness || 0;
-    if (profileCompleteness < 30 && !userJourney?.profile_completed) {
+    if (profileCompleteness < 20 && !userJourney?.profile_completed && completedSteps === 0) {
       navigate('/onboarding');
     }
-  }, [profile, userJourney, navigate]);
+  }, [profile, userJourney, navigate, completedSteps]);
 
   const getAvailableModules = () => {
     const modules = [];
+    const completedStepIds = steps.filter(s => s.completed).map(s => s.id);
     
-    // Always available
+    // Always show profile
     modules.push({
       id: 'profile',
       title: 'Your Profile',
@@ -55,20 +64,26 @@ export default function ProgressiveDashboard() {
       icon: User,
       route: '/profile',
       available: true,
-      completion: profile?.profile_completeness || 0
+      completion: profile?.profile_completeness || 0,
+      isNew: false
     });
 
-    // Available after profile setup
-    if (steps.find(s => s.id === 'profile')?.completed) {
+    // Show knowledge after profile is started (30% completion)
+    if ((profile?.profile_completeness || 0) >= 30 || completedStepIds.includes('profile')) {
       modules.push({
         id: 'knowledge',
         title: 'Knowledge Base',
         description: 'Upload and manage your documents',
         icon: BookOpen,
         route: '/knowledge',
-        available: true
+        available: true,
+        isNew: !completedStepIds.includes('knowledge'),
+        badge: completedStepIds.includes('profile') && !completedStepIds.includes('knowledge') ? 'Newly Unlocked' : undefined
       });
+    }
 
+    // Show chat after knowledge setup or profile completion
+    if (completedStepIds.includes('profile') || completedStepIds.includes('knowledge')) {
       modules.push({
         id: 'chat',
         title: 'CLIPOGINO AI Mentor',
@@ -76,12 +91,14 @@ export default function ProgressiveDashboard() {
         icon: MessageSquare,
         route: '/chat',
         available: true,
-        badge: 'AI Powered'
+        badge: 'AI Powered',
+        isNew: !completedStepIds.includes('chat'),
+        highlight: completedStepIds.includes('knowledge') && !completedStepIds.includes('chat')
       });
     }
 
-    // Available after first chat
-    if (steps.find(s => s.id === 'chat')?.completed) {
+    // Show competitive intelligence after first chat
+    if (completedStepIds.includes('chat')) {
       modules.push({
         id: 'competitive',
         title: 'Competitive Intelligence',
@@ -89,16 +106,23 @@ export default function ProgressiveDashboard() {
         icon: Shield,
         route: '/competitive-intelligence',
         available: true,
-        badge: 'AI Agents'
+        badge: 'AI Agents',
+        isNew: !completedStepIds.includes('agents'),
+        highlight: completedStepIds.includes('chat') && !completedStepIds.includes('agents')
       });
+    }
 
+    // Show content creation after competitive intelligence discovery
+    if (completedStepIds.includes('chat')) {
       modules.push({
         id: 'content',
         title: 'Content Creation',
         description: 'Generate professional content with AI',
         icon: FileText,
         route: '/content-generator',
-        available: true
+        available: true,
+        isNew: !completedStepIds.includes('content'),
+        highlight: completedStepIds.includes('agents') && !completedStepIds.includes('content')
       });
     }
 
@@ -111,7 +135,9 @@ export default function ProgressiveDashboard() {
         icon: TrendingUp,
         route: '/trends',
         available: true,
-        badge: 'Live Data'
+        badge: 'Live Data',
+        isNew: true,
+        highlight: true
       });
     }
 
@@ -119,6 +145,7 @@ export default function ProgressiveDashboard() {
   };
 
   const availableModules = getAvailableModules();
+  const newModulesCount = availableModules.filter(m => m.isNew).length;
 
   return (
     <UnifiedAppLayout>
@@ -127,13 +154,18 @@ export default function ProgressiveDashboard() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-3xl font-bold flex items-center gap-2">
                 Welcome back, {profile?.full_name?.split(' ')[0] || 'Professional'}! 👋
+                {newModulesCount > 0 && (
+                  <Badge className="bg-green-500 animate-pulse">
+                    {newModulesCount} New!
+                  </Badge>
+                )}
               </h1>
               <p className="text-muted-foreground">
                 {isJourneyComplete() 
                   ? 'Your AI-powered workspace is ready for professional growth'
-                  : 'Continue your setup to unlock the full potential of LAIGENT'
+                  : `Continue your setup to unlock more AI-powered features (${completedSteps}/${totalSteps} completed)`
                 }
               </p>
             </div>
@@ -149,6 +181,39 @@ export default function ProgressiveDashboard() {
             )}
           </div>
 
+          {/* Achievements Row */}
+          {earnedAchievements.length > 0 && (
+            <Card className="mb-6 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-5 w-5 text-purple-600" />
+                    <span className="font-semibold">Your Achievements</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {earnedAchievements.map((achievement) => (
+                      <AchievementBadge 
+                        key={achievement} 
+                        type={achievement} 
+                        earned={true} 
+                        size="sm"
+                        showLabel={false} 
+                      />
+                    ))}
+                    {isJourneyComplete() && (
+                      <AchievementBadge 
+                        type="master" 
+                        earned={true} 
+                        size="sm"
+                        showLabel={false} 
+                      />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Progress Bar (only show if not complete) */}
           {!isJourneyComplete() && (
             <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
@@ -157,7 +222,7 @@ export default function ProgressiveDashboard() {
                   <div>
                     <h3 className="font-semibold">Setup Progress</h3>
                     <p className="text-sm text-muted-foreground">
-                      {completedSteps} of {steps.length} steps completed
+                      {completedSteps} of {totalSteps} steps completed
                     </p>
                   </div>
                   <Badge className="bg-blue-500">
@@ -220,6 +285,8 @@ export default function ProgressiveDashboard() {
                 key={module.id}
                 className={`cursor-pointer transition-all hover:shadow-lg ${
                   module.available ? 'hover:scale-105' : 'opacity-60'
+                } ${module.highlight ? 'ring-2 ring-blue-300 bg-blue-50' : ''} ${
+                  module.isNew ? 'animate-pulse' : ''
                 }`}
                 onClick={() => module.available && navigate(module.route)}
               >
@@ -228,11 +295,18 @@ export default function ProgressiveDashboard() {
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                       <Icon className="h-5 w-5 text-white" />
                     </div>
-                    {module.badge && (
-                      <Badge variant="secondary" className="text-xs">
-                        {module.badge}
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {module.badge && (
+                        <Badge variant="secondary" className="text-xs">
+                          {module.badge}
+                        </Badge>
+                      )}
+                      {module.isNew && (
+                        <Badge className="bg-green-500 text-xs animate-pulse">
+                          New!
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <CardTitle className="text-lg">{module.title}</CardTitle>
                   <CardDescription>{module.description}</CardDescription>
@@ -256,6 +330,14 @@ export default function ProgressiveDashboard() {
                       <ArrowRight className="h-4 w-4 text-blue-500" />
                     </div>
                   )}
+                  {!module.available && (
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-sm text-gray-500 flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Complete previous steps
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -273,6 +355,9 @@ export default function ProgressiveDashboard() {
               <p className="text-muted-foreground mb-4">
                 You've unlocked the full power of LAIGENT. Your AI-powered professional development journey begins now!
               </p>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <AchievementBadge type="master" earned={true} size="lg" showLabel={true} />
+              </div>
               <div className="flex items-center justify-center gap-3">
                 <Button onClick={() => navigate('/chat')}>
                   Start with CLIPOGINO

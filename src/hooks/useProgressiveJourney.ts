@@ -1,11 +1,22 @@
 
+import { useState } from 'react';
 import { UserJourney } from './journey/types';
 import { useJourneyData } from './journey/useJourneyData';
 import { useJourneySteps } from './journey/useJourneySteps';
 
 export function useProgressiveJourney() {
   const { userJourney, isLoading, updateJourney } = useJourneyData();
-  const { getJourneySteps, getNextStep, getCurrentStepIndex, isJourneyComplete } = useJourneySteps(userJourney);
+  const { 
+    getJourneySteps, 
+    getNextStep, 
+    getCurrentStepIndex, 
+    isJourneyComplete,
+    getCompletedStepsCount,
+    getTotalStepsCount
+  } = useJourneySteps(userJourney);
+
+  const [lastCompletedStep, setLastCompletedStep] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const completeStep = (stepId: string) => {
     const updates: Partial<UserJourney> = {};
@@ -29,7 +40,24 @@ export function useProgressiveJourney() {
     }
 
     updates.current_step = Math.max(getCurrentStepIndex() + 1, userJourney?.current_step || 0);
+    
+    // Set up celebration state
+    setLastCompletedStep(stepId);
+    setShowCelebration(true);
+    
     updateJourney.mutate(updates);
+  };
+
+  const dismissCelebration = () => {
+    setShowCelebration(false);
+    setLastCompletedStep(null);
+  };
+
+  const getEarnedAchievements = () => {
+    const steps = getJourneySteps();
+    return steps
+      .filter(step => step.completed)
+      .map(step => step.id as 'profile' | 'knowledge' | 'chat' | 'agents' | 'content');
   };
 
   return {
@@ -41,6 +69,12 @@ export function useProgressiveJourney() {
     completeStep,
     isJourneyComplete,
     updateJourney: updateJourney.mutate,
+    getCompletedStepsCount,
+    getTotalStepsCount,
+    lastCompletedStep,
+    showCelebration,
+    dismissCelebration,
+    getEarnedAchievements,
   };
 }
 
