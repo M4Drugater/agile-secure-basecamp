@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -62,6 +61,26 @@ What specific competitive intelligence would you like me to help you discover an
       icon: BarChart3,
       color: 'text-blue-600'
     },
+    cir: {
+      name: '(CIR) COMPETITIVE INTELLIGENCE RETRIEVER',
+      welcomeMessage: `Hello! I'm Marcus Rodriguez, your data intelligence specialist. I have access to comprehensive market databases and provide ACTUAL DATA and metrics, not instructions.
+
+My specialized capabilities include:
+• **Domain Authority Analysis**: Specific DA estimates for competitors
+• **Traffic Intelligence**: Monthly visitor estimates and patterns
+• **Social Media Metrics**: LinkedIn followers, engagement rates, posting frequency
+• **Team Size Assessment**: Employee count estimates based on industry profiles
+• **Content Analysis**: Volume assessment and content focus breakdown
+
+I focus on providing specific numbers and ranges based on industry knowledge. I don't provide methodology - only concrete data and metrics.
+
+${sessionConfig.companyName ? `Ready to analyze ${sessionConfig.companyName} and competitors` : 'Ready to analyze your competitive landscape'} with actual data estimates.
+
+What specific market data do you need me to retrieve?`,
+      responseStyle: 'data-focused and metrics-driven',
+      icon: Target,
+      color: 'text-green-600'
+    },
     cia: {
       name: 'CIA - Intelligence Analysis',
       welcomeMessage: `Greetings! I'm CIA, your Competitive Intelligence Analysis expert. I specialize in strategic analysis, threat assessment, and transforming competitive data into actionable strategic insights.
@@ -78,23 +97,6 @@ What strategic competitive intelligence questions can I analyze for you?`,
       responseStyle: 'strategic and intelligence-focused',
       icon: Brain,
       color: 'text-purple-600'
-    },
-    cir: {
-      name: 'CIR - Intelligence Reporting',
-      welcomeMessage: `Welcome! I'm CIR, your Competitive Intelligence Reporting specialist. I focus on creating actionable reports, strategic recommendations, and executive decision-support documents.
-
-I excel at delivering:
-• **Executive Reports**: Clear, concise intelligence for leadership decisions
-• **Strategic Recommendations**: Actionable competitive response strategies
-• **Decision Support**: Structured analysis for strategic choices
-• **Implementation Plans**: Detailed roadmaps for competitive actions
-
-I understand you're working on ${sessionConfig.analysisFocus || 'competitive analysis'}${sessionConfig.companyName ? ` for ${sessionConfig.companyName}` : ''}. I'll ensure my reports are tailored to drive your specific business decisions.
-
-What type of competitive intelligence report would be most valuable for your current needs?`,
-      responseStyle: 'executive and action-oriented',
-      icon: FileText,
-      color: 'text-green-600'
     }
   };
 
@@ -175,7 +177,7 @@ What type of competitive intelligence report would be most valuable for your cur
     }
   };
 
-  const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
+  const agent = agentPersonalities[agentId as key of typeof agentPersonalities];
 
   if (!agent) {
     return (

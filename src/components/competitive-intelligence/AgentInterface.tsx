@@ -38,6 +38,19 @@ const agents = {
       'Data correlation analysis'
     ]
   },
+  cir: {
+    name: '(CIR) COMPETITIVE INTELLIGENCE RETRIEVER',
+    icon: Target,
+    color: 'bg-green-500',
+    description: 'Data intelligence specialist providing actual market data and metrics',
+    capabilities: [
+      'Domain authority estimates',
+      'Traffic analysis',
+      'Social media metrics',
+      'Team size evaluation',
+      'Content volume assessment'
+    ]
+  },
   cia: {
     name: 'CIA - Competitive Intelligence Analysis',
     icon: Brain,
@@ -49,19 +62,6 @@ const agents = {
       'Competitor profiling',
       'SWOT analysis',
       'Risk evaluation'
-    ]
-  },
-  cir: {
-    name: 'CIR - Competitive Intelligence Reporting',
-    icon: Target,
-    color: 'bg-green-500',
-    description: 'Focused on generating actionable reports and strategic recommendations',
-    capabilities: [
-      'Executive summaries',
-      'Strategic recommendations',
-      'Action plan development',
-      'Performance reports',
-      'Decision support documents'
     ]
   }
 };

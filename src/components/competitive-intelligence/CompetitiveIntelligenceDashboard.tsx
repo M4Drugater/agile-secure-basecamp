@@ -29,20 +29,20 @@ const agents = [
     features: ['Competitor Discovery', 'Competitive Validation', 'Market Opportunity Analysis', 'Threat Assessment']
   },
   {
+    id: 'cir',
+    name: '(CIR) COMPETITIVE INTELLIGENCE RETRIEVER',
+    description: 'Data intelligence specialist providing actual market data and metrics',
+    icon: Target,
+    color: 'bg-green-500',
+    features: ['Data Intelligence', 'Market Metrics', 'Traffic Analysis', 'Competitive Benchmarking']
+  },
+  {
     id: 'cia',
     name: 'CIA - Intelligence Analysis',
     description: 'Provides strategic intelligence and comprehensive market analysis',
     icon: Brain,
     color: 'bg-purple-500',
     features: ['Strategic Analysis', 'Risk Assessment', 'Market Intelligence', 'Scenario Planning']
-  },
-  {
-    id: 'cir',
-    name: 'CIR - Intelligence Reporting',
-    description: 'Generates actionable reports and strategic recommendations',
-    icon: Target,
-    color: 'bg-green-500',
-    features: ['Executive Reports', 'Action Plans', 'Strategic Recommendations', 'Decision Support']
   }
 ];
 
