@@ -13,7 +13,8 @@ import {
   Lightbulb,
   TrendingUp,
   Zap,
-  Brain
+  Brain,
+  Target
 } from 'lucide-react';
 import { useAgentMessageHandling } from '@/hooks/competitive-intelligence/useAgentMessageHandling';
 
@@ -177,7 +178,7 @@ What strategic competitive intelligence questions can I analyze for you?`,
     }
   };
 
-  const agent = agentPersonalities[agentId as key of typeof agentPersonalities];
+  const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
 
   if (!agent) {
     return (
