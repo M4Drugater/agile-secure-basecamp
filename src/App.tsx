@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
+import AssistedModel from "./pages/AssistedModel";
 import ContentGenerator from "./pages/ContentGenerator";
 import ContentLibrary from "./pages/ContentLibrary";
 import ContentAnalytics from "./pages/ContentAnalytics";
@@ -49,6 +50,11 @@ function App() {
               <Route path="/chat" element={
                 <ProtectedRoute>
                   <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/modelo-asistido" element={
+                <ProtectedRoute>
+                  <AssistedModel />
                 </ProtectedRoute>
               } />
               <Route path="/content/generator" element={
