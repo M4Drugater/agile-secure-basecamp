@@ -1,149 +1,91 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, BookOpen, Brain, FileText, Database } from 'lucide-react';
-import { useEnhancedKnowledgeBase } from '@/hooks/useEnhancedKnowledgeBase';
-import { useDebounce } from '@/hooks/useDebounce';
+import { Button } from '@/components/ui/button';
+import { BookOpen, ExternalLink, Star } from 'lucide-react';
 
-export function KnowledgeRecommendations() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const { getRecommendations } = useEnhancedKnowledgeBase();
-  
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+interface KnowledgeRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  relevanceScore: number;
+  type: 'document' | 'article' | 'resource';
+  url?: string;
+}
 
-  React.useEffect(() => {
-    const searchRecommendations = async () => {
-      if (!debouncedSearchQuery.trim()) {
-        setRecommendations([]);
-        return;
-      }
+interface KnowledgeRecommendationsProps {
+  recommendations: KnowledgeRecommendation[];
+  onViewResource: (resource: KnowledgeRecommendation) => void;
+}
 
-      setIsSearching(true);
-      try {
-        const results = await getRecommendations(debouncedSearchQuery);
-        setRecommendations(results);
-      } catch (error) {
-        console.error('Error getting recommendations:', error);
-        setRecommendations([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
+export function KnowledgeRecommendations({ 
+  recommendations, 
+  onViewResource 
+}: KnowledgeRecommendationsProps) {
+  const [filteredRecommendations, setFilteredRecommendations] = useState<KnowledgeRecommendation[]>([]);
 
+  const searchRecommendations = useCallback((searchTerm: string = '') => {
+    if (!searchTerm.trim()) {
+      setFilteredRecommendations(recommendations);
+      return;
+    }
+
+    const filtered = recommendations.filter(rec =>
+      rec.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rec.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredRecommendations(filtered);
+  }, [recommendations]);
+
+  useEffect(() => {
     searchRecommendations();
-  }, [debouncedSearchQuery, getRecommendations]);
+  }, [searchRecommendations]);
 
-  const getKnowledgeIcon = (type: string) => {
-    switch (type) {
-      case 'personal':
-        return <FileText className="h-4 w-4" />;
-      case 'system':
-        return <Database className="h-4 w-4" />;
-      default:
-        return <BookOpen className="h-4 w-4" />;
-    }
-  };
-
-  const getKnowledgeColor = (type: string) => {
-    switch (type) {
-      case 'personal':
-        return 'bg-blue-50 text-blue-600';
-      case 'system':
-        return 'bg-purple-50 text-purple-600';
-      default:
-        return 'bg-gray-50 text-gray-600';
-    }
-  };
+  if (!recommendations || recommendations.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="w-80 space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            AI Knowledge Recommendations
+            <BookOpen className="h-5 w-5" />
+            Knowledge Recommendations
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search your knowledge base for recommendations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {isSearching && (
-              <div className="text-center py-4">
-                <div className="inline-flex items-center gap-2 text-muted-foreground">
-                  <Brain className="h-4 w-4 animate-pulse" />
-                  Searching knowledge base...
+        <CardContent className="space-y-3">
+          {filteredRecommendations.map((recommendation) => (
+            <div key={recommendation.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-start justify-between">
+                <h4 className="font-medium text-sm">{recommendation.title}</h4>
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-yellow-500" />
+                  <span className="text-xs">{recommendation.relevanceScore}</span>
                 </div>
               </div>
-            )}
-
-            {!searchQuery.trim() && (
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Enter a search term to get AI-powered recommendations from your knowledge base</p>
+              
+              <p className="text-xs text-muted-foreground">
+                {recommendation.description}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <Badge variant="secondary" className="text-xs">
+                  {recommendation.type}
+                </Badge>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onViewResource(recommendation)}
+                  className="h-6 px-2 text-xs"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
               </div>
-            )}
-
-            {searchQuery.trim() && !isSearching && recommendations.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No recommendations found for "{searchQuery}"</p>
-              </div>
-            )}
-
-            {recommendations.length > 0 && (
-              <div className="space-y-3">
-                {recommendations.map((recommendation) => (
-                  <Card key={recommendation.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1 rounded-full ${getKnowledgeColor(recommendation.knowledge_type)}`}>
-                              {getKnowledgeIcon(recommendation.knowledge_type)}
-                            </div>
-                            <h4 className="font-medium">{recommendation.title}</h4>
-                            <Badge variant="outline" className="text-xs">
-                              {Math.round(recommendation.relevance_score * 100)}% match
-                            </Badge>
-                          </div>
-                          
-                          {recommendation.description && (
-                            <p className="text-sm text-muted-foreground">
-                              {recommendation.description}
-                            </p>
-                          )}
-                          
-                          {recommendation.content_snippet && (
-                            <p className="text-sm bg-gray-50 p-2 rounded border-l-2 border-gray-200">
-                              {recommendation.content_snippet}...
-                            </p>
-                          )}
-                        </div>
-
-                        <Badge variant={recommendation.knowledge_type === 'personal' ? 'default' : 'secondary'}>
-                          {recommendation.knowledge_type}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
     </div>

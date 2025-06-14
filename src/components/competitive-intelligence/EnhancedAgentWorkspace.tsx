@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Brain, BarChart3, Settings } from 'lucide-react';
+import { MessageSquare, Brain, BarChart3, Settings, Monitor } from 'lucide-react';
 import { AgentInfoPanel } from './AgentInfoPanel';
 import { AgentConfigurationPanel } from './AgentConfigurationPanel';
 import { AgentChat } from './AgentChat';
 import { StrategicAnalysisPanel } from './StrategicAnalysisPanel';
+import { ExecutiveDashboard } from './ExecutiveDashboard';
+import { ContinuousMonitoringPanel } from './ContinuousMonitoringPanel';
 
 interface SessionConfig {
   companyName: string;
@@ -32,18 +34,18 @@ export function EnhancedAgentWorkspace({
   const agentCapabilities = {
     cdv: {
       name: 'Competitor Discovery & Validator',
-      frameworks: ['Porter\'s Five Forces', 'Competitive Landscape Mapping'],
-      specialties: ['Market Discovery', 'Threat Validation', 'Competitive Positioning']
+      frameworks: ['Porter\'s Five Forces', 'Competitive Landscape Mapping', 'Threat Assessment Matrix'],
+      specialties: ['Market Discovery', 'Threat Validation', 'Competitive Positioning', 'Early Warning Systems']
     },
     cir: {
       name: 'Competitive Intelligence Retriever', 
-      frameworks: ['Financial Analysis', 'Operational Metrics'],
-      specialties: ['Data Intelligence', 'Market Metrics', 'Performance Benchmarking']
+      frameworks: ['Financial Analysis', 'Operational Metrics', 'Market Intelligence'],
+      specialties: ['Data Intelligence', 'Market Metrics', 'Performance Benchmarking', 'Financial Analysis']
     },
     cia: {
       name: 'Competitive Intelligence Analysis',
-      frameworks: ['McKinsey 7-S', '3-Horizons Planning', 'BCG Matrix'],
-      specialties: ['Strategic Analysis', 'Scenario Planning', 'Executive Intelligence']
+      frameworks: ['McKinsey 7-S', '3-Horizons Planning', 'BCG Matrix', 'Strategic Options Analysis'],
+      specialties: ['Strategic Analysis', 'Scenario Planning', 'Executive Intelligence', 'Implementation Roadmaps']
     }
   };
 
@@ -64,14 +66,14 @@ export function EnhancedAgentWorkspace({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">Enhanced with McKinsey Frameworks</Badge>
-          <Badge variant="default">AI-Powered</Badge>
+          <Badge variant="outline">McKinsey-Level Analysis</Badge>
+          <Badge variant="default">Enhanced AI Engine</Badge>
         </div>
       </div>
 
-      {/* Main Workspace Tabs */}
+      {/* Enhanced Workspace Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             Agent Chat
@@ -80,9 +82,13 @@ export function EnhancedAgentWorkspace({
             <Brain className="h-4 w-4" />
             Strategic Analysis
           </TabsTrigger>
-          <TabsTrigger value="insights" className="flex items-center gap-2">
+          <TabsTrigger value="dashboard" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Intelligence Hub
+            Executive Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="monitoring" className="flex items-center gap-2">
+            <Monitor className="h-4 w-4" />
+            Continuous Monitoring
           </TabsTrigger>
           <TabsTrigger value="config" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -108,13 +114,12 @@ export function EnhancedAgentWorkspace({
           />
         </TabsContent>
 
-        <TabsContent value="insights" className="space-y-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Intelligence widgets would go here */}
-            <div className="col-span-full text-center text-muted-foreground py-8">
-              Intelligence Hub - Coming in Phase 2
-            </div>
-          </div>
+        <TabsContent value="dashboard" className="space-y-0">
+          <ExecutiveDashboard companyContext={sessionConfig} />
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-0">
+          <ContinuousMonitoringPanel companyContext={sessionConfig} />
         </TabsContent>
 
         <TabsContent value="config" className="space-y-0">
@@ -124,13 +129,28 @@ export function EnhancedAgentWorkspace({
               setSessionConfig={setSessionConfig} 
             />
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Agent Specialties</h3>
-              <div className="space-y-2">
-                {currentAgent?.specialties.map((specialty) => (
-                  <div key={specialty} className="p-3 border rounded-lg">
-                    <span className="text-sm font-medium">{specialty}</span>
+              <h3 className="text-lg font-semibold">Enhanced Agent Capabilities</h3>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-medium mb-2">Strategic Frameworks</h4>
+                  <div className="space-y-1">
+                    {currentAgent?.frameworks.map((framework) => (
+                      <div key={framework} className="p-2 border rounded-lg text-sm">
+                        {framework}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Core Specialties</h4>
+                  <div className="space-y-1">
+                    {currentAgent?.specialties.map((specialty) => (
+                      <div key={specialty} className="p-2 bg-muted rounded-lg text-sm">
+                        {specialty}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
