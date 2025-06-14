@@ -11,6 +11,8 @@ import { useMessageHandling } from './useMessageHandling';
 import { useConversationState } from './useConversationState';
 import { useChatHistory } from './useChatHistory';
 import { useConsolidatedContext } from '@/hooks/useConsolidatedContext';
+import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
+import { useKnowledgeBase } from '@/hooks/useKnowledgeBase';
 import { ChatHeader } from './ChatHeader';
 import { UsageWarning } from './UsageWarning';
 import { WelcomeMessage } from './WelcomeMessage';
@@ -20,6 +22,7 @@ import { ChatInput } from './ChatInput';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ModelSelector } from './ModelSelector';
 import { KnowledgeRecommendations } from './KnowledgeRecommendations';
+import { ChatPromptSuggestion } from './ChatPromptSuggestion';
 import { ChatMessage as ChatMessageType } from './types';
 
 interface AttachedFile {
@@ -32,6 +35,8 @@ export function ConsolidatedChat() {
   const { user } = useAuth();
   const { isLoading, selectedModel, setSelectedModel, sendMessageToAI } = useMessageHandling();
   const { buildFullContextString, getContextSummary, hasProfileContext } = useConsolidatedContext();
+  const { getJourneySteps } = useProgressiveJourney();
+  const { documents } = useKnowledgeBase();
   const {
     messages,
     knowledgeRecommendations,
@@ -50,6 +55,12 @@ export function ConsolidatedChat() {
   const [showKnowledgePanel, setShowKnowledgePanel] = useState(true);
   const [showContextDetails, setShowContextDetails] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Check if chat step is completed
+  const journeySteps = getJourneySteps();
+  const chatStep = journeySteps.find(step => step.id === 'chat');
+  const hasCompletedChat = chatStep?.completed || false;
+  const hasKnowledgeFiles = (documents && documents.length > 0) || false;
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -113,6 +124,10 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
     } catch (error) {
       console.error('Error in sendMessage:', error);
     }
+  };
+
+  const handleUseSuggestedPrompt = (prompt: string) => {
+    sendMessage(prompt);
   };
 
   const handleNewConversation = () => {
@@ -221,7 +236,15 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
         )}
 
         {/* Main Chat Area */}
-        <div className="flex-1">
+        <div className="flex-1 space-y-4">
+          {/* Prompt Suggestion - only show if chat step not completed and no messages */}
+          {!hasCompletedChat && messages.length === 0 && (
+            <ChatPromptSuggestion 
+              onUseSuggestion={handleUseSuggestedPrompt}
+              hasKnowledgeFiles={hasKnowledgeFiles}
+            />
+          )}
+
           <Card className="h-[600px] flex flex-col">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
