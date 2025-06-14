@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -8,7 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Home,
   MessageSquare,
-  Bot,
   FileText,
   BookOpen,
   TrendingUp,
@@ -37,13 +35,6 @@ const mainNavItems = [
     icon: MessageSquare,
     badge: 'AI',
     description: 'Asistente inteligente personalizado'
-  },
-  { 
-    title: 'Modelo Asistido', 
-    href: '/modelo-asistido', 
-    icon: Bot,
-    badge: 'NEW',
-    description: 'Navegación inteligente por módulos'
   }
 ];
 

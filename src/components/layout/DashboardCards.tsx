@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   MessageSquare, 
-  Bot, 
   Shield,
   TrendingUp,
   FileText,
@@ -38,15 +36,6 @@ export function DashboardCards() {
       badge: 'AI Assistant',
       color: 'from-green-600 to-blue-600',
       features: ['Contextualización inteligente', 'Recomendaciones personalizadas', 'Análisis de conocimiento']
-    },
-    {
-      title: 'Modelo Asistido',
-      description: 'Navegación inteligente que detecta tus intenciones y activa automáticamente los módulos apropiados',
-      icon: Bot,
-      href: '/modelo-asistido',
-      badge: 'Smart Navigation',
-      color: 'from-purple-600 to-pink-600',
-      features: ['Detección de intenciones', 'Activación automática', 'Redirección inteligente']
     }
   ];
 

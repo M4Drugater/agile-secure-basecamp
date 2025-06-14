@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -9,7 +8,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Home,
   MessageSquare,
-  Bot,
   FileText,
   BookOpen,
   TrendingUp,
@@ -43,8 +41,7 @@ const navigationItems = [
     section: 'Principal',
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: Home, description: 'Vista general del sistema' },
-      { title: 'Chat con CLIPOGINO', href: '/chat', icon: MessageSquare, badge: 'AI', description: 'Asistente inteligente personalizado' },
-      { title: 'Modelo Asistido', href: '/modelo-asistido', icon: Bot, badge: 'NEW', description: 'Navegación inteligente por módulos' }
+      { title: 'Chat con CLIPOGINO', href: '/chat', icon: MessageSquare, badge: 'AI', description: 'Asistente inteligente personalizado' }
     ]
   },
   { 
