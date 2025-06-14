@@ -1,7 +1,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessageHandling } from './useMessageHandling';
-import { useEnhancedContextBuilder } from '@/hooks/useEnhancedContextBuilder';
+import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 import { useConversationState } from './useConversationState';
 import { ChatMessage } from './types';
 
@@ -14,7 +14,7 @@ interface AttachedFile {
 export function useEnhancedClipoginoChat() {
   const { user } = useAuth();
   const { isLoading, selectedModel, setSelectedModel, sendMessageToAI } = useMessageHandling();
-  const { buildFullContextString, getContextSummary } = useEnhancedContextBuilder();
+  const { buildFullContextString, getContextSummary } = useContextBuilder();
   const {
     messages,
     knowledgeRecommendations,

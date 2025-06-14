@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useClipoginoChat } from './useClipoginoChat';
 import { useChatHistory } from './useChatHistory';
-import { useEnhancedContextBuilder } from '@/hooks/useEnhancedContextBuilder';
+import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 import { ChatHeader } from './ChatHeader';
 import { UsageWarning } from './UsageWarning';
 import { WelcomeMessage } from './WelcomeMessage';
@@ -33,7 +33,7 @@ export function EnhancedClipoginoChat() {
   } = useClipoginoChat();
   
   const { setCurrentConversationId } = useChatHistory();
-  const { getContextSummary } = useEnhancedContextBuilder();
+  const { getContextSummary } = useContextBuilder();
   const contextSummary = getContextSummary();
   
   const [showSidebar, setShowSidebar] = useState(true);
