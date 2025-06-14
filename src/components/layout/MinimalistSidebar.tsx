@@ -16,20 +16,23 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
+import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 
 const coreNavItems = [
   { 
     title: 'Dashboard', 
     href: '/dashboard', 
     icon: Home,
-    description: 'Vista general del sistema'
+    description: 'Vista general del sistema',
+    alwaysShow: true
   },
   { 
     title: 'CLIPOGINO', 
     href: '/chat', 
     icon: MessageSquare,
     badge: 'IA',
-    description: 'Tu mentor inteligente personalizado'
+    description: 'Tu mentor inteligente personalizado',
+    requiresStep: 'knowledge'
   }
 ];
 
@@ -39,20 +42,23 @@ const activeModulesItems = [
     href: '/competitive-intelligence', 
     icon: Shield,
     badge: 'IA',
-    description: 'Análisis competitivo con agentes CDV, CIA y CIR'
+    description: 'Análisis competitivo con agentes CDV, CIA y CIR',
+    requiresStep: 'chat'
   },
   { 
     title: 'Generador de Contenido', 
     href: '/content-generator', 
     icon: FileText,
     badge: 'IA',
-    description: 'Creación de contenido profesional'
+    description: 'Creación de contenido profesional',
+    requiresStep: 'chat'
   },
   { 
     title: 'Base de Conocimiento', 
     href: '/knowledge', 
     icon: BookOpen,
-    description: 'Gestión de documentos y recursos'
+    description: 'Gestión de documentos y recursos',
+    requiresStep: 'profile'
   }
 ];
 
@@ -61,13 +67,15 @@ const accountItems = [
     title: 'Perfil', 
     href: '/profile', 
     icon: User,
-    description: 'Configuración personal'
+    description: 'Configuración personal',
+    alwaysShow: true
   },
   { 
     title: 'Administración', 
     href: '/admin', 
     icon: Settings,
-    description: 'Panel de administración'
+    description: 'Panel de administración',
+    alwaysShow: true
   }
 ];
 
@@ -79,18 +87,38 @@ interface NavSectionProps {
     icon: React.ComponentType<any>;
     badge?: string;
     description?: string;
+    alwaysShow?: boolean;
+    requiresStep?: string;
   }>;
   isCollapsed: boolean;
+  completionStates: Record<string, boolean>;
+  isJourneyComplete: boolean;
 }
 
-function NavSection({ title, items, isCollapsed }: NavSectionProps) {
+function NavSection({ title, items, isCollapsed, completionStates, isJourneyComplete }: NavSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
+
+  // Filter items based on journey progress
+  const availableItems = items.filter(item => {
+    // Always show if marked as such or journey is complete
+    if (item.alwaysShow || isJourneyComplete) return true;
+    
+    // Show if required step is completed
+    if (item.requiresStep) {
+      return completionStates[item.requiresStep];
+    }
+    
+    return true;
+  });
+
+  // Don't render section if no items are available
+  if (availableItems.length === 0) return null;
 
   if (isCollapsed) {
     return (
       <div className="space-y-1">
-        {items.map((item) => {
+        {availableItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.href;
           
@@ -128,7 +156,7 @@ function NavSection({ title, items, isCollapsed }: NavSectionProps) {
       
       {isOpen && (
         <div className="space-y-1">
-          {items.map((item) => {
+          {availableItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href;
             
@@ -170,6 +198,13 @@ function NavSection({ title, items, isCollapsed }: NavSectionProps) {
 
 export function MinimalistSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { getJourneySteps, isJourneyComplete } = useProgressiveJourney();
+  
+  const steps = getJourneySteps();
+  const completionStates = steps.reduce((acc, step) => {
+    acc[step.id] = step.completed;
+    return acc;
+  }, {} as Record<string, boolean>);
 
   return (
     <div className={cn(
@@ -204,18 +239,24 @@ export function MinimalistSidebar() {
             title="Principal" 
             items={coreNavItems} 
             isCollapsed={isCollapsed}
+            completionStates={completionStates}
+            isJourneyComplete={isJourneyComplete()}
           />
           
           <NavSection 
             title="Módulos Activos" 
             items={activeModulesItems} 
             isCollapsed={isCollapsed}
+            completionStates={completionStates}
+            isJourneyComplete={isJourneyComplete()}
           />
           
           <NavSection 
             title="Cuenta" 
             items={accountItems} 
             isCollapsed={isCollapsed}
+            completionStates={completionStates}
+            isJourneyComplete={isJourneyComplete()}
           />
         </div>
       </ScrollArea>
