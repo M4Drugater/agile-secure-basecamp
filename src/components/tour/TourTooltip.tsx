@@ -21,83 +21,114 @@ export function TourTooltip({ step, targetElement, stepNumber, totalSteps }: Tou
   useEffect(() => {
     if (!targetElement) return;
 
-    const rect = targetElement.getBoundingClientRect();
-    const tooltipOffset = 20;
-    const tooltipWidth = 320;
-    const tooltipHeight = 200; // Approximate height
+    const updatePosition = () => {
+      const rect = targetElement.getBoundingClientRect();
+      const tooltipOffset = 20;
+      const tooltipWidth = 360;
+      const tooltipHeight = 280;
 
-    let left = rect.left;
-    let top = rect.top;
+      let left = rect.left;
+      let top = rect.top;
+      let arrowPosition = '';
 
-    switch (step.position) {
-      case 'top':
-        left = rect.left + rect.width / 2 - tooltipWidth / 2;
-        top = rect.top - tooltipHeight - tooltipOffset;
-        break;
-      case 'bottom':
-        left = rect.left + rect.width / 2 - tooltipWidth / 2;
-        top = rect.bottom + tooltipOffset;
-        break;
-      case 'left':
-        left = rect.left - tooltipWidth - tooltipOffset;
-        top = rect.top + rect.height / 2 - tooltipHeight / 2;
-        break;
-      case 'right':
-        left = rect.right + tooltipOffset;
-        top = rect.top + rect.height / 2 - tooltipHeight / 2;
-        break;
-    }
+      switch (step.position) {
+        case 'top':
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          top = rect.top - tooltipHeight - tooltipOffset;
+          arrowPosition = 'bottom';
+          break;
+        case 'bottom':
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          top = rect.bottom + tooltipOffset;
+          arrowPosition = 'top';
+          break;
+        case 'left':
+          left = rect.left - tooltipWidth - tooltipOffset;
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          arrowPosition = 'right';
+          break;
+        case 'right':
+          left = rect.right + tooltipOffset;
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          arrowPosition = 'left';
+          break;
+      }
 
-    // Keep tooltip within viewport
-    const margin = 10;
-    left = Math.max(margin, Math.min(left, window.innerWidth - tooltipWidth - margin));
-    top = Math.max(margin, Math.min(top, window.innerHeight - tooltipHeight - margin));
+      // Keep tooltip within viewport with better margins
+      const margin = 20;
+      const maxLeft = window.innerWidth - tooltipWidth - margin;
+      const maxTop = window.innerHeight - tooltipHeight - margin;
+      
+      left = Math.max(margin, Math.min(left, maxLeft));
+      top = Math.max(margin, Math.min(top, maxTop));
 
-    setTooltipStyle({
-      position: 'fixed',
-      left: `${left}px`,
-      top: `${top}px`,
-      width: `${tooltipWidth}px`,
-      zIndex: 10000
-    });
+      setTooltipStyle({
+        position: 'fixed',
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${tooltipWidth}px`,
+        zIndex: 10000,
+        maxHeight: `${tooltipHeight}px`
+      });
+    };
+
+    updatePosition();
+    
+    // Update position on scroll and resize
+    const handleUpdate = () => {
+      requestAnimationFrame(updatePosition);
+    };
+
+    window.addEventListener('scroll', handleUpdate, true);
+    window.addEventListener('resize', handleUpdate);
+
+    return () => {
+      window.removeEventListener('scroll', handleUpdate, true);
+      window.removeEventListener('resize', handleUpdate);
+    };
   }, [targetElement, step.position]);
 
   return (
     <Card 
-      className="shadow-2xl border-2 border-blue-200 bg-white animate-scale-in"
+      className="shadow-2xl border-2 border-blue-200 bg-white animate-in fade-in-50 slide-in-from-bottom-5 duration-300"
       style={tooltipStyle}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
             {stepNumber} de {totalSteps}
           </Badge>
           <Button
             variant="ghost"
             size="sm"
             onClick={skipTour}
-            className="h-6 w-6 p-0 hover:bg-red-100"
+            className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <CardTitle className="text-lg">{step.title}</CardTitle>
-        <Progress value={progress} className="h-2" />
+        <CardTitle className="text-lg text-gray-800">{step.title}</CardTitle>
+        <Progress value={progress} className="h-2 bg-gray-200">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 rounded-full"
+            style={{ width: `${progress}%` }}
+          />
+        </Progress>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
           {step.content}
         </p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-2">
           <div className="flex gap-2">
             {stepNumber > 1 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={prevStep}
-                className="text-xs"
+                className="text-xs hover:bg-gray-50"
               >
                 <ArrowLeft className="h-3 w-3 mr-1" />
                 Anterior
@@ -108,17 +139,17 @@ export function TourTooltip({ step, targetElement, stepNumber, totalSteps }: Tou
               variant="ghost"
               size="sm"
               onClick={skipTour}
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50"
             >
               <SkipForward className="h-3 w-3 mr-1" />
-              Saltar tour
+              Saltar
             </Button>
           </div>
           
           <Button
             onClick={nextStep}
             size="sm"
-            className="text-xs bg-blue-600 hover:bg-blue-700"
+            className="text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
             {stepNumber === totalSteps ? 'Finalizar' : 'Siguiente'}
             {stepNumber < totalSteps && <ArrowRight className="h-3 w-3 ml-1" />}

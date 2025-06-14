@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,42 +14,29 @@ import {
   MoreVertical,
   Play,
   Archive,
-  FileText
+  FileText,
+  Activity
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useSupabase } from '@/hooks/useSupabase';
 
-// Mock data for demonstration
-const mockSessions = [
-  {
-    id: '1',
-    sessionName: 'Apple Inc. Market Analysis',
-    agentType: 'cia',
-    companyName: 'Apple Inc.',
-    industry: 'Technology',
-    analysisFocus: 'Product Features',
-    status: 'active',
-    createdAt: new Date('2024-01-15'),
-    reportsCount: 3,
-    insightsCount: 7
-  },
-  {
-    id: '2',
-    sessionName: 'Tesla Competitive Intelligence',
-    agentType: 'cdv',
-    companyName: 'Tesla',
-    industry: 'Automotive',
-    analysisFocus: 'Market Share',
-    status: 'completed',
-    createdAt: new Date('2024-01-10'),
-    reportsCount: 5,
-    insightsCount: 12
-  }
-];
+interface Session {
+  id: string;
+  session_name: string;
+  agent_type: string;
+  company_name: string;
+  industry: string;
+  analysis_focus: string;
+  status: string;
+  created_at: string;
+  reports_count?: number;
+  insights_count?: number;
+}
 
 const agentIcons = {
   cdv: Eye,
   cia: Brain,
-  cir: Target
+  cir: Activity
 };
 
 const agentColors = {
@@ -59,34 +46,95 @@ const agentColors = {
 };
 
 export function SessionManager() {
-  const [sessions] = useState(mockSessions);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const { supabase, user } = useSupabase();
+
+  useEffect(() => {
+    loadSessions();
+  }, [user, supabase]);
+
+  const loadSessions = async () => {
+    if (!user || !supabase) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('competitive_intelligence_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Cargar conteos de reportes e insights para cada sesión
+      const sessionsWithCounts = await Promise.all((data || []).map(async (session) => {
+        const [reportsCount, insightsCount] = await Promise.all([
+          supabase
+            .from('competitive_intelligence_reports')
+            .select('*', { count: 'exact', head: true })
+            .eq('session_id', session.id),
+          supabase
+            .from('competitive_intelligence_insights')
+            .select('*', { count: 'exact', head: true })
+            .eq('session_id', session.id)
+        ]);
+
+        return {
+          ...session,
+          reports_count: reportsCount.count || 0,
+          insights_count: insightsCount.count || 0
+        };
+      }));
+
+      setSessions(sessionsWithCounts);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredSessions = sessions.filter(session =>
-    session.sessionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    session.companyName.toLowerCase().includes(searchTerm.toLowerCase())
+    session.session_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (session.company_name && session.company_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-20 bg-gray-200 rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Intelligence Sessions</h2>
-          <p className="text-muted-foreground">Manage your competitive analysis sessions</p>
+          <h2 className="text-2xl font-bold">Sesiones de Inteligencia</h2>
+          <p className="text-muted-foreground">Gestiona tus sesiones de análisis competitivo</p>
         </div>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          New Session
+          Nueva Sesión
         </Button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search */}
       <div className="flex gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Search sessions..."
+            placeholder="Buscar sesiones..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -100,20 +148,22 @@ export function SessionManager() {
           <Card>
             <CardContent className="p-12 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No sessions found</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {searchTerm ? 'No se encontraron sesiones' : 'No hay sesiones aún'}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm ? 'Try adjusting your search terms' : 'Create your first competitive intelligence session'}
+                {searchTerm ? 'Intenta ajustar tus términos de búsqueda' : 'Crea tu primera sesión de inteligencia competitiva'}
               </p>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Session
+                Crear Sesión
               </Button>
             </CardContent>
           </Card>
         ) : (
           filteredSessions.map((session) => {
-            const AgentIcon = agentIcons[session.agentType as keyof typeof agentIcons];
-            const agentColor = agentColors[session.agentType as keyof typeof agentColors];
+            const AgentIcon = agentIcons[session.agent_type as keyof typeof agentIcons];
+            const agentColor = agentColors[session.agent_type as keyof typeof agentColors];
 
             return (
               <Card key={session.id} className="hover:shadow-md transition-shadow">
@@ -126,30 +176,30 @@ export function SessionManager() {
                       
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-3">
-                          <h3 className="font-semibold text-lg">{session.sessionName}</h3>
+                          <h3 className="font-semibold text-lg">{session.session_name}</h3>
                           <Badge variant={session.status === 'active' ? 'default' : 'secondary'}>
-                            {session.status}
+                            {session.status === 'active' ? 'Activa' : 'Completada'}
                           </Badge>
                         </div>
                         
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            {session.createdAt.toLocaleDateString()}
+                            {new Date(session.created_at).toLocaleDateString()}
                           </span>
-                          <span>Agent: {session.agentType.toUpperCase()}</span>
-                          <span>Industry: {session.industry}</span>
-                          <span>Focus: {session.analysisFocus}</span>
+                          <span>Agente: {session.agent_type.toUpperCase()}</span>
+                          {session.industry && <span>Industria: {session.industry}</span>}
+                          {session.analysis_focus && <span>Enfoque: {session.analysis_focus}</span>}
                         </div>
 
                         <div className="flex items-center gap-6 text-sm">
                           <div className="flex items-center gap-1">
                             <FileText className="h-4 w-4 text-blue-500" />
-                            <span>{session.reportsCount} Reports</span>
+                            <span>{session.reports_count || 0} Reportes</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Target className="h-4 w-4 text-green-500" />
-                            <span>{session.insightsCount} Insights</span>
+                            <span>{session.insights_count || 0} Insights</span>
                           </div>
                         </div>
                       </div>
@@ -158,7 +208,7 @@ export function SessionManager() {
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm">
                         <Play className="h-4 w-4 mr-1" />
-                        Continue
+                        Continuar
                       </Button>
                       
                       <DropdownMenu>
@@ -170,15 +220,15 @@ export function SessionManager() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
                             <FileText className="h-4 w-4 mr-2" />
-                            View Reports
+                            Ver Reportes
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Target className="h-4 w-4 mr-2" />
-                            View Insights
+                            Ver Insights
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Archive className="h-4 w-4 mr-2" />
-                            Archive Session
+                            Archivar Sesión
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

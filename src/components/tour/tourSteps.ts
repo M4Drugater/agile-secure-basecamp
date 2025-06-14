@@ -5,7 +5,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
     title: '¡Bienvenido a LAIGENT! 🚀',
-    content: 'Estás a punto de descubrir la plataforma de desarrollo profesional más avanzada con IA. Te guiaremos a través de las funciones principales en solo unos minutos.',
+    content: 'Estás a punto de descubrir la plataforma de desarrollo profesional más avanzada con IA. Te guiaremos paso a paso por las funciones principales.',
     target: '[data-tour="welcome-header"]',
     position: 'bottom',
     action: 'none'
@@ -13,7 +13,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'profile',
     title: 'Tu Perfil Profesional 👤',
-    content: 'Aquí puedes completar tu información profesional. Un perfil completo permite que CLIPOGINO te brinde recomendaciones más personalizadas.',
+    content: 'Completa tu información profesional aquí. Un perfil completo permite que CLIPOGINO te brinde recomendaciones más personalizadas y relevantes.',
     target: '[data-tour="profile-module"]',
     position: 'left',
     action: 'hover'
@@ -21,7 +21,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'knowledge',
     title: 'Base de Conocimiento 📚',
-    content: 'Sube tus documentos profesionales (CV, certificados, portafolios) para que la IA los analice y personalice tu experiencia.',
+    content: 'Sube tus documentos profesionales (CV, certificados, portafolios) para que la IA los analice y personalice completamente tu experiencia.',
     target: '[data-tour="knowledge-module"]',
     position: 'top',
     action: 'hover'
@@ -29,7 +29,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'clipogino',
     title: 'Conoce a CLIPOGINO 🤖',
-    content: 'Tu mentor de IA personal. CLIPOGINO puede ayudarte con consejos de carrera, preparación de entrevistas, y desarrollo de habilidades.',
+    content: 'Tu mentor de IA personal. CLIPOGINO puede ayudarte con consejos de carrera, preparación de entrevistas, desarrollo de habilidades y mucho más.',
     target: '[data-tour="chat-module"]',
     position: 'right',
     action: 'hover'
@@ -37,7 +37,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'intelligence',
     title: 'Inteligencia Competitiva 🎯',
-    content: 'Accede a herramientas de análisis competitivo para investigar empresas, tendencias del mercado y oportunidades.',
+    content: 'Accede a herramientas avanzadas de análisis competitivo con agentes especializados para investigar empresas y oportunidades de mercado.',
     target: '[data-tour="intelligence-module"]',
     position: 'top',
     action: 'hover'
@@ -45,7 +45,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'content',
     title: 'Generador de Contenido ✨',
-    content: 'Crea contenido profesional de alta calidad: posts de LinkedIn, cartas de presentación, y más, todo con asistencia de IA.',
+    content: 'Crea contenido profesional de alta calidad: posts de LinkedIn, cartas de presentación, propuestas y más, todo con asistencia de IA.',
     target: '[data-tour="content-module"]',
     position: 'bottom',
     action: 'hover'
@@ -61,7 +61,7 @@ export const DASHBOARD_TOUR_STEPS: TourStep[] = [
   {
     id: 'completion',
     title: '¡Listo para Empezar! 🎉',
-    content: 'Ya conoces las funciones principales de LAIGENT. ¡Comienza explorando cualquier módulo que te interese más!',
+    content: 'Ya conoces las funciones principales de LAIGENT. Te recomendamos empezar completando tu perfil y subiendo algunos documentos. ¡Disfruta la experiencia!',
     target: '[data-tour="welcome-header"]',
     position: 'bottom',
     action: 'none'

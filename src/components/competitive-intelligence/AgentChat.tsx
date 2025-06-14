@@ -1,30 +1,29 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Bot, 
   Send, 
-  User,
-  BarChart3,
-  FileText,
-  Lightbulb,
-  TrendingUp,
-  Zap,
+  Bot, 
+  User, 
+  Loader2, 
+  AlertCircle,
+  Eye,
   Brain,
-  Target
+  Activity
 } from 'lucide-react';
-import { useAgentMessageHandling } from '@/hooks/competitive-intelligence/useAgentMessageHandling';
+import { useSupabase } from '@/hooks/useSupabase';
+import { useAgentPrompts } from '@/hooks/competitive-intelligence/useAgentPrompts';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  messageType?: 'text' | 'analysis' | 'report' | 'insight';
-  metadata?: any;
+  agentType?: string;
 }
 
 interface AgentChatProps {
@@ -34,238 +33,303 @@ interface AgentChatProps {
     industry: string;
     analysisFocus: string;
     objectives: string;
-    sessionId?: string;
   };
 }
 
+const agentNames = {
+  cdv: 'CDV Agent',
+  cir: 'CIR Agent', 
+  cia: 'CIA Agent'
+};
+
+const agentIcons = {
+  cdv: Eye,
+  cir: Activity,
+  cia: Brain
+};
+
 export function AgentChat({ agentId, sessionConfig }: AgentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const { sendMessageToAgent, isProcessing } = useAgentMessageHandling();
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { supabase, user } = useSupabase();
+  const { getSystemPrompt } = useAgentPrompts();
 
-  const agentPersonalities = {
-    cdv: {
-      name: 'CDV - Competitor Discovery & Validator',
-      welcomeMessage: `Hello! I'm CDV, your Competitor Discovery & Validator specialist. I excel at discovering, analyzing, and validating competitive threats and opportunities in your market.
+  const AgentIcon = agentIcons[agentId as keyof typeof agentIcons];
 
-I can help you with:
-• **Competitor Discovery**: Finding direct, indirect, and emerging competitors
-• **Competitive Validation**: Verifying competitor capabilities and market positions  
-• **Market Opportunity Analysis**: Identifying gaps and strategic opportunities
-• **Threat Assessment**: Evaluating competitive risks and strategic implications
-
-Based on your profile, I can see you're in ${sessionConfig.industry || 'your industry'}${sessionConfig.companyName ? ` and interested in analyzing ${sessionConfig.companyName}` : ''}. Let's discover and validate your competitive landscape!
-
-What specific competitive intelligence would you like me to help you discover and validate?`,
-      responseStyle: 'discovery and validation focused',
-      icon: BarChart3,
-      color: 'text-blue-600'
-    },
-    cir: {
-      name: '(CIR) COMPETITIVE INTELLIGENCE RETRIEVER',
-      welcomeMessage: `Hello! I'm Marcus Rodriguez, your data intelligence specialist. I have access to comprehensive market databases and provide ACTUAL DATA and metrics, not instructions.
-
-My specialized capabilities include:
-• **Domain Authority Analysis**: Specific DA estimates for competitors
-• **Traffic Intelligence**: Monthly visitor estimates and patterns
-• **Social Media Metrics**: LinkedIn followers, engagement rates, posting frequency
-• **Team Size Assessment**: Employee count estimates based on industry profiles
-• **Content Analysis**: Volume assessment and content focus breakdown
-
-I focus on providing specific numbers and ranges based on industry knowledge. I don't provide methodology - only concrete data and metrics.
-
-${sessionConfig.companyName ? `Ready to analyze ${sessionConfig.companyName} and competitors` : 'Ready to analyze your competitive landscape'} with actual data estimates.
-
-What specific market data do you need me to retrieve?`,
-      responseStyle: 'data-focused and metrics-driven',
-      icon: Target,
-      color: 'text-green-600'
-    },
-    cia: {
-      name: 'CIA - Intelligence Analysis',
-      welcomeMessage: `Greetings! I'm CIA, your Competitive Intelligence Analysis expert. I specialize in strategic analysis, threat assessment, and transforming competitive data into actionable strategic insights.
-
-My analytical capabilities include:
-• **Strategic Analysis**: SWOT, Porter's Five Forces, strategic positioning
-• **Threat Intelligence**: Competitive threat assessment and risk evaluation
-• **Market Intelligence**: Industry dynamics and competitive trend analysis
-• **Strategic Scenarios**: What-if analysis and strategic planning support
-
-Given your background in ${sessionConfig.industry || 'your industry'}, I can provide deep strategic intelligence tailored to your market context and business objectives.
-
-What strategic competitive intelligence questions can I analyze for you?`,
-      responseStyle: 'strategic and intelligence-focused',
-      icon: Brain,
-      color: 'text-purple-600'
-    }
-  };
-
-  useEffect(() => {
-    // Initialize with personalized welcome message
-    const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
-    if (agent) {
-      const welcomeMessage: Message = {
-        id: '1',
-        role: 'assistant',
-        content: agent.welcomeMessage,
-        timestamp: new Date(),
-        messageType: 'text'
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [agentId, sessionConfig]);
-
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isProcessing) return;
+  // Initialize session when configuration is ready
+  useEffect(() => {
+    if (sessionConfig.companyName && !sessionId) {
+      initializeSession();
+    }
+  }, [sessionConfig, sessionId]);
+
+  const initializeSession = async () => {
+    if (!user || !supabase || !sessionConfig.companyName) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('competitive_intelligence_sessions')
+        .insert({
+          user_id: user.id,
+          session_name: `${agentNames[agentId as keyof typeof agentNames]} - ${sessionConfig.companyName}`,
+          agent_type: agentId,
+          company_name: sessionConfig.companyName,
+          industry: sessionConfig.industry,
+          analysis_focus: sessionConfig.analysisFocus,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setSessionId(data.id);
+      
+      // Add welcome message
+      const welcomeMessage: Message = {
+        id: `welcome-${Date.now()}`,
+        role: 'assistant',
+        content: getWelcomeMessage(),
+        timestamp: new Date(),
+        agentType: agentId
+      };
+      
+      setMessages([welcomeMessage]);
+    } catch (error) {
+      console.error('Error initializing session:', error);
+    }
+  };
+
+  const getWelcomeMessage = () => {
+    const agentName = agentNames[agentId as keyof typeof agentNames];
+    const company = sessionConfig.companyName;
+    
+    switch (agentId) {
+      case 'cdv':
+        return `¡Hola! Soy ${agentName}, tu especialista en descubrimiento y validación competitiva. Estoy listo para ayudarte a analizar ${company} y descubrir oportunidades estratégicas. ¿Por dónde te gustaría empezar?`;
+      case 'cir':
+        return `¡Hola! Soy ${agentName}, tu especialista en inteligencia de datos. Puedo proporcionarte métricas específicas y datos de mercado sobre ${company}. ¿Qué datos te interesan más?`;
+      case 'cia':
+        return `¡Hola! Soy ${agentName}, tu analista de inteligencia estratégica. Estoy aquí para ayudarte con análisis profundos sobre ${company} y el panorama competitivo. ¿Qué aspectos estratégicos quieres explorar?`;
+      default:
+        return `¡Hola! Estoy aquí para ayudarte con el análisis competitivo de ${company}. ¿En qué puedo asistirte?`;
+    }
+  };
+
+  const buildUserContext = async () => {
+    if (!user || !supabase) return '';
+
+    try {
+      // Get user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      // Build context
+      let context = `\n=== CONTEXTO DEL USUARIO ===\n`;
+      
+      if (profile) {
+        context += `Profesión: ${profile.profession || 'No especificada'}\n`;
+        context += `Industria: ${profile.industry || 'No especificada'}\n`;
+        context += `Experiencia: ${profile.experience_level || 'No especificada'}\n`;
+        context += `Objetivos: ${profile.career_goals || 'No especificados'}\n`;
+      }
+
+      context += `\n=== CONFIGURACIÓN DE ANÁLISIS ===\n`;
+      context += `Empresa objetivo: ${sessionConfig.companyName}\n`;
+      context += `Industria: ${sessionConfig.industry}\n`;
+      context += `Enfoque: ${sessionConfig.analysisFocus}\n`;
+      context += `Objetivos: ${sessionConfig.objectives}\n`;
+
+      return context;
+    } catch (error) {
+      console.error('Error building context:', error);
+      return '';
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading || !sessionId) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       role: 'user',
-      content: inputValue,
-      timestamp: new Date(),
-      messageType: 'text'
+      content: inputMessage.trim(),
+      timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
+    setInputMessage('');
+    setIsLoading(true);
 
     try {
-      // Send to enhanced agent system
-      const assistantMessage = await sendMessageToAgent(
-        inputValue,
-        agentId,
-        { ...sessionConfig, sessionId: sessionConfig.sessionId || `session_${Date.now()}` },
-        messages
-      );
+      // Build context
+      const userContext = await buildUserContext();
+      
+      // Prepare messages for API
+      const conversationMessages = [
+        ...messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        {
+          role: 'user' as const,
+          content: inputMessage.trim()
+        }
+      ];
+
+      // Add system prompt
+      const systemPrompt = getSystemPrompt(agentId, userContext, sessionConfig);
+      const apiMessages = [
+        { role: 'system' as const, content: systemPrompt },
+        ...conversationMessages
+      ];
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('competitive-intelligence-chat', {
+        body: {
+          messages: apiMessages,
+          agentType: agentId,
+          sessionConfig,
+          userContext: {
+            userId: user?.id,
+            sessionId
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Add assistant response
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date(),
+        agentType: agentId
+      };
 
       setMessages(prev => [...prev, assistantMessage]);
+
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Add error message
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'I apologize, but I encountered an error processing your request. Please try again or rephrase your question.',
+        content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, inténtalo de nuevo.',
         timestamp: new Date(),
-        messageType: 'text'
+        agentType: agentId
       };
-      
+
       setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      sendMessage();
     }
   };
 
-  const getMessageTypeIcon = (type?: string) => {
-    switch (type) {
-      case 'analysis': return <BarChart3 className="h-4 w-4" />;
-      case 'report': return <FileText className="h-4 w-4" />;
-      case 'insight': return <Lightbulb className="h-4 w-4" />;
-      default: return <Bot className="h-4 w-4" />;
-    }
-  };
-
-  const agent = agentPersonalities[agentId as keyof typeof agentPersonalities];
-
-  if (!agent) {
+  if (!sessionConfig.companyName) {
     return (
-      <Card className="h-[600px] flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <Bot className="h-12 w-12 mx-auto mb-4" />
-          <p>Agent not found. Please select a valid agent.</p>
-        </div>
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-96">
+          <div className="text-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <h3 className="font-semibold mb-2">Configuración Requerida</h3>
+              <p className="text-muted-foreground text-sm">
+                Completa la configuración de sesión para comenzar a chatear con el agente.
+              </p>
+            </div>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3">
-          <agent.icon className={`h-5 w-5 ${agent.color}`} />
-          Chat with {agent.name}
-          <Badge variant="outline" className="ml-auto">
-            <Zap className="h-3 w-3 mr-1" />
-            Enhanced AI
-          </Badge>
-        </CardTitle>
-        {(sessionConfig.companyName || sessionConfig.industry || sessionConfig.analysisFocus) && (
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {sessionConfig.companyName && (
-              <Badge variant="secondary">Target: {sessionConfig.companyName}</Badge>
-            )}
-            {sessionConfig.industry && (
-              <Badge variant="outline">{sessionConfig.industry}</Badge>
-            )}
-            {sessionConfig.analysisFocus && (
-              <Badge variant="outline">{sessionConfig.analysisFocus}</Badge>
-            )}
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <AgentIcon className="h-4 w-4 text-white" />
           </div>
-        )}
+          <div>
+            <CardTitle className="text-lg">{agentNames[agentId as keyof typeof agentNames]}</CardTitle>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {sessionConfig.companyName}
+              </Badge>
+              {sessionConfig.industry && (
+                <Badge variant="outline" className="text-xs">
+                  {sessionConfig.industry}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <CardContent className="flex-1 flex flex-col space-y-4">
+        {/* Messages */}
+        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-4 rounded-lg ${
-                    message.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  {message.role === 'assistant' && (
-                    <div className="flex items-center gap-2 mb-2">
-                      {getMessageTypeIcon(message.messageType)}
-                      <span className="text-xs font-medium opacity-70">
-                        {agent.name} • {message.messageType || 'response'}
-                      </span>
-                      {message.metadata?.cost && (
-                        <Badge variant="outline" className="ml-auto text-xs">
-                          ${message.metadata.cost.toFixed(4)}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  <div className="prose prose-sm max-w-none">
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: message.content
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                          .replace(/•/g, '•')
-                          .replace(/\n/g, '<br/>')
-                      }}
-                    />
+              <div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-4 w-4 text-white" />
+                  </div>
+                )}
+                
+                <div className={`max-w-[80%] p-3 rounded-lg ${
+                  message.role === 'user' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-100 text-gray-900'
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <div className={`text-xs mt-1 ${
+                    message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
+
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                )}
               </div>
             ))}
-
-            {isProcessing && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-900 p-4 rounded-lg">
+            
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-4 w-4 text-white" />
+                </div>
+                <div className="bg-gray-100 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 animate-pulse" />
-                    <span>{agent.name} is analyzing...</span>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-gray-600">Analizando...</span>
                   </div>
                 </div>
               </div>
@@ -273,27 +337,27 @@ What strategic competitive intelligence questions can I analyze for you?`,
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={`Ask ${agent.name.split(' - ')[0]} for competitive intelligence...`}
-              disabled={isProcessing}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isProcessing}
-              size="sm"
-            >
+        {/* Message Input */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Escribe tu mensaje..."
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button 
+            onClick={sendMessage} 
+            disabled={!inputMessage.trim() || isLoading}
+            size="sm"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
               <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Enhanced with your profile, knowledge base, and contextual intelligence
-          </p>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>

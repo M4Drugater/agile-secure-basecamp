@@ -15,7 +15,8 @@ import {
   Send,
   Settings,
   Play,
-  Zap
+  Zap,
+  Activity
 } from 'lucide-react';
 import { AgentChat } from './AgentChat';
 
@@ -26,42 +27,42 @@ interface AgentInterfaceProps {
 
 const agents = {
   cdv: {
-    name: 'CDV - Competitive Data Visualization',
+    name: 'CDV - Competitor Discovery & Validator',
     icon: Eye,
     color: 'bg-blue-500',
-    description: 'Specialized in transforming raw competitive data into compelling visual insights',
+    description: 'Especializado en descubrir, analizar y validar amenazas competitivas y oportunidades de mercado',
     capabilities: [
-      'Market share visualization',
-      'Competitive positioning maps',
-      'Trend analysis charts',
-      'Performance benchmarking',
-      'Data correlation analysis'
+      'Descubrimiento de competidores directos e indirectos',
+      'Validación de amenazas competitivas',
+      'Análisis de posicionamiento de mercado',
+      'Identificación de oportunidades estratégicas',
+      'Evaluación de brechas competitivas'
     ]
   },
   cir: {
-    name: '(CIR) COMPETITIVE INTELLIGENCE RETRIEVER',
-    icon: Target,
+    name: 'CIR - Competitive Intelligence Retriever',
+    icon: Activity,
     color: 'bg-green-500',
-    description: 'Data intelligence specialist providing actual market data and metrics',
+    description: 'Especialista en inteligencia de datos que proporciona métricas reales y datos de mercado',
     capabilities: [
-      'Domain authority estimates',
-      'Traffic analysis',
-      'Social media metrics',
-      'Team size evaluation',
-      'Content volume assessment'
+      'Estimaciones de autoridad de dominio',
+      'Análisis de tráfico web',
+      'Métricas de redes sociales',
+      'Evaluación de tamaño de equipos',
+      'Análisis de volumen de contenido'
     ]
   },
   cia: {
     name: 'CIA - Competitive Intelligence Analysis',
     icon: Brain,
     color: 'bg-purple-500',
-    description: 'Expert in strategic analysis and competitive intelligence gathering',
+    description: 'Experto en análisis estratégico y recopilación de inteligencia competitiva avanzada',
     capabilities: [
-      'Strategic threat assessment',
-      'Market opportunity analysis',
-      'Competitor profiling',
-      'SWOT analysis',
-      'Risk evaluation'
+      'Evaluación de amenazas estratégicas',
+      'Análisis de oportunidades de mercado',
+      'Perfilado de competidores',
+      'Análisis SWOT',
+      'Evaluación de riesgos'
     ]
   }
 };
@@ -78,9 +79,9 @@ export function AgentInterface({ selectedAgent, onAgentSelect }: AgentInterfaceP
     return (
       <div className="text-center py-12">
         <Bot className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Select an AI Agent</h3>
+        <h3 className="text-lg font-semibold mb-2">Selecciona un Agente de IA</h3>
         <p className="text-muted-foreground mb-6">
-          Choose a specialized competitive intelligence agent to begin your analysis
+          Elige un agente especializado en inteligencia competitiva para comenzar tu análisis
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {Object.entries(agents).map(([id, agent]) => (
@@ -116,7 +117,7 @@ export function AgentInterface({ selectedAgent, onAgentSelect }: AgentInterfaceP
                 <CardTitle className="text-lg">{agent.name}</CardTitle>
                 <Badge variant="secondary" className="mt-1">
                   <Zap className="h-3 w-3 mr-1" />
-                  Active
+                  Activo
                 </Badge>
               </div>
             </div>
@@ -125,7 +126,7 @@ export function AgentInterface({ selectedAgent, onAgentSelect }: AgentInterfaceP
             <p className="text-sm text-muted-foreground">{agent.description}</p>
             
             <div>
-              <h4 className="font-medium mb-2">Capabilities:</h4>
+              <h4 className="font-medium mb-2">Capacidades:</h4>
               <div className="space-y-1">
                 {agent.capabilities.map((capability, idx) => (
                   <div key={idx} className="flex items-center gap-2 text-sm">
@@ -142,68 +143,70 @@ export function AgentInterface({ selectedAgent, onAgentSelect }: AgentInterfaceP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Session Configuration
+              Configuración de Sesión
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="companyName">Target Company</Label>
+              <Label htmlFor="companyName">Empresa Objetivo</Label>
               <Input
                 id="companyName"
-                placeholder="Company to analyze"
+                placeholder="Empresa a analizar"
                 value={sessionConfig.companyName}
                 onChange={(e) => setSessionConfig(prev => ({ ...prev, companyName: e.target.value }))}
               />
             </div>
 
             <div>
-              <Label htmlFor="industry">Industry</Label>
+              <Label htmlFor="industry">Industria</Label>
               <Select value={sessionConfig.industry} onValueChange={(value) => 
                 setSessionConfig(prev => ({ ...prev, industry: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select industry" />
+                  <SelectValue placeholder="Selecciona industria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="technology">Tecnología</SelectItem>
+                  <SelectItem value="finance">Finanzas</SelectItem>
+                  <SelectItem value="healthcare">Salud</SelectItem>
                   <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="manufacturing">Manufactura</SelectItem>
+                  <SelectItem value="education">Educación</SelectItem>
+                  <SelectItem value="other">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="analysisFocus">Analysis Focus</Label>
+              <Label htmlFor="analysisFocus">Enfoque de Análisis</Label>
               <Select value={sessionConfig.analysisFocus} onValueChange={(value) => 
                 setSessionConfig(prev => ({ ...prev, analysisFocus: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select focus area" />
+                  <SelectValue placeholder="Selecciona enfoque" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="market-share">Market Share</SelectItem>
-                  <SelectItem value="pricing">Pricing Strategy</SelectItem>
-                  <SelectItem value="product-features">Product Features</SelectItem>
-                  <SelectItem value="marketing">Marketing Strategy</SelectItem>
-                  <SelectItem value="financial">Financial Performance</SelectItem>
+                  <SelectItem value="market-share">Participación de Mercado</SelectItem>
+                  <SelectItem value="pricing">Estrategia de Precios</SelectItem>
+                  <SelectItem value="product-features">Características de Producto</SelectItem>
+                  <SelectItem value="marketing">Estrategia de Marketing</SelectItem>
+                  <SelectItem value="financial">Rendimiento Financiero</SelectItem>
+                  <SelectItem value="technology">Análisis Tecnológico</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="objectives">Objectives</Label>
+              <Label htmlFor="objectives">Objetivos del Análisis</Label>
               <Textarea
                 id="objectives"
-                placeholder="What do you want to achieve with this analysis?"
+                placeholder="¿Qué quieres lograr con este análisis?"
                 value={sessionConfig.objectives}
                 onChange={(e) => setSessionConfig(prev => ({ ...prev, objectives: e.target.value }))}
               />
             </div>
 
-            <Button className="w-full">
+            <Button className="w-full" disabled={!sessionConfig.companyName}>
               <Play className="h-4 w-4 mr-2" />
-              Start Analysis Session
+              Iniciar Sesión de Análisis
             </Button>
           </CardContent>
         </Card>
