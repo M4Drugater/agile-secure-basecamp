@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -141,7 +140,7 @@ export function AgentChat({ agentId, sessionConfig }: AgentChatProps) {
       let context = `\n=== CONTEXTO DEL USUARIO ===\n`;
       
       if (profile) {
-        context += `Profesión: ${profile.profession || 'No especificada'}\n`;
+        context += `Profesión: ${profile.current_position || 'No especificada'}\n`;
         context += `Industria: ${profile.industry || 'No especificada'}\n`;
         context += `Experiencia: ${profile.experience_level || 'No especificada'}\n`;
         context += `Objetivos: ${profile.career_goals || 'No especificados'}\n`;
