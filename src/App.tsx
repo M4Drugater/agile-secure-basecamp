@@ -1,141 +1,44 @@
-
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-
-// Page imports
-import LandingPage from '@/pages/Landing';
-import { AuthForm } from '@/components/auth/AuthForm';
-import IndexPage from '@/pages/Index';
-import ProfilePage from '@/pages/Profile';
-import KnowledgeBasePage from '@/pages/KnowledgeBase';
-import ContentGeneratorPage from '@/pages/ContentGenerator';
-import ContentLibraryPage from '@/pages/ContentLibrary';
-import ChatPage from '@/pages/Chat';
-import EnhancedChatPage from '@/pages/EnhancedChat';
-import AssistedModelPage from '@/pages/AssistedModel';
-import LearningManagementPage from '@/pages/LearningManagement';
-import ResearchWorkbenchPage from '@/pages/ResearchWorkbench';
-import OptimizedResearchWorkbenchPage from '@/pages/OptimizedResearchWorkbench';
-import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligence';
-import CDVDiscoveryPage from '@/pages/CDVDiscovery';
-import TrendsDiscoveryPage from '@/pages/TrendsDiscovery';
-import ContentAnalyticsPage from '@/pages/ContentAnalytics';
-import BillingPage from '@/pages/Billing';
-import AdminPage from '@/pages/Admin';
-import NotFoundPage from '@/pages/NotFound';
-
-// Progressive Journey Components
-import OnboardingFlow from '@/components/journey/OnboardingFlow';
-import ProgressiveDashboard from '@/components/journey/ProgressiveDashboard';
-
-const queryClient = new QueryClient();
+import { AuthProvider } from './contexts/AuthContext';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Profile from './pages/Profile';
+import KnowledgeBase from './pages/KnowledgeBase';
+import ContentGeneratorPage from './pages/ContentGeneratorPage';
+import ContentLibrary from './pages/ContentLibrary';
+import RedditTrendsPage from './pages/RedditTrendsPage';
+import OnboardingPage from './pages/OnboardingPage';
+import ProgressiveDashboard from './components/journey/ProgressiveDashboard';
+import Chat from './pages/Chat';
+import CompetitiveIntelligence from './pages/CompetitiveIntelligence';
+import EnhancedFeatures from '@/pages/EnhancedFeatures';
 
 function App() {
   return (
-    <BrowserRouter>
+    <QueryClientProvider client={new QueryClient()}>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
+        <Router>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<AuthForm />} />
-            <Route path="/onboarding" element={
-              <ProtectedRoute>
-                <OnboardingFlow />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <ProgressiveDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/knowledge" element={
-              <ProtectedRoute>
-                <KnowledgeBasePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/content-generator" element={
-              <ProtectedRoute>
-                <ContentGeneratorPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/content-library" element={
-              <ProtectedRoute>
-                <ContentLibraryPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/chat" element={
-              <ProtectedRoute>
-                <ChatPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/enhanced-chat" element={
-              <ProtectedRoute>
-                <EnhancedChatPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/assisted-model" element={
-              <ProtectedRoute>
-                <AssistedModelPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/learning" element={
-              <ProtectedRoute>
-                <LearningManagementPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/research" element={
-              <ProtectedRoute>
-                <ResearchWorkbenchPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/optimized-research" element={
-              <ProtectedRoute>
-                <OptimizedResearchWorkbenchPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/competitive-intelligence" element={
-              <ProtectedRoute>
-                <CompetitiveIntelligencePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/cdv-discovery" element={
-              <ProtectedRoute>
-                <CDVDiscoveryPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/trends" element={
-              <ProtectedRoute>
-                <TrendsDiscoveryPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/content-analytics" element={
-              <ProtectedRoute>
-                <ContentAnalyticsPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/billing" element={
-              <ProtectedRoute>
-                <BillingPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminPage />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/knowledge-base" element={<KnowledgeBase />} />
+            <Route path="/content-generator" element={<ContentGeneratorPage />} />
+            <Route path="/content-library" element={<ContentLibrary />} />
+            <Route path="/reddit-trends" element={<RedditTrendsPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/dashboard" element={<ProgressiveDashboard />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/competitive-intelligence" element={<CompetitiveIntelligence />} />
+            <Route path="/enhanced" element={<EnhancedFeatures />} />
           </Routes>
-        </QueryClientProvider>
+        </Router>
       </AuthProvider>
-    </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
