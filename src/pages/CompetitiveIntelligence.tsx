@@ -1,14 +1,26 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CompetitiveIntelligenceDashboard } from '@/components/competitive-intelligence/CompetitiveIntelligenceDashboard';
-import { ConsolidatedAppLayout } from '@/components/layout/ConsolidatedAppLayout';
+import { UniversalLayout } from '@/components/layout/UniversalLayout';
+import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 
-export default function CompetitiveIntelligencePage() {
+export default function CompetitiveIntelligence() {
+  const { completeStep, getJourneySteps } = useProgressiveJourney();
+
+  // Auto-complete the agents step when user visits this page
+  useEffect(() => {
+    const steps = getJourneySteps();
+    const agentsStep = steps.find(step => step.id === 'agents');
+    
+    if (agentsStep && !agentsStep.completed) {
+      console.log('User visited competitive intelligence page, completing agents step');
+      completeStep('agents');
+    }
+  }, [completeStep, getJourneySteps]);
+
   return (
-    <ConsolidatedAppLayout>
-      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-        <CompetitiveIntelligenceDashboard />
-      </div>
-    </ConsolidatedAppLayout>
+    <UniversalLayout>
+      <CompetitiveIntelligenceDashboard />
+    </UniversalLayout>
   );
 }

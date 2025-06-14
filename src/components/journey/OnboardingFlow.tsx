@@ -12,9 +12,9 @@ import {
   Shield, 
   FileText,
   CheckCircle,
-  Lock,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  SkipForward
 } from 'lucide-react';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { StepCompletionCelebration } from './StepCompletionCelebration';
@@ -39,7 +39,8 @@ export default function OnboardingFlow() {
     lastCompletedStep,
     showCelebration,
     dismissCelebration,
-    getEarnedAchievements
+    getEarnedAchievements,
+    completeStep
   } = useProgressiveJourney();
 
   const steps = getJourneySteps();
@@ -59,7 +60,8 @@ export default function OnboardingFlow() {
   }, [isJourneyComplete, showCelebration, navigate]);
 
   const handleStepClick = (step: any) => {
-    if (!step.locked && step.route) {
+    // Allow navigation to any step, not just unlocked ones
+    if (step.route) {
       navigate(step.route);
     }
   };
@@ -68,6 +70,11 @@ export default function OnboardingFlow() {
     if (nextStep?.route) {
       navigate(nextStep.route);
     }
+  };
+
+  const handleSkipStep = (stepId: string) => {
+    // Mark step as completed and move to next
+    completeStep(stepId);
   };
 
   const handleCelebrationContinue = () => {
@@ -97,17 +104,17 @@ export default function OnboardingFlow() {
             <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold">Welcome to LAIGENT</h1>
+            <h1 className="text-3xl font-bold">Bienvenido a LAIGENT</h1>
           </div>
           <p className="text-lg text-muted-foreground mb-6">
-            Let's get you set up for the best AI-powered professional development experience
+            Configuremos tu experiencia de desarrollo profesional con IA. Puedes completar los pasos en cualquier orden o saltarlos si lo prefieres.
           </p>
           
           {/* Progress */}
           <div className="max-w-md mx-auto">
             <div className="flex justify-between text-sm mb-2">
-              <span>Setup Progress</span>
-              <span>{completedSteps}/{totalSteps} completed</span>
+              <span>Progreso de Configuración</span>
+              <span>{completedSteps}/{totalSteps} completados</span>
             </div>
             <Progress value={progressPercentage} className="h-3" />
           </div>
@@ -115,7 +122,7 @@ export default function OnboardingFlow() {
           {/* Achievement Badges */}
           {earnedAchievements.length > 0 && (
             <div className="flex justify-center gap-2 mt-4">
-              <span className="text-sm text-muted-foreground mr-2">Earned:</span>
+              <span className="text-sm text-muted-foreground mr-2">Conseguido:</span>
               {earnedAchievements.map((achievement) => (
                 <AchievementBadge 
                   key={achievement} 
@@ -142,14 +149,24 @@ export default function OnboardingFlow() {
                   <CardTitle className="text-lg">{nextStep.title}</CardTitle>
                   <p className="text-sm text-muted-foreground">{nextStep.description}</p>
                 </div>
-                <Badge className="bg-blue-500">Next</Badge>
+                <Badge className="bg-blue-500">Siguiente</Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleSkipToNext} className="w-full" size="lg">
-                Continue Setup
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleSkipToNext} className="flex-1" size="lg">
+                  Continuar Configuración
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+                <Button 
+                  onClick={() => handleSkipStep(nextStep.id)} 
+                  variant="outline" 
+                  size="lg"
+                >
+                  <SkipForward className="h-4 w-4 mr-2" />
+                  Saltar
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -162,12 +179,10 @@ export default function OnboardingFlow() {
             return (
               <Card 
                 key={step.id}
-                className={`transition-all cursor-pointer ${
+                className={`relative transition-all duration-200 cursor-pointer group hover:shadow-md hover:scale-[1.02] border-border ${
                   step.completed 
                     ? 'bg-green-50 border-green-200' 
-                    : step.locked 
-                    ? 'bg-gray-50 border-gray-200 opacity-60' 
-                    : 'hover:shadow-md'
+                    : 'border-gray-200'
                 }`}
                 onClick={() => handleStepClick(step)}
               >
@@ -177,14 +192,10 @@ export default function OnboardingFlow() {
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                         step.completed 
                           ? 'bg-green-500' 
-                          : step.locked 
-                          ? 'bg-gray-300'
                           : 'bg-blue-500'
                       }`}>
                         {step.completed ? (
                           <CheckCircle className="h-6 w-6 text-white" />
-                        ) : step.locked ? (
-                          <Lock className="h-6 w-6 text-gray-500" />
                         ) : (
                           <Icon className="h-6 w-6 text-white" />
                         )}
@@ -212,17 +223,26 @@ export default function OnboardingFlow() {
                             size="sm" 
                           />
                           <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            Complete
+                            Completado
                           </Badge>
                         </>
                       )}
-                      {step.locked && (
-                        <Badge variant="outline" className="text-gray-500">
-                          Locked
-                        </Badge>
-                      )}
-                      {!step.completed && !step.locked && (
-                        <ArrowRight className="h-5 w-5 text-blue-500" />
+                      {!step.completed && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSkipStep(step.id);
+                            }}
+                            className="text-xs"
+                          >
+                            <SkipForward className="h-3 w-3 mr-1" />
+                            Saltar
+                          </Button>
+                          <ArrowRight className="h-5 w-5 text-blue-500" />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -232,15 +252,35 @@ export default function OnboardingFlow() {
           })}
         </div>
 
-        {/* Skip Option */}
-        <div className="text-center mt-8">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/dashboard')}
-            className="text-muted-foreground"
-          >
-            Skip setup and go to dashboard
-          </Button>
+        {/* Quick Complete Options */}
+        <div className="text-center mt-8 space-y-4">
+          <div className="flex justify-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard')}
+              className="text-muted-foreground"
+            >
+              Ir al Dashboard
+            </Button>
+            {completedSteps >= 2 && (
+              <Button 
+                onClick={() => {
+                  // Auto-complete remaining steps
+                  steps.forEach(step => {
+                    if (!step.completed) {
+                      completeStep(step.id);
+                    }
+                  });
+                }}
+                variant="secondary"
+              >
+                Completar Todo y Continuar
+              </Button>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            El onboarding es opcional. Puedes completar estos pasos más tarde desde el dashboard.
+          </p>
         </div>
       </div>
 

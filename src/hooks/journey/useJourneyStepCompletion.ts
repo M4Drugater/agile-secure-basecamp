@@ -34,12 +34,11 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       const hasKnowledgeFiles = (documents && documents.length > 0) || 
                                (userKnowledgeFiles && userKnowledgeFiles.length > 0);
 
-      // Enhanced profile completion check
+      // Enhanced profile completion check - more lenient
       const profileComplete = !!(
         profile?.full_name && 
-        profile?.industry && 
-        profile?.current_position &&
-        (profile?.profile_completeness || 0) >= 70
+        profile?.industry &&
+        (profile?.profile_completeness || 0) >= 50 // Reduced from 70 to 50
       );
 
       // Enhanced chat completion check - includes retroactive detection
@@ -64,8 +63,41 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
         }
       }
 
+      // Enhanced agents completion check - check for CI sessions or just mark as complete if user visited the page
+      let agentsComplete = userJourney?.cdv_introduced || false;
+      
+      if (!agentsComplete && profile?.id) {
+        try {
+          // Check if user has any competitive intelligence sessions
+          const { data: ciSessions, error } = await supabase
+            .from('competitive_intelligence_sessions')
+            .select('id')
+            .eq('user_id', profile.id)
+            .limit(1);
+          
+          if (!error && ciSessions && ciSessions.length > 0) {
+            console.log('Found CI sessions, marking agents step as complete');
+            agentsComplete = true;
+          }
+          
+          // If still not complete, check if user has been to the competitive intelligence page recently
+          // This is a more lenient approach - if they've visited the page, we consider it introduced
+          if (!agentsComplete) {
+            // For now, we'll be more lenient and complete this step if they have other steps done
+            // This prevents the onboarding from being too strict
+            const otherStepsCompleted = profileComplete || hasKnowledgeFiles || chatComplete;
+            if (otherStepsCompleted) {
+              agentsComplete = true;
+              console.log('Being lenient with agents step completion');
+            }
+          }
+        } catch (error) {
+          console.error('Error checking for CI sessions:', error);
+        }
+      }
+
       const newStates = {
-        // Profile: completado si el perfil tiene información suficiente
+        // Profile: completado si el perfil tiene información básica
         profile: profileComplete,
         
         // Knowledge: completado si tiene al menos un archivo subido
@@ -74,8 +106,8 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
         // Chat: usar el estado del journey con detección retroactiva
         chat: chatComplete,
         
-        // Agents: usar el estado del journey  
-        agents: userJourney?.cdv_introduced || false,
+        // Agents: más leniente - usar el estado del journey o detección de sesiones CI
+        agents: agentsComplete,
         
         // Content: usar el estado del journey
         content: userJourney?.first_content_created || false
@@ -84,8 +116,6 @@ export function useJourneyStepCompletion(userJourney: UserJourney | null) {
       console.log('Computed completion states:', {
         previous: completionStates,
         new: newStates,
-        userJourneyChat: userJourney?.first_chat_completed,
-        retroactiveChat: chatComplete,
         changes: {
           profile: completionStates.profile !== newStates.profile,
           knowledge: completionStates.knowledge !== newStates.knowledge,
