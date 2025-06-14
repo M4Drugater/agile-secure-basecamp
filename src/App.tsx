@@ -7,6 +7,7 @@ import { QueryProvider } from '@/contexts/QueryContext';
 import Home from '@/pages/Home';
 import KnowledgeBase from '@/pages/KnowledgeBase';
 import Agents from '@/pages/Agents';
+import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { UniversalLayout } from '@/layouts/UniversalLayout';
 import Pricing from '@/pages/Pricing';
@@ -44,6 +45,13 @@ function App() {
                 <ProtectedRoute>
                   <UniversalLayout>
                     <Agents />
+                  </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/competitive-intelligence" element={
+                <ProtectedRoute>
+                  <UniversalLayout>
+                    <CompetitiveIntelligence />
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
@@ -90,7 +98,6 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
-              
               <Route path="/billing" element={
                 <ProtectedRoute>
                   <UniversalLayout>
@@ -98,7 +105,6 @@ function App() {
                   </UniversalLayout>
                 </ProtectedRoute>
               } />
-              
             </Routes>
           </div>
         </BrowserRouter>
