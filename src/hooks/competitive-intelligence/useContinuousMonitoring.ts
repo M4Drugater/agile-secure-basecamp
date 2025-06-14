@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { useSupabase } from '@/hooks/useSupabase';
 
 interface MonitoringAlert {
   id: string;
@@ -30,7 +29,6 @@ interface MonitoringConfig {
 }
 
 export function useContinuousMonitoring() {
-  const { supabase } = useSupabase();
   const [alerts, setAlerts] = useState<MonitoringAlert[]>([]);
   const [monitoringConfig, setMonitoringConfig] = useState<MonitoringConfig>({
     competitors: [],
@@ -121,29 +119,15 @@ export function useContinuousMonitoring() {
     setIsMonitoring(true);
     setLastScan(new Date());
 
-    // Log monitoring start
-    if (supabase) {
-      await supabase.from('competitive_intelligence_logs').insert({
-        action: 'monitoring_started',
-        config: JSON.stringify(monitoringConfig),
-        started_at: new Date().toISOString()
-      });
-    }
-
-    console.log('Continuous monitoring started with config:', monitoringConfig);
+    // Log monitoring start - using console.log for now since competitive_intelligence_logs table doesn't exist
+    console.log('Continuous monitoring started with config:', { ...monitoringConfig, ...config });
   };
 
   const stopMonitoring = async () => {
     setIsMonitoring(false);
     
-    if (supabase) {
-      await supabase.from('competitive_intelligence_logs').insert({
-        action: 'monitoring_stopped',
-        stopped_at: new Date().toISOString()
-      });
-    }
-
-    console.log('Continuous monitoring stopped');
+    // Log monitoring stop - using console.log for now since competitive_intelligence_logs table doesn't exist
+    console.log('Continuous monitoring stopped at:', new Date().toISOString());
   };
 
   const acknowledgeAlert = async (alertId: string) => {
@@ -151,13 +135,8 @@ export function useContinuousMonitoring() {
       alert.id === alertId ? { ...alert, acknowledged: true } : alert
     ));
 
-    if (supabase) {
-      await supabase.from('competitive_intelligence_logs').insert({
-        action: 'alert_acknowledged',
-        alert_id: alertId,
-        acknowledged_at: new Date().toISOString()
-      });
-    }
+    // Log alert acknowledgment - using console.log for now since competitive_intelligence_logs table doesn't exist
+    console.log('Alert acknowledged:', { alertId, acknowledgedAt: new Date().toISOString() });
   };
 
   const dismissAlert = (alertId: string) => {
@@ -175,16 +154,13 @@ export function useContinuousMonitoring() {
       const newAlert = generateMockAlert();
       setAlerts(prev => [newAlert, ...prev].slice(0, 50)); // Keep last 50 alerts
 
-      // Log new alert
-      if (supabase) {
-        await supabase.from('competitive_intelligence_logs').insert({
-          action: 'alert_generated',
-          alert_type: newAlert.type,
-          alert_severity: newAlert.severity,
-          competitor: newAlert.competitor,
-          generated_at: new Date().toISOString()
-        });
-      }
+      // Log new alert - using console.log for now since competitive_intelligence_logs table doesn't exist
+      console.log('New alert generated:', {
+        alertType: newAlert.type,
+        alertSeverity: newAlert.severity,
+        competitor: newAlert.competitor,
+        generatedAt: new Date().toISOString()
+      });
     }
   };
 

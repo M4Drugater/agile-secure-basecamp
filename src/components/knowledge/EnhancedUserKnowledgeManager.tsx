@@ -10,7 +10,6 @@ import { UserKnowledgeCard } from './UserKnowledgeCard';
 import { UserKnowledgeFilters } from './UserKnowledgeFilters';
 import { UserKnowledgeEmptyState } from './UserKnowledgeEmptyState';
 import { ProcessingQueueViewer } from './ProcessingQueueViewer';
-import { KnowledgeRecommendations } from './KnowledgeRecommendations';
 import { KnowledgeErrorBoundary } from './KnowledgeErrorBoundary';
 import { Plus, Brain, Settings, BarChart3 } from 'lucide-react';
 
@@ -81,7 +80,7 @@ export function EnhancedUserKnowledgeManager() {
           <div>
             <h2 className="text-2xl font-bold">Enhanced Knowledge Base</h2>
             <p className="text-muted-foreground">
-              Advanced AI-powered knowledge management with processing queue and recommendations
+              Advanced AI-powered knowledge management with processing queue and insights
             </p>
           </div>
           <Button onClick={handleOpenDialog}>
@@ -91,7 +90,7 @@ export function EnhancedUserKnowledgeManager() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="files" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               My Files
@@ -99,10 +98,6 @@ export function EnhancedUserKnowledgeManager() {
             <TabsTrigger value="processing" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Processing
-            </TabsTrigger>
-            <TabsTrigger value="recommendations" className="flex items-center gap-2">
-              <Brain className="h-4 w-4" />
-              AI Insights
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -157,12 +152,6 @@ export function EnhancedUserKnowledgeManager() {
           <TabsContent value="processing" className="mt-6">
             <KnowledgeErrorBoundary>
               <ProcessingQueueViewer />
-            </KnowledgeErrorBoundary>
-          </TabsContent>
-
-          <TabsContent value="recommendations" className="mt-6">
-            <KnowledgeErrorBoundary>
-              <KnowledgeRecommendations />
             </KnowledgeErrorBoundary>
           </TabsContent>
 
