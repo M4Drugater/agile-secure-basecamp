@@ -1677,6 +1677,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journey: {
+        Row: {
+          cdv_introduced: boolean
+          completed_steps: string[]
+          created_at: string
+          current_step: number
+          first_chat_completed: boolean
+          first_content_created: boolean
+          id: string
+          knowledge_setup: boolean
+          profile_completed: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cdv_introduced?: boolean
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: number
+          first_chat_completed?: boolean
+          first_content_created?: boolean
+          id?: string
+          knowledge_setup?: boolean
+          profile_completed?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cdv_introduced?: boolean
+          completed_steps?: string[]
+          created_at?: string
+          current_step?: number
+          first_chat_completed?: boolean
+          first_content_created?: boolean
+          id?: string
+          knowledge_setup?: boolean
+          profile_completed?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_knowledge_files: {
         Row: {
           ai_analysis: Json | null

@@ -14,6 +14,8 @@ export interface JourneyStep {
 }
 
 export interface UserJourney {
+  id?: string;
+  user_id: string;
   current_step: number;
   completed_steps: string[];
   profile_completed: boolean;
@@ -21,6 +23,8 @@ export interface UserJourney {
   first_chat_completed: boolean;
   first_content_created: boolean;
   cdv_introduced: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const JOURNEY_STEPS: Omit<JourneyStep, 'completed' | 'locked'>[] = [
@@ -70,18 +74,23 @@ export function useProgressiveJourney() {
     queryFn: async () => {
       if (!user) return null;
 
-      const { data, error } = await supabase
-        .from('user_journey')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from('user_journey' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user journey:', error);
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching user journey:', error);
+          return null;
+        }
+
+        return data as UserJourney | null;
+      } catch (error) {
+        console.error('Error in userJourney query:', error);
         return null;
       }
-
-      return data as UserJourney | null;
     },
     enabled: !!user,
   });
@@ -90,18 +99,23 @@ export function useProgressiveJourney() {
     mutationFn: async (updates: Partial<UserJourney>) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_journey')
-        .upsert({
-          user_id: user.id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('user_journey' as any)
+          .upsert({
+            user_id: user.id,
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data as UserJourney;
+      } catch (error) {
+        console.error('Error updating user journey:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userJourney', user?.id] });
