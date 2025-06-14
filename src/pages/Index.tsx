@@ -1,21 +1,14 @@
 
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { AppLayout } from "@/components/layout/AppLayout";
+import React from 'react';
+import { ConsolidatedAppLayout } from '@/components/layout/ConsolidatedAppLayout';
+import { DashboardCards } from '@/components/layout/DashboardCards';
 
-const Index = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    // If we're on the root path and user is authenticated, redirect to dashboard
-    if (user && window.location.pathname === '/') {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
-
-  return <AppLayout />;
-};
-
-export default Index;
+export default function Index() {
+  return (
+    <ConsolidatedAppLayout>
+      <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+        <DashboardCards />
+      </div>
+    </ConsolidatedAppLayout>
+  );
+}

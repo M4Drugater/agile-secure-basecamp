@@ -22,7 +22,14 @@ import ResearchWorkbench from "./pages/ResearchWorkbench";
 import CompetitiveIntelligence from "./pages/CompetitiveIntelligence";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 function App() {
   return (
