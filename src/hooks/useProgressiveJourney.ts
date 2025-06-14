@@ -76,7 +76,7 @@ export function useProgressiveJourney() {
 
       try {
         const { data, error } = await supabase
-          .from('user_journey' as any)
+          .from('user_journey')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -86,7 +86,7 @@ export function useProgressiveJourney() {
           return null;
         }
 
-        return data as UserJourney | null;
+        return data;
       } catch (error) {
         console.error('Error in userJourney query:', error);
         return null;
@@ -101,7 +101,7 @@ export function useProgressiveJourney() {
 
       try {
         const { data, error } = await supabase
-          .from('user_journey' as any)
+          .from('user_journey')
           .upsert({
             user_id: user.id,
             ...updates,
@@ -111,7 +111,7 @@ export function useProgressiveJourney() {
           .single();
 
         if (error) throw error;
-        return data as UserJourney;
+        return data;
       } catch (error) {
         console.error('Error updating user journey:', error);
         throw error;
