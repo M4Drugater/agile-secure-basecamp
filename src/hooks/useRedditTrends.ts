@@ -64,7 +64,17 @@ export function useRedditTrends(enabled: boolean = true) {
 
       if (error) {
         console.error('Reddit trends error:', error);
-        throw new Error(error.message || 'Failed to fetch Reddit trends');
+        
+        // Handle specific error types
+        if (error.message?.includes('credentials') || error.message?.includes('REDDIT_CLIENT')) {
+          throw new Error('Reddit API credentials not configured. Please contact your administrator to set up REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.');
+        } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          throw new Error('Reddit API authentication failed. Please verify the API credentials are correct.');
+        } else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          throw new Error('Reddit API rate limit exceeded. Please try again in a few minutes.');
+        } else {
+          throw new Error(error.message || 'Failed to fetch Reddit trends');
+        }
       }
 
       if (!data) {
@@ -84,7 +94,19 @@ export function useRedditTrends(enabled: boolean = true) {
     gcTime: 10 * 60 * 1000, // 10 minutes
     retry: (failureCount, error) => {
       console.log(`Query retry attempt ${failureCount}:`, error);
-      return failureCount < 2; // Retry up to 2 times
+      
+      // Don't retry on credential errors
+      if (error.message?.includes('credentials') || error.message?.includes('REDDIT_CLIENT')) {
+        return false;
+      }
+      
+      // Don't retry on authentication errors after first attempt
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        return failureCount < 1;
+      }
+      
+      // Retry other errors up to 2 times
+      return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

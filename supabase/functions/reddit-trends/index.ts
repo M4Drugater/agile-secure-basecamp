@@ -1,11 +1,12 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const supabaseUrl = 'https://jzvpgqtobzqbavsillqp.supabase.co';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const redditClientId = Deno.env.get('REDDIT_CLIENT_ID')!;
-const redditClientSecret = Deno.env.get('REDDIT_CLIENT_SECRET')!;
+const redditClientId = Deno.env.get('REDDIT_CLIENT_ID');
+const redditClientSecret = Deno.env.get('REDDIT_CLIENT_SECRET');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,15 +60,13 @@ async function getRedditAccessToken(): Promise<string> {
     return cached.token;
   }
 
+  if (!redditClientId || !redditClientSecret) {
+    throw new Error('Reddit credentials not configured: REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET must be set in Supabase secrets');
+  }
+
   try {
     console.log('Requesting new Reddit access token...');
-    console.log(`Client ID exists: ${!!redditClientId}`);
-    console.log(`Client Secret exists: ${!!redditClientSecret}`);
-    console.log(`Client ID length: ${redditClientId?.length || 0}`);
-    
-    if (!redditClientId || !redditClientSecret) {
-      throw new Error('Reddit credentials not found in environment variables');
-    }
+    console.log(`Using Client ID: ${redditClientId.substring(0, 4)}...`);
     
     const credentials = btoa(`${redditClientId}:${redditClientSecret}`);
     const response = await fetch('https://www.reddit.com/api/v1/access_token', {
@@ -75,35 +74,37 @@ async function getRedditAccessToken(): Promise<string> {
       headers: {
         'Authorization': `Basic ${credentials}`,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'LAIGENT-TrendsDiscovery/1.0 (Web Application for Business Insights)',
+        'User-Agent': 'LAIGENT-TrendsDiscovery/2.0 (Web Application for Business Intelligence)',
       },
       body: 'grant_type=client_credentials',
     });
 
     console.log(`Reddit OAuth response status: ${response.status}`);
-    const responseText = await response.text();
-    console.log(`Reddit OAuth response: ${responseText.substring(0, 200)}`);
-
+    
     if (!response.ok) {
-      throw new Error(`Reddit OAuth failed: ${response.status} ${response.statusText} - ${responseText}`);
+      const errorText = await response.text();
+      console.error(`Reddit OAuth failed: ${response.status} ${response.statusText} - ${errorText}`);
+      
+      if (response.status === 401) {
+        throw new Error('Reddit credentials are invalid. Please verify REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET are correct.');
+      } else if (response.status === 429) {
+        throw new Error('Reddit API rate limit exceeded. Please try again later.');
+      } else {
+        throw new Error(`Reddit OAuth failed: ${response.status} ${response.statusText}`);
+      }
     }
 
-    let tokenData;
-    try {
-      tokenData = JSON.parse(responseText);
-    } catch (parseError) {
-      throw new Error(`Failed to parse Reddit OAuth response: ${parseError.message}`);
-    }
+    const tokenData = await response.json();
     
     if (!tokenData.access_token) {
-      throw new Error(`No access token received from Reddit. Response: ${JSON.stringify(tokenData)}`);
+      console.error('No access token in response:', tokenData);
+      throw new Error('No access token received from Reddit');
     }
 
     console.log('Successfully obtained Reddit access token');
-    console.log(`Token type: ${tokenData.token_type}, expires in: ${tokenData.expires_in} seconds`);
     
-    // Cache the token
-    const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000;
+    // Cache the token with safety margin
+    const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 minute safety margin
     tokenCache.set(cacheKey, {
       token: tokenData.access_token,
       expires: expiresAt
@@ -112,13 +113,7 @@ async function getRedditAccessToken(): Promise<string> {
     return tokenData.access_token;
   } catch (error) {
     console.error('Failed to get Reddit access token:', error);
-    console.error('Error details:', {
-      message: error.message,
-      clientIdPresent: !!redditClientId,
-      clientSecretPresent: !!redditClientSecret,
-      clientIdPrefix: redditClientId ? redditClientId.substring(0, 4) + '...' : 'not found'
-    });
-    throw new Error(`Reddit authentication failed: ${error.message}`);
+    throw error;
   }
 }
 
@@ -157,7 +152,7 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
     return cached?.data || [];
   }
 
-  const maxRetries = 3;
+  const maxRetries = 2;
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -170,19 +165,17 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
         url += `&t=${timeframe}`;
       }
 
-      console.log(`Attempt ${attempt}: Fetching from ${url}`);
+      console.log(`Attempt ${attempt}: Fetching from r/${subreddit}`);
 
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'User-Agent': 'LAIGENT-TrendsDiscovery/1.0 (Web Application for Business Insights)',
+          'User-Agent': 'LAIGENT-TrendsDiscovery/2.0 (Web Application for Business Intelligence)',
           'Accept': 'application/json',
         },
       });
 
       console.log(`Response status for r/${subreddit}: ${response.status}`);
-      const responseText = await response.text();
-      console.log(`Response headers: ${JSON.stringify([...response.headers.entries()])}`);
 
       if (response.status === 401) {
         console.log('Token expired, clearing cache...');
@@ -202,19 +195,12 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
       }
 
       if (!response.ok) {
-        console.error(`HTTP error for r/${subreddit}: ${response.status} ${response.statusText}`);
-        console.error(`Response body: ${responseText.substring(0, 500)}`);
-        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText.substring(0, 200)}`);
+        const errorText = await response.text();
+        console.error(`HTTP error for r/${subreddit}: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      let data: RedditResponse;
-      try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error(`Failed to parse JSON response for r/${subreddit}:`, parseError);
-        console.error(`Response text: ${responseText.substring(0, 500)}`);
-        throw new Error(`Invalid JSON response: ${parseError.message}`);
-      }
+      const data: RedditResponse = await response.json();
       
       if (!data?.data?.children) {
         console.error(`Invalid response structure for r/${subreddit}:`, data);
@@ -233,10 +219,7 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
 
     } catch (error) {
       lastError = error as Error;
-      console.error(`Attempt ${attempt} failed for r/${subreddit}:`, {
-        error: error.message,
-        stack: error.stack?.split('\n').slice(0, 3).join('\n')
-      });
+      console.error(`Attempt ${attempt} failed for r/${subreddit}:`, error.message);
       
       if (attempt < maxRetries) {
         const waitTime = Math.pow(2, attempt - 1) * 1000;
@@ -248,6 +231,7 @@ async function fetchFromRedditAPI(subreddit: string, sortBy: string, timeframe: 
 
   console.error(`All ${maxRetries} attempts failed for r/${subreddit}:`, lastError?.message);
   
+  // Return cached data if available
   const fallbackData = cache.get(cacheKey);
   if (fallbackData) {
     console.log(`Using stale cached data for r/${subreddit}`);
@@ -322,28 +306,23 @@ serve(async (req) => {
       sortBy,
       limit,
       timestamp: new Date().toISOString(),
-      credentialsCheck: {
+      credentialsConfigured: {
         clientId: !!redditClientId,
-        clientSecret: !!redditClientSecret,
-        clientIdLength: redditClientId?.length || 0
+        clientSecret: !!redditClientSecret
       }
     });
 
-    // Validate Reddit credentials with detailed logging
+    // Validate Reddit credentials
     if (!redditClientId || !redditClientSecret) {
-      console.error('Reddit credentials missing:', {
-        clientId: !!redditClientId,
-        clientSecret: !!redditClientSecret,
-        envVars: Object.keys(Deno.env.toObject()).filter(key => key.includes('REDDIT'))
-      });
+      console.error('Reddit credentials missing');
       
       return new Response(JSON.stringify({ 
         error: 'Reddit API credentials not configured',
-        message: 'Please configure REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET in Supabase secrets',
+        message: 'REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET must be configured in Supabase secrets',
         debug: {
           clientIdPresent: !!redditClientId,
           clientSecretPresent: !!redditClientSecret,
-          availableEnvVars: Object.keys(Deno.env.toObject()).filter(key => key.includes('REDDIT'))
+          helpText: 'Contact your administrator to configure Reddit API credentials'
         }
       }), {
         status: 500,
@@ -382,23 +361,18 @@ serve(async (req) => {
       });
     }
 
-    // Test Reddit API connection first
+    // Test Reddit API connection
     console.log('Testing Reddit API connection...');
     try {
-      const testToken = await getRedditAccessToken();
+      await getRedditAccessToken();
       console.log('Reddit API connection test successful');
     } catch (testError) {
       console.error('Reddit API connection test failed:', testError);
       return new Response(JSON.stringify({ 
-        error: 'Reddit API connection failed',
-        message: 'Unable to authenticate with Reddit API. Please check your credentials.',
+        error: 'Reddit API authentication failed',
+        message: testError.message,
         debug: {
-          error: testError.message,
-          credentials: {
-            clientIdPresent: !!redditClientId,
-            clientSecretPresent: !!redditClientSecret,
-            clientIdPrefix: redditClientId ? redditClientId.substring(0, 4) + '...' : 'missing'
-          }
+          suggestion: 'Verify that REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET are correct'
         }
       }), {
         status: 500,
@@ -463,9 +437,7 @@ serve(async (req) => {
             success_rate: `${successRate}%`,
             api_method: 'reddit_oauth_api',
             successful_subreddits: successfulFetches,
-            total_subreddits: subreddits.length,
-            cache_hits: Array.from(cache.keys()).length,
-            rate_limited: !checkRateLimit()
+            total_subreddits: subreddits.length
           }
         });
     } catch (logError) {
