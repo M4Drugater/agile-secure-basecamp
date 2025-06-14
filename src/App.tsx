@@ -1,20 +1,21 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthContextProvider } from '@/contexts/AuthContext';
 import { QueryProvider } from '@/contexts/QueryContext';
-import { Home } from '@/pages/Home';
-import { KnowledgeBase } from '@/pages/KnowledgeBase';
-import { Agents } from '@/pages/Agents';
+import Home from '@/pages/Home';
+import KnowledgeBase from '@/pages/KnowledgeBase';
+import Agents from '@/pages/Agents';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { UniversalLayout } from '@/layouts/UniversalLayout';
-import { Pricing } from '@/pages/Pricing';
-import { Terms } from '@/pages/Terms';
-import { Privacy } from '@/pages/Privacy';
-import { Chat } from '@/pages/Chat';
-import { Content } from '@/pages/Content';
-import { Profile } from '@/pages/Profile';
-import { Admin } from '@/pages/Admin';
+import Pricing from '@/pages/Pricing';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import Chat from '@/pages/Chat';
+import Content from '@/pages/Content';
+import Profile from '@/pages/Profile';
+import Admin from '@/pages/Admin';
 import Billing from '@/pages/Billing';
 
 function App() {

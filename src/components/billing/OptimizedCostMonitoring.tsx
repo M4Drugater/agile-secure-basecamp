@@ -48,7 +48,7 @@ export function OptimizedCostMonitoring() {
 
   const getStatusColor = () => {
     if (isOverLimit) return 'destructive';
-    if (isNearLimit) return 'warning';
+    if (isNearLimit) return 'secondary';
     return 'default';
   };
 

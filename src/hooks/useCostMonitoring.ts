@@ -76,6 +76,11 @@ export function useCostMonitoring(): CostMonitoringHook {
         };
       } catch (error) {
         console.error('Error fetching cost usage:', error);
+        toast({
+          title: 'Usage Monitoring Error',
+          description: 'Unable to fetch current usage data.',
+          variant: 'destructive',
+        });
         throw error;
       }
     },
@@ -84,14 +89,6 @@ export function useCostMonitoring(): CostMonitoringHook {
     refetchInterval: 60000, // 1 minute
     refetchOnWindowFocus: false,
     retry: 2,
-    onError: (error) => {
-      console.error('Cost monitoring error:', error);
-      toast({
-        title: 'Usage Monitoring Error',
-        description: 'Unable to fetch current usage data.',
-        variant: 'destructive',
-      });
-    }
   });
 
   const isNearLimit = usage ? (usage.dailyPercentage > 80 || usage.monthlyPercentage > 80) : false;
