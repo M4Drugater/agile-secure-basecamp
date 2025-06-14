@@ -15,6 +15,7 @@ interface ModuleItem {
   icon: React.ComponentType<any>;
   route: string;
   available: boolean;
+  completed: boolean;
   completion?: number;
   isNew?: boolean;
   badge?: string;
@@ -45,6 +46,7 @@ export function useAvailableModules(
       icon: User,
       route: '/profile',
       available: true,
+      completed: completedStepIds.includes('profile'),
       completion: profileCompleteness,
       isNew: false
     });
@@ -58,6 +60,7 @@ export function useAvailableModules(
         icon: BookOpen,
         route: '/knowledge',
         available: true,
+        completed: completedStepIds.includes('knowledge'),
         isNew: !completedStepIds.includes('knowledge'),
         badge: !completedStepIds.includes('knowledge') ? 'Nuevo' : undefined,
         highlight: !completedStepIds.includes('knowledge')
@@ -73,6 +76,7 @@ export function useAvailableModules(
         icon: MessageSquare,
         route: '/chat',
         available: true,
+        completed: completedStepIds.includes('chat'),
         badge: 'IA',
         isNew: !completedStepIds.includes('chat'),
         highlight: !completedStepIds.includes('chat')
@@ -89,6 +93,7 @@ export function useAvailableModules(
         icon: Shield,
         route: '/competitive-intelligence',
         available: true,
+        completed: completedStepIds.includes('agents'),
         badge: 'Agentes IA',
         isNew: !completedStepIds.includes('agents'),
         highlight: !completedStepIds.includes('agents')
@@ -102,6 +107,7 @@ export function useAvailableModules(
         icon: FileText,
         route: '/content-generator',
         available: true,
+        completed: completedStepIds.includes('content'),
         badge: 'IA',
         isNew: !completedStepIds.includes('content'),
         highlight: !completedStepIds.includes('content')

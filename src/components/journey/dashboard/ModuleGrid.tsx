@@ -48,7 +48,8 @@ export function ModuleGrid({ modules, onModuleClick }: ModuleGridProps) {
       chat: 'chat-module',
       agents: 'intelligence-module',
       content: 'content-module',
-      intelligence: 'intelligence-module'
+      intelligence: 'intelligence-module',
+      competitive: 'intelligence-module'
     };
     return tourMap[moduleId] || '';
   };
