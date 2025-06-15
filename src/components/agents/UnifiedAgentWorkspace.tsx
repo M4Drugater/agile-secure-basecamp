@@ -28,7 +28,7 @@ export interface AgentConfig {
   icon: React.ComponentType<any>;
   color: string;
   capabilities: string[];
-  type: 'competitive-intelligence' | 'research' | 'chat' | 'content' | 'learning' | 'enhanced-content';
+  type: 'competitive-intelligence' | 'research' | 'chat' | 'content' | 'learning';
   status: 'active' | 'idle' | 'processing';
 }
 
@@ -46,7 +46,7 @@ const availableAgents: AgentConfig[] = [
       'Knowledge base enhancement',
       'C-suite ready outputs'
     ],
-    type: 'enhanced-content',
+    type: 'content',
     status: 'active'
   },
   {
