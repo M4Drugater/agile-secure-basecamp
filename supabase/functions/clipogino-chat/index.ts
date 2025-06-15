@@ -4,7 +4,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ElitePromptSystem } from './elite-prompt-system.ts';
 import { EnhancedContextBuilder } from './enhanced-context-builder.ts';
-import { buildMessages, ChatMessage } from './prompt-system.ts';
 import { UsageLogger } from './usage-logger.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -22,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, context, conversationHistory, model = 'gpt-4o-mini', currentPage = '/chat' } = await req.json();
+    const { message, context, conversationHistory, model = 'gpt-4o', currentPage = '/chat' } = await req.json();
     
     if (!message) {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -31,7 +30,7 @@ serve(async (req) => {
       });
     }
 
-    // Get user from auth header
+    // Get user authentication
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Authorization required' }), {
@@ -55,10 +54,22 @@ serve(async (req) => {
       userId: user.id, 
       message: message.substring(0, 100),
       model,
-      currentPage
+      currentPage,
+      timestamp: new Date().toISOString()
     });
 
-    // Build enhanced user context
+    if (!openAIApiKey) {
+      return new Response(JSON.stringify({ 
+        response: "I apologize, but my AI services are temporarily unavailable. As your strategic advisor, I recommend contacting support to configure the OpenAI API for our continued collaboration.",
+        usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+        model: model,
+        contextQuality: 'service-unavailable'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Build comprehensive user context
     const contextBuilder = new EnhancedContextBuilder();
     const userContext = await contextBuilder.buildUserContext(user.id, currentPage);
 
@@ -66,25 +77,40 @@ serve(async (req) => {
     const elitePromptSystem = new ElitePromptSystem();
     const eliteSystemPrompt = elitePromptSystem.buildEliteSystemPrompt(userContext);
 
-    // Prepare enhanced messages with elite prompt
-    const messages: ChatMessage[] = [
+    // Prepare enhanced messages with elite prompt and conversation context
+    const messages = [
       { role: 'system', content: eliteSystemPrompt },
-      ...(conversationHistory || []).slice(-8), // Include recent conversation history
+      ...(conversationHistory || []).slice(-10), // Include more context for continuity
       { role: 'user', content: message }
     ];
 
-    if (!openAIApiKey) {
-      return new Response(JSON.stringify({ 
-        response: "I apologize, but my AI services are temporarily unavailable. Please contact support for assistance with configuring the OpenAI API.",
-        usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
-        model: model,
-        contextQuality: 'elite'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Optimized model configuration for elite performance
+    const getOptimizedConfig = (model: string) => {
+      const configs = {
+        'gpt-4o': {
+          model: 'gpt-4o',
+          max_tokens: 3000,
+          temperature: 0.8, // Higher creativity for strategic thinking
+          top_p: 0.95,
+          frequency_penalty: 0.2,
+          presence_penalty: 0.3
+        },
+        'gpt-4o-mini': {
+          model: 'gpt-4o-mini',
+          max_tokens: 2500,
+          temperature: 0.7,
+          top_p: 0.9,
+          frequency_penalty: 0.1,
+          presence_penalty: 0.2
+        }
+      };
+      return configs[model] || configs['gpt-4o-mini'];
+    };
 
-    // Call OpenAI API with elite configuration
+    const modelConfig = getOptimizedConfig(model);
+    const startTime = Date.now();
+
+    // Enhanced OpenAI API call
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,13 +118,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model,
+        ...modelConfig,
         messages: messages,
-        max_tokens: model === 'gpt-4o' ? 2500 : 2000,
-        temperature: 0.8, // Higher creativity for strategic thinking
-        top_p: 0.95, // Enhanced response quality
-        frequency_penalty: 0.2, // Reduce repetition
-        presence_penalty: 0.3, // Encourage diverse thinking
+        stream: false,
       }),
     });
 
@@ -110,15 +132,23 @@ serve(async (req) => {
 
     const data = await response.json();
     const reply = data.choices[0].message.content;
+    const processingTime = Date.now() - startTime;
 
-    // Log elite usage metrics
+    // Enhanced usage tracking
     const usage = data.usage;
     if (usage) {
       const usageLogger = new UsageLogger();
-      await usageLogger.logUsage(user.id, model, usage);
+      await usageLogger.logUsage(user.id, model, usage, {
+        currentPage,
+        contextQuality: 'elite',
+        personalFilesCount: userContext.knowledge.personal_files_count,
+        processingTime,
+        responseLength: reply.length,
+        promptVersion: 'elite-v2'
+      });
     }
 
-    console.log('Elite CLIPOGINO Response:', { 
+    console.log('Elite CLIPOGINO Response Success:', { 
       userId: user.id, 
       replyLength: reply.length,
       contextQuality: 'elite',
@@ -126,7 +156,9 @@ serve(async (req) => {
       systemKnowledgeCount: userContext.knowledge.system_knowledge_count,
       experienceLevel: userContext.profile.experience_level,
       currentPage: userContext.session.current_page,
-      model: model
+      model: model,
+      processingTime: `${processingTime}ms`,
+      tokensUsed: usage?.total_tokens || 0
     });
 
     return new Response(JSON.stringify({ 
@@ -137,11 +169,19 @@ serve(async (req) => {
         completionTokens: usage?.completion_tokens || 0
       },
       model: model,
-      contextQuality: 'elite',
+      contextQuality: 'elite-enhanced',
+      processingTime,
       userContext: {
         experienceLevel: userContext.profile.experience_level,
         knowledgeAssets: userContext.knowledge.personal_files_count,
-        industryFocus: userContext.profile.industry
+        industryFocus: userContext.profile.industry,
+        managementLevel: userContext.profile.management_level,
+        conversationCount: userContext.activity.conversation_count
+      },
+      metadata: {
+        promptVersion: 'elite-v2',
+        contextBuilder: 'enhanced',
+        strategicAdvisoryLevel: 'fortune-500'
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -150,8 +190,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in elite clipogino-chat function:', error);
     return new Response(JSON.stringify({ 
-      error: 'Internal server error',
-      response: 'I encountered an error while processing your request. Please try again, and I will provide you with the strategic guidance you need.',
+      error: 'Strategic advisory system error',
+      response: 'I encountered a temporary disruption while accessing my strategic frameworks. Please try again, and I will provide you with the executive-level guidance you need for your strategic decisions.',
       usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
       model: 'error',
       contextQuality: 'error'
