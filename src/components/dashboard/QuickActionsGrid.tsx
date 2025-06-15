@@ -6,13 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { 
   MessageSquare, 
-  FileText, 
   BookOpen, 
   Search,
-  Brain,
   Sparkles,
   Bot,
-  BarChart3
+  Brain
 } from 'lucide-react';
 
 export function QuickActionsGrid() {
@@ -36,15 +34,6 @@ export function QuickActionsGrid() {
       color: 'bg-green-50 border-green-200',
       iconColor: 'text-green-600',
       route: '/agents'
-    },
-    {
-      title: 'Generador de Contenido',
-      description: 'Creación de contenido con IA',
-      icon: FileText,
-      badge: 'IA',
-      color: 'bg-purple-50 border-purple-200',
-      iconColor: 'text-purple-600',
-      route: '/content/generator'
     },
     {
       title: 'Base de Conocimiento',
@@ -71,20 +60,12 @@ export function QuickActionsGrid() {
       route: '/learning'
     },
     {
-      title: 'Biblioteca de Contenido',
-      description: 'Gestión de contenido creado',
+      title: 'Perfil',
+      description: 'Configuración personal',
       icon: Brain,
       color: 'bg-indigo-50 border-indigo-200',
       iconColor: 'text-indigo-600',
-      route: '/content/library'
-    },
-    {
-      title: 'Analytics de Contenido',
-      description: 'Métricas y rendimiento',
-      icon: BarChart3,
-      color: 'bg-cyan-50 border-cyan-200',
-      iconColor: 'text-cyan-600',
-      route: '/content/analytics'
+      route: '/profile'
     }
   ];
 
