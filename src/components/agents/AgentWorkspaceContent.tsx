@@ -1,11 +1,8 @@
 
 import React from 'react';
 import { AgentConfig } from './UnifiedAgentWorkspace';
-import { ClipoginoChat } from '@/components/chat/ClipoginoChat';
-import { EnhancedAgentWorkspace } from '@/components/competitive-intelligence/EnhancedAgentWorkspace';
-import { OptimizedResearchWorkbench } from '@/components/research/OptimizedResearchWorkbench';
+import { ConsolidatedAgentChat } from './ConsolidatedAgentChat';
 import { EnhancedContentGenerator } from '@/components/content/EnhancedContentGenerator';
-import { EnhancedAgentChat } from '@/components/competitive-intelligence/EnhancedAgentChat';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -28,53 +25,17 @@ export function AgentWorkspaceContent({
     );
   }
 
-  // Initialize default session config for competitive intelligence agents if not set
-  const ensureSessionConfig = () => {
-    if (!sessionConfig.companyName && (primaryAgent.type === 'competitive-intelligence')) {
-      return {
-        companyName: '',
-        industry: '',
-        analysisFocus: '',
-        objectives: '',
-        ...sessionConfig
-      };
-    }
-    return sessionConfig;
-  };
-
-  const currentSessionConfig = ensureSessionConfig();
-
-  // Route to the appropriate agent interface based on type and ID
-  switch (primaryAgent.id) {
-    case 'enhanced-content-generator':
-      return <EnhancedContentGenerator />;
-      
-    case 'clipogino':
-      return <ClipoginoChat />;
-    
-    case 'research-engine':
-      return <OptimizedResearchWorkbench />;
-    
-    case 'cdv':
-    case 'cia':
-    case 'cir':
-      // Use the enhanced agent chat with real-time web search integration
-      return (
-        <div className="max-w-4xl mx-auto">
-          <EnhancedAgentChat
-            agentId={primaryAgent.id}
-            sessionConfig={currentSessionConfig}
-          />
-        </div>
-      );
-    
-    default:
-      return (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            Agent interface for {primaryAgent.name} is not yet implemented
-          </p>
-        </div>
-      );
+  // Special handling for Enhanced Content Generator
+  if (primaryAgent.id === 'enhanced-content-generator') {
+    return <EnhancedContentGenerator />;
   }
+
+  // Use consolidated chat for all other agents
+  return (
+    <ConsolidatedAgentChat
+      selectedAgent={primaryAgent}
+      sessionConfig={sessionConfig}
+      onUpdateConfig={setSessionConfig}
+    />
+  );
 }

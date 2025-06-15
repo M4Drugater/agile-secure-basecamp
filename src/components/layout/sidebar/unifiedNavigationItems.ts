@@ -1,120 +1,109 @@
 
-import { 
-  Home,
+import {
+  LayoutDashboard,
   MessageSquare,
   FileText,
-  BookOpen,
-  TrendingUp,
-  Search,
-  Shield,
-  Settings,
-  User,
-  CreditCard,
+  Library,
   BarChart3,
+  BookOpen,
+  GraduationCap,
+  Users,
+  Settings,
+  CreditCard,
   Brain,
-  Sparkles
+  Bot,
+  Search
 } from 'lucide-react';
 
 export const mainNavItems = [
-  { 
-    title: 'Dashboard', 
-    href: '/dashboard', 
-    icon: Home,
-    description: 'Vista general del sistema'
+  {
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    description: 'Panel principal de control'
   },
-  { 
-    title: 'Chat con CLIPOGINO', 
-    href: '/chat', 
+  {
+    title: 'AI Agents',
+    href: '/agents',
+    icon: Bot,
+    description: 'Workspace unificado de agentes IA'
+  },
+  {
+    title: 'Chat Unificado',
+    href: '/chat',
     icon: MessageSquare,
-    badge: 'AI',
-    description: 'Asistente inteligente personalizado'
+    description: 'Chat consolidado con CLIPOGINO'
   }
 ];
 
 export const aiModulesItems = [
-  { 
-    title: 'Inteligencia Competitiva', 
-    href: '/competitive-intelligence', 
-    icon: Shield,
-    badge: 'AI',
-    description: 'Agentes CDV, CIA y CIR'
+  {
+    title: 'Content Generator',
+    href: '/content',
+    icon: FileText,
+    description: 'Generador avanzado de contenido'
   },
-  { 
-    title: 'Descubrimiento de Tendencias', 
-    href: '/trends', 
-    icon: TrendingUp,
-    badge: 'LIVE',
-    description: 'Tendencias de Reddit en tiempo real'
-  },
-  { 
-    title: 'Research Workbench', 
-    href: '/research', 
+  {
+    title: 'Research Engine',
+    href: '/research',
     icon: Search,
-    description: 'Investigación con Perplexity AI'
+    description: 'Motor de investigación con IA'
+  },
+  {
+    title: 'Knowledge Base',
+    href: '/knowledge',
+    icon: Library,
+    description: 'Base de conocimiento empresarial'
   }
 ];
 
 export const contentItems = [
-  { 
-    title: 'Generador de Contenido', 
-    href: '/content/generator', 
-    icon: FileText,
-    description: 'Creación de contenido con IA'
+  {
+    title: 'Content Library',
+    href: '/content-library',
+    icon: Library,
+    description: 'Biblioteca de contenido generado'
   },
-  { 
-    title: 'Biblioteca de Contenido', 
-    href: '/content/library', 
-    icon: BookOpen,
-    description: 'Gestión de contenido creado'
-  },
-  { 
-    title: 'Analytics de Contenido', 
-    href: '/content/analytics', 
+  {
+    title: 'Analytics',
+    href: '/analytics',
     icon: BarChart3,
-    description: 'Métricas y rendimiento'
+    description: 'Métricas y análisis de contenido'
   }
 ];
 
 export const learningItems = [
-  { 
-    title: 'Base de Conocimiento', 
-    href: '/knowledge', 
-    icon: Brain,
-    description: 'Documentos y recursos'
+  {
+    title: 'Learning Paths',
+    href: '/learning',
+    icon: GraduationCap,
+    description: 'Rutas de aprendizaje personalizadas'
   },
-  { 
-    title: 'Gestión de Aprendizaje', 
-    href: '/learning', 
-    icon: Sparkles,
-    description: 'Rutas y módulos de aprendizaje'
+  {
+    title: 'Progress Tracking',
+    href: '/progress',
+    icon: BarChart3,
+    description: 'Seguimiento de progreso'
   }
 ];
 
 export const accountItems = [
-  { 
-    title: 'Perfil', 
-    href: '/profile', 
-    icon: User,
-    description: 'Configuración personal'
+  {
+    title: 'Profile',
+    href: '/profile',
+    icon: Users,
+    description: 'Perfil de usuario'
   },
-  { 
-    title: 'Facturación', 
-    href: '/billing', 
+  {
+    title: 'Billing',
+    href: '/billing',
     icon: CreditCard,
-    description: 'Suscripciones y pagos'
+    description: 'Facturación y suscripciones'
   },
-  { 
-    title: 'Administración', 
-    href: '/admin', 
+  {
+    title: 'Settings',
+    href: '/settings',
     icon: Settings,
-    description: 'Panel de administración'
+    description: 'Configuración de la cuenta'
   }
 ];
-
-export type UnifiedNavItem = {
-  title: string;
-  href: string;
-  icon: React.ComponentType<any>;
-  badge?: string;
-  description?: string;
-};

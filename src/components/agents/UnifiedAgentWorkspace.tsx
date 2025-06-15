@@ -135,7 +135,12 @@ export function UnifiedAgentWorkspace() {
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('selector');
   const [collaborativeMode, setCollaborativeMode] = useState(false);
-  const [sessionConfig, setSessionConfig] = useState<any>({});
+  const [sessionConfig, setSessionConfig] = useState({
+    companyName: '',
+    industry: '',
+    analysisFocus: '',
+    objectives: ''
+  });
 
   const handleAgentSelect = (agentId: string) => {
     if (collaborativeMode) {
@@ -170,7 +175,7 @@ export function UnifiedAgentWorkspace() {
             Unified Agent Workspace
           </h1>
           <p className="text-muted-foreground mt-2">
-            Centralized interface for all AI agents and collaborative workflows
+            Sistema consolidado para todos los agentes de IA
           </p>
         </div>
         
@@ -181,19 +186,19 @@ export function UnifiedAgentWorkspace() {
             className="flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
-            Collaborative Mode
+            Modo Colaborativo
           </Button>
           
           {selectedAgents.length > 1 && collaborativeMode && (
             <Button onClick={startCollaborativeSession} className="flex items-center gap-2">
               <Play className="h-4 w-4" />
-              Start Session
+              Iniciar Sesión
             </Button>
           )}
           
           <Badge variant="secondary" className="flex items-center gap-1">
             <Brain className="h-3 w-3" />
-            {selectedAgents.length} Agent{selectedAgents.length !== 1 ? 's' : ''} Selected
+            {selectedAgents.length} Agente{selectedAgents.length !== 1 ? 's' : ''} Seleccionado{selectedAgents.length !== 1 ? 's' : ''}
           </Badge>
         </div>
       </div>
@@ -203,7 +208,7 @@ export function UnifiedAgentWorkspace() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="selector" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
-            Agent Selection
+            Selección de Agentes
           </TabsTrigger>
           <TabsTrigger 
             value="workspace" 
@@ -219,11 +224,11 @@ export function UnifiedAgentWorkspace() {
             className="flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
-            Collaborative
+            Colaborativo
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Settings
+            Configuración
           </TabsTrigger>
         </TabsList>
 
@@ -259,12 +264,41 @@ export function UnifiedAgentWorkspace() {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Workspace Settings</CardTitle>
+              <CardTitle>Configuración del Workspace</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                Configure global settings for the unified agent workspace.
-              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Configuración Global de Sesión</label>
+                  <p className="text-sm text-muted-foreground">
+                    Configuración aplicada a todos los agentes de inteligencia competitiva
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Empresa</label>
+                    <input
+                      type="text"
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                      value={sessionConfig.companyName}
+                      onChange={(e) => setSessionConfig(prev => ({ ...prev, companyName: e.target.value }))}
+                      placeholder="Nombre de la empresa"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Industria</label>
+                    <input
+                      type="text"
+                      className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
+                      value={sessionConfig.industry}
+                      onChange={(e) => setSessionConfig(prev => ({ ...prev, industry: e.target.value }))}
+                      placeholder="Industria principal"
+                    />
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
