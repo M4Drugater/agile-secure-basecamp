@@ -112,7 +112,7 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
 
       // Generate insights based on progress
       if (Math.random() > 0.85) {
-        const insightTypes = ['consensus', 'synthesis', 'breakthrough'] as const;
+        const insightTypes = ['consensus', 'breakthrough'] as const;
         const randomType = insightTypes[Math.floor(Math.random() * insightTypes.length)];
         simulateCollaborativeEvent(randomType);
       }

@@ -249,20 +249,25 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
     if (!supabase || !user) return;
 
     try {
-      // Guardar metadatos de finalización
-      await supabase.from('session_completions').insert({
+      // Guardar metadatos de finalización en la tabla de intelligent_outputs
+      await supabase.from('intelligent_outputs').insert({
         session_id: sessionId,
         user_id: user.id,
-        final_report_id: results.finalReport.id,
-        synthesis_report_id: results.synthesisReport.id,
-        action_plan_id: results.actionPlan.id,
-        agent_outputs: results.agentOutputs,
-        completed_at: results.completedAt.toISOString(),
+        output_type: 'session_completion',
+        title: 'Resultados de Sesión Colaborativa Completada',
+        content: JSON.stringify({
+          final_report_id: results.finalReport.id,
+          synthesis_report_id: results.synthesisReport.id,
+          action_plan_id: results.actionPlan.id,
+          completed_at: results.completedAt.toISOString()
+        }),
         metadata: {
           agentCount: selectedAgents.length,
           completionTrigger: 'automatic',
-          outputsGenerated: Object.keys(results.agentOutputs).length + 3
-        }
+          outputsGenerated: Object.keys(results.agentOutputs).length + 3,
+          agent_outputs: results.agentOutputs
+        },
+        status: 'completed'
       });
 
       console.log('💾 Resultados de finalización guardados en la base de datos');
