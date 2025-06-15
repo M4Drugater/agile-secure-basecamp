@@ -11,12 +11,9 @@ import {
   Zap, 
   CheckCircle,
   Wrench,
-  ArrowRight,
   Crown,
-  Target,
   MessageSquare,
   Settings,
-  Play,
   Users
 } from 'lucide-react';
 import { LaigentBucketSelector } from '@/components/orchestrators/LaigentBucketSelector';
