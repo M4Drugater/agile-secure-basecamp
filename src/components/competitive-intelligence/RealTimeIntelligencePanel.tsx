@@ -1,25 +1,21 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useRealTimeWebSearch } from '@/hooks/competitive-intelligence/useRealTimeWebSearch';
 import { 
   Search, 
   TrendingUp, 
-  DollarSign, 
   AlertTriangle, 
   Target, 
   Zap,
-  Clock,
   Globe,
-  BarChart3
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import { useRealTimeWebSearch } from '@/hooks/competitive-intelligence/useRealTimeWebSearch';
 
 interface RealTimeIntelligencePanelProps {
   companyName: string;
@@ -27,49 +23,54 @@ interface RealTimeIntelligencePanelProps {
 }
 
 export function RealTimeIntelligencePanel({ companyName, industry }: RealTimeIntelligencePanelProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<'news' | 'financial' | 'competitive' | 'market' | 'regulatory'>('competitive');
-  const [timeframe, setTimeframe] = useState<'hour' | 'day' | 'week' | 'month' | 'quarter'>('week');
+  const [activeSearch, setActiveSearch] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  const {
+    isLoading,
+    searchResults,
+    searchCompetitiveNews,
+    searchMarketTrends,
+    searchFinancialUpdates,
+    clearResults
+  } = useRealTimeWebSearch();
 
-  const webSearch = useRealTimeWebSearch();
-
-  const handleWebSearch = async () => {
-    if (!searchQuery.trim()) return;
-
-    try {
-      await webSearch.performWebSearch({
-        query: searchQuery,
-        companyName,
-        industry,
-        searchType,
-        timeframe
-      });
-    } catch (error) {
-      console.error('Web search failed:', error);
+  const intelligenceTypes = [
+    {
+      id: 'competitive',
+      title: 'Competitive Intelligence',
+      description: 'Latest competitive moves and market positioning',
+      icon: Target,
+      action: () => searchCompetitiveNews(companyName, industry),
+      color: 'bg-blue-500'
+    },
+    {
+      id: 'financial',
+      title: 'Financial Intelligence',
+      description: 'Financial performance and market metrics',
+      icon: TrendingUp,
+      action: () => searchFinancialUpdates(companyName, industry),
+      color: 'bg-green-500'
+    },
+    {
+      id: 'market',
+      title: 'Market Intelligence',
+      description: 'Industry trends and market dynamics',
+      icon: Globe,
+      action: () => searchMarketTrends(industry),
+      color: 'bg-purple-500'
     }
-  };
+  ];
 
-  const handleQuickSearch = async (type: 'news' | 'market' | 'regulatory' | 'financial') => {
-    setSearchType(type);
-    const queries = {
-      news: `latest news announcements ${companyName}`,
-      market: `market trends analysis ${industry}`,
-      regulatory: `regulatory changes compliance ${industry}`,
-      financial: `financial results earnings revenue ${companyName}`
-    };
-    
-    setSearchQuery(queries[type]);
-    
+  const handleIntelligenceSearch = async (type: string, searchFunction: () => Promise<any>) => {
+    setActiveSearch(type);
     try {
-      await webSearch.performWebSearch({
-        query: queries[type],
-        companyName,
-        industry,
-        searchType: type,
-        timeframe
-      });
+      await searchFunction();
+      setLastUpdate(new Date());
     } catch (error) {
-      console.error('Quick search failed:', error);
+      console.error('Intelligence search failed:', error);
+    } finally {
+      setActiveSearch(null);
     }
   };
 
@@ -79,329 +80,230 @@ export function RealTimeIntelligencePanel({ companyName, industry }: RealTimeInt
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Globe className="h-6 w-6 text-blue-600" />
-            Real-Time Competitive Intelligence
+            <Zap className="h-6 w-6 text-yellow-500" />
+            Real-Time Intelligence Center
           </h2>
           <p className="text-muted-foreground">
-            Live web search and market analysis powered by Perplexity for {companyName}
+            Live competitive intelligence for {companyName} in {industry}
           </p>
         </div>
+        
         <div className="flex items-center gap-2">
-          <Badge variant="default" className="flex items-center gap-1">
-            <Zap className="h-3 w-3" />
-            Live Data
-          </Badge>
           <Badge variant="outline" className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            Real-Time
+            Last update: {lastUpdate.toLocaleTimeString()}
           </Badge>
+          {searchResults && (
+            <Badge variant="default" className="flex items-center gap-1">
+              <CheckCircle className="h-3 w-3" />
+              Data Quality: {searchResults.metadata?.dataConfidence || 0}%
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* Quick Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Button
-          variant="outline"
-          onClick={() => handleQuickSearch('news')}
-          disabled={webSearch.isLoading}
-          className="flex items-center gap-2"
-        >
-          <Search className="h-4 w-4" />
-          Latest News
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => handleQuickSearch('financial')}
-          disabled={webSearch.isLoading}
-          className="flex items-center gap-2"
-        >
-          <DollarSign className="h-4 w-4" />
-          Financial Data
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => handleQuickSearch('market')}
-          disabled={webSearch.isLoading}
-          className="flex items-center gap-2"
-        >
-          <TrendingUp className="h-4 w-4" />
-          Market Trends
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => handleQuickSearch('regulatory')}
-          disabled={webSearch.isLoading}
-          className="flex items-center gap-2"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Regulatory Updates
-        </Button>
+      {/* Intelligence Search Controls */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {intelligenceTypes.map((type) => {
+          const Icon = type.icon;
+          const isSearching = activeSearch === type.id;
+          
+          return (
+            <Card key={type.id} className="cursor-pointer hover:shadow-lg transition-all">
+              <CardContent className="p-4">
+                <Button
+                  onClick={() => handleIntelligenceSearch(type.id, type.action)}
+                  disabled={isSearching || isLoading}
+                  className="w-full h-auto p-4 flex flex-col items-center gap-3"
+                  variant="outline"
+                >
+                  <div className={`w-12 h-12 rounded-full ${type.color} flex items-center justify-center`}>
+                    <Icon className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-center">
+                    <div className="font-semibold">{type.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {type.description}
+                    </div>
+                  </div>
+                  {isSearching && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="animate-spin w-3 h-3 border border-current border-t-transparent rounded-full" />
+                      Searching...
+                    </div>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Main Search Interface */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Real-Time Intelligence Search
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="search-query">Search Query</Label>
-              <Input
-                id="search-query"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter your search query..."
-                onKeyPress={(e) => e.key === 'Enter' && handleWebSearch()}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="search-type">Search Type</Label>
-              <Select value={searchType} onValueChange={(value: any) => setSearchType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="competitive">Competitive Analysis</SelectItem>
-                  <SelectItem value="news">News & Announcements</SelectItem>
-                  <SelectItem value="financial">Financial Updates</SelectItem>
-                  <SelectItem value="market">Market Trends</SelectItem>
-                  <SelectItem value="regulatory">Regulatory Changes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timeframe">Timeframe</Label>
-              <Select value={timeframe} onValueChange={(value: any) => setTimeframe(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hour">Last Hour</SelectItem>
-                  <SelectItem value="day">Last 24 Hours</SelectItem>
-                  <SelectItem value="week">Last Week</SelectItem>
-                  <SelectItem value="month">Last Month</SelectItem>
-                  <SelectItem value="quarter">Last Quarter</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button 
-            onClick={handleWebSearch} 
-            disabled={webSearch.isLoading || !searchQuery.trim()}
-            className="w-full"
-          >
-            {webSearch.isLoading ? (
-              <>
-                <Search className="h-4 w-4 mr-2 animate-spin" />
-                Searching Real-Time Data...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4 mr-2" />
-                Search Intelligence
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Intelligence Results */}
+      {searchResults && (
+        <Tabs defaultValue="intelligence" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="intelligence">Intelligence Data</TabsTrigger>
+            <TabsTrigger value="insights">Key Insights</TabsTrigger>
+            <TabsTrigger value="threats">Threats</TabsTrigger>
+            <TabsTrigger value="opportunities">Opportunities</TabsTrigger>
+          </TabsList>
 
-      {/* Search Results */}
-      {webSearch.searchResults && (
-        <div className="space-y-4">
-          {/* Key Insights */}
-          {webSearch.searchResults.insights.length > 0 && (
+          <TabsContent value="intelligence">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Key Intelligence Insights
+                  <Search className="h-5 w-5" />
+                  Live Intelligence Data
                 </CardTitle>
+                <div className="flex flex-wrap gap-2">
+                  {searchResults.metadata?.sources?.map((source, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {source}
+                    </Badge>
+                  ))}
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {webSearch.searchResults.insights.map((insight, index) => (
-                    <div key={index} className="p-3 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{insight.title}</h4>
-                        <Badge variant={insight.impact === 'high' ? 'default' : 'secondary'}>
-                          {insight.impact} impact
-                        </Badge>
+                <div className="space-y-4">
+                  <div className="prose max-w-none">
+                    <h4>Real-Time Market Intelligence</h4>
+                    <div className="whitespace-pre-wrap text-sm">
+                      {searchResults.searchResults.webData}
+                    </div>
+                  </div>
+                  
+                  {searchResults.searchResults.strategicAnalysis && (
+                    <div className="border-t pt-4">
+                      <h4 className="font-semibold mb-2">Strategic Analysis</h4>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {searchResults.searchResults.strategicAnalysis}
                       </div>
-                      <p className="text-sm text-muted-foreground">{insight.description}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-muted-foreground">
-                          Confidence: {(insight.confidence * 100).toFixed(0)}%
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {insight.type}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="insights">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {searchResults.insights?.map((insight, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{insight.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {insight.description}
+                        </p>
+                        <Badge variant="outline" className="mt-2 text-xs">
+                          Confidence: {insight.confidence}%
                         </Badge>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-          {/* Strategic Analysis */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Strategic Analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-sm">
-                  {webSearch.searchResults.searchResults.strategicAnalysis}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Real-Time Data */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Real-Time Web Data
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap text-sm">
-                  {webSearch.searchResults.searchResults.webData}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Threats and Opportunities */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {webSearch.searchResults.threats.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-red-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    Identified Threats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {webSearch.searchResults.threats.map((threat, index) => (
-                      <div key={index} className="p-3 border border-red-200 rounded-lg bg-red-50/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-red-800">{threat.type}</span>
-                          <Badge variant="destructive">{threat.severity}</Badge>
+          <TabsContent value="threats">
+            <div className="space-y-4">
+              {searchResults.threats?.map((threat, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{threat.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {threat.description}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="destructive" className="text-xs">
+                            {threat.severity} severity
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {threat.likelihood} likelihood
+                          </Badge>
                         </div>
-                        <p className="text-sm text-red-700">{threat.description}</p>
-                        <span className="text-xs text-red-600">
-                          Probability: {(threat.probability * 100).toFixed(0)}%
-                        </span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
 
-            {webSearch.searchResults.opportunities.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-600">
-                    <Target className="h-5 w-5" />
-                    Market Opportunities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {webSearch.searchResults.opportunities.map((opportunity, index) => (
-                      <div key={index} className="p-3 border border-green-200 rounded-lg bg-green-50/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-green-800">{opportunity.type}</span>
-                          <Badge variant="secondary">{opportunity.potential}</Badge>
+          <TabsContent value="opportunities">
+            <div className="space-y-4">
+              {searchResults.opportunities?.map((opportunity, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Target className="h-5 w-5 text-green-500 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{opportunity.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {opportunity.description}
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <Badge variant="default" className="text-xs bg-green-600">
+                            {opportunity.potential} potential
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {opportunity.timeframe}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-green-700">{opportunity.description}</p>
-                        <span className="text-xs text-green-600">
-                          Feasibility: {(opportunity.feasibility * 100).toFixed(0)}%
-                        </span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Related Questions */}
-          {webSearch.searchResults.searchResults.relatedQuestions?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Related Search Suggestions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {webSearch.searchResults.searchResults.relatedQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery(question);
-                        handleWebSearch();
-                      }}
-                      className="text-xs"
-                    >
-                      {question}
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Search Metadata</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Search Type:</span>
-                  <div className="text-muted-foreground">{webSearch.searchResults.metadata.searchType}</div>
-                </div>
-                <div>
-                  <span className="font-medium">Timeframe:</span>
-                  <div className="text-muted-foreground">{webSearch.searchResults.metadata.timeframe}</div>
-                </div>
-                <div>
-                  <span className="font-medium">Confidence:</span>
-                  <div className="text-muted-foreground">{(webSearch.searchResults.metadata.dataConfidence * 100).toFixed(0)}%</div>
-                </div>
-                <div>
-                  <span className="font-medium">Sources:</span>
-                  <div className="text-muted-foreground">{webSearch.searchResults.metadata.sources.length} sources</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       )}
 
-      {/* Error Display */}
-      {webSearch.error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Search Error:</strong> {webSearch.error}
-          </AlertDescription>
-        </Alert>
+      {/* Data Quality Metrics */}
+      {searchResults?.metadata && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Intelligence Quality Metrics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {searchResults.metadata.dataConfidence}%
+                </div>
+                <div className="text-xs text-muted-foreground">Data Confidence</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {searchResults.metadata.sources?.length || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Sources</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {searchResults.metrics?.sourceCount || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Validated Points</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {searchResults.searchResults.relatedQuestions?.length || 0}
+                </div>
+                <div className="text-xs text-muted-foreground">Related Topics</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
