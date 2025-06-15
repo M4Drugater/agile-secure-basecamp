@@ -36,27 +36,36 @@ serve(async (req) => {
       });
     }
 
-    const { userId } = await req.json();
-
-    // Get research sessions
-    const { data: sessions, error } = await supabase
-      .from('research_sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    // Use the new enhanced analytics function
+    const { data, error } = await supabase.rpc('get_enhanced_research_analytics', {
+      user_uuid: user.id
+    });
 
     if (error) throw error;
 
-    // Calculate analytics
+    if (!data || data.length === 0) {
+      return new Response(JSON.stringify({
+        totalSessions: 0,
+        totalSourcesFound: 0,
+        averageEffectiveness: 0,
+        topIndustries: [],
+        creditsUsed: 0,
+        timeSpent: 0,
+        favoriteResearchTypes: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const result = data[0];
     const analytics = {
-      totalSessions: sessions.length,
-      totalSourcesFound: sessions.reduce((sum, s) => sum + (s.sources?.length || 0), 0),
-      averageEffectiveness: sessions.length > 0 ? 
-        Math.round(sessions.reduce((sum, s) => sum + (s.effectiveness || 75), 0) / sessions.length) : 0,
-      topIndustries: calculateTopIndustries(sessions),
-      creditsUsed: sessions.reduce((sum, s) => sum + (s.credits_used || 0), 0),
-      timeSpent: sessions.reduce((sum, s) => sum + (s.metadata?.processingTime || 60000), 0) / 1000 / 60, // Convert to minutes
-      favoriteResearchTypes: calculateFavoriteResearchTypes(sessions)
+      totalSessions: result.total_sessions,
+      totalSourcesFound: result.total_sources_found,
+      averageEffectiveness: result.average_effectiveness,
+      topIndustries: result.top_industries || [],
+      creditsUsed: result.credits_used,
+      timeSpent: result.time_spent_minutes,
+      favoriteResearchTypes: result.favorite_research_types || []
     };
 
     return new Response(JSON.stringify(analytics), {
@@ -75,32 +84,3 @@ serve(async (req) => {
     });
   }
 });
-
-function calculateTopIndustries(sessions: any[]): Array<{ industry: string; count: number }> {
-  const industryCount: Record<string, number> = {};
-  
-  sessions.forEach(session => {
-    if (session.industry) {
-      industryCount[session.industry] = (industryCount[session.industry] || 0) + 1;
-    }
-  });
-  
-  return Object.entries(industryCount)
-    .map(([industry, count]) => ({ industry, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-}
-
-function calculateFavoriteResearchTypes(sessions: any[]): Array<{ type: string; count: number }> {
-  const typeCount: Record<string, number> = {};
-  
-  sessions.forEach(session => {
-    if (session.research_type) {
-      typeCount[session.research_type] = (typeCount[session.research_type] || 0) + 1;
-    }
-  });
-  
-  return Object.entries(typeCount)
-    .map(([type, count]) => ({ type, count }))
-    .sort((a, b) => b.count - a.count);
-}

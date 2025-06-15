@@ -1540,47 +1540,71 @@ export type Database = {
       }
       research_sessions: {
         Row: {
+          confidence_threshold: number | null
           content: string
+          context_quality: string | null
           created_at: string
           credits_used: number
+          effectiveness: number | null
           id: string
           industry: string | null
           insights: string[] | null
           keywords: string[] | null
+          metadata: Json | null
           model_used: string
+          output_format: string | null
           query: string
           research_type: string
+          session_id: string | null
+          source_filters: string[] | null
           sources: Json | null
+          time_filter: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          confidence_threshold?: number | null
           content: string
+          context_quality?: string | null
           created_at?: string
           credits_used?: number
+          effectiveness?: number | null
           id?: string
           industry?: string | null
           insights?: string[] | null
           keywords?: string[] | null
+          metadata?: Json | null
           model_used: string
+          output_format?: string | null
           query: string
           research_type: string
+          session_id?: string | null
+          source_filters?: string[] | null
           sources?: Json | null
+          time_filter?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          confidence_threshold?: number | null
           content?: string
+          context_quality?: string | null
           created_at?: string
           credits_used?: number
+          effectiveness?: number | null
           id?: string
           industry?: string | null
           insights?: string[] | null
           keywords?: string[] | null
+          metadata?: Json | null
           model_used?: string
+          output_format?: string | null
           query?: string
           research_type?: string
+          session_id?: string | null
+          source_filters?: string[] | null
           sources?: Json | null
+          time_filter?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2216,6 +2240,19 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_enhanced_research_analytics: {
+        Args: { user_uuid: string }
+        Returns: {
+          total_sessions: number
+          total_sources_found: number
+          average_effectiveness: number
+          top_industries: Json
+          credits_used: number
+          time_spent_minutes: number
+          favorite_research_types: Json
+          recent_activity: Json
+        }[]
       }
       get_knowledge_recommendations: {
         Args: { search_text: string; user_uuid?: string }

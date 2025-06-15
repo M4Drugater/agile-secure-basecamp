@@ -110,7 +110,7 @@ export function useEliteResearchEngine() {
     }
   });
 
-  // Load research sessions with advanced filtering
+  // Load research sessions with enhanced data structure
   const { data: researchSessions, isLoading: isLoadingSessions } = useQuery({
     queryKey: ['research-sessions', user?.id],
     queryFn: async () => {
@@ -151,18 +151,40 @@ export function useEliteResearchEngine() {
     enabled: !!user,
   });
 
-  // Load research analytics
+  // Load research analytics using the new enhanced function
   const { data: analytics } = useQuery({
     queryKey: ['research-analytics', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase.functions.invoke('get-research-analytics', {
-        body: { userId: user.id }
+      const { data, error } = await supabase.rpc('get_enhanced_research_analytics', {
+        user_uuid: user.id
       });
 
       if (error) throw error;
-      return data as ResearchAnalytics;
+      
+      if (!data || data.length === 0) {
+        return {
+          totalSessions: 0,
+          totalSourcesFound: 0,
+          averageEffectiveness: 0,
+          topIndustries: [],
+          creditsUsed: 0,
+          timeSpent: 0,
+          favoriteResearchTypes: []
+        };
+      }
+
+      const result = data[0];
+      return {
+        totalSessions: result.total_sessions,
+        totalSourcesFound: result.total_sources_found,
+        averageEffectiveness: result.average_effectiveness,
+        topIndustries: result.top_industries || [],
+        creditsUsed: result.credits_used,
+        timeSpent: result.time_spent_minutes,
+        favoriteResearchTypes: result.favorite_research_types || []
+      } as ResearchAnalytics;
     },
     enabled: !!user,
   });

@@ -1,11 +1,10 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -13,54 +12,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface EliteResearchRequest {
-  query: string;
-  researchType: 'quick-scan' | 'comprehensive' | 'industry-deep-dive' | 'competitive-analysis';
-  industry?: string;
-  model?: 'llama-3.1-sonar-small-128k-online' | 'llama-3.1-sonar-large-128k-online';
-  contextLevel?: 'basic' | 'enhanced' | 'elite';
-  outputFormat?: 'executive-brief' | 'detailed-analysis' | 'data-points' | 'strategic-insights';
-  sourceFilters?: string[];
-  timeFilter?: 'day' | 'week' | 'month' | 'quarter' | 'year';
-  confidenceThreshold?: number;
-  userId: string;
-}
-
-interface ResearchSource {
-  title: string;
-  url: string;
-  snippet: string;
-  relevance: number;
-  domain: string;
-  publishDate?: string;
-  author?: string;
-  credibilityScore: number;
-  sourceType: 'academic' | 'news' | 'industry' | 'government' | 'corporate';
-}
-
-interface ResearchResponse {
-  id: string;
-  query: string;
-  content: string;
-  sources: ResearchSource[];
-  insights: string[];
-  keywords: string[];
-  researchType: string;
-  industry?: string;
-  creditsUsed: number;
-  modelUsed: string;
-  createdAt: string;
-  effectiveness: number;
-  contextQuality: string;
-  outputFormat: string;
-  metadata: {
-    processingTime: number;
-    sourceCount: number;
-    confidenceScore: number;
-    strategicValue: number;
-  };
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -86,34 +37,27 @@ serve(async (req) => {
       });
     }
 
-    if (!perplexityApiKey) {
-      return new Response(JSON.stringify({ 
-        error: 'Research service not configured',
-        message: 'Please contact support to configure the research engine.'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const {
+      query,
+      researchType,
+      industry,
+      model = 'llama-3.1-sonar-large-128k-online',
+      contextLevel = 'elite',
+      outputFormat = 'detailed-analysis',
+      sourceFilters = [],
+      timeFilter = 'month',
+      confidenceThreshold = 0.8,
+      userId
+    } = await req.json();
 
-    const request: EliteResearchRequest = await req.json();
-    const sessionId = crypto.randomUUID();
+    console.log('Elite Research Request:', { query, researchType, model, contextLevel });
+
     const startTime = Date.now();
 
-    console.log('Elite Research Request:', {
-      userId: user.id,
-      query: request.query,
-      researchType: request.researchType,
-      contextLevel: request.contextLevel,
-      sessionId
-    });
+    // Enhanced prompt based on research type and context level
+    const enhancedPrompt = buildElitePrompt(query, researchType, industry, contextLevel, outputFormat);
 
-    // Build elite research prompt
-    const prompt = buildEliteResearchPrompt(request);
-    
-    // Configure model settings based on research type
-    const modelConfig = getModelConfiguration(request);
-
+    // Make request to Perplexity with elite parameters
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -121,133 +65,97 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ...modelConfig,
+        model: model,
         messages: [
           {
             role: 'system',
-            content: buildSystemPrompt(request)
+            content: 'You are an elite research analyst providing Fortune 500-quality insights with strategic depth and actionable intelligence.'
           },
           {
             role: 'user',
-            content: prompt
+            content: enhancedPrompt
           }
         ],
-        return_images: false,
-        return_related_questions: false,
-        search_domain_filter: request.sourceFilters || ['reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com', 'harvard.edu', 'mit.edu'],
-        search_recency_filter: request.timeFilter || 'month',
+        temperature: 0.2,
+        max_tokens: 4000,
+        return_citations: true,
+        search_domain_filter: sourceFilters.length > 0 ? sourceFilters : undefined,
+        search_recency_filter: timeFilter
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Perplexity API error: ${response.status} - ${errorData}`);
+      throw new Error(`Perplexity API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content;
-    const usage = data.usage || {};
-    
-    if (!content) {
-      throw new Error('No content returned from research API');
-    }
-
+    const result = await response.json();
     const processingTime = Date.now() - startTime;
 
-    // Extract enhanced data
-    const sources = extractEliteSources(content);
-    const insights = extractStrategicInsights(content, request.outputFormat);
-    const keywords = extractKeywords(request.query, content);
-    
-    // Calculate effectiveness and strategic value
-    const effectiveness = calculateEffectiveness(sources, insights, request);
-    const strategicValue = calculateStrategicValue(content, sources, request);
-    const confidenceScore = calculateConfidenceScore(sources, content);
+    // Process and enhance the response
+    const processedResult = processEliteResearchResponse(
+      result,
+      researchType,
+      outputFormat,
+      processingTime
+    );
 
-    // Calculate credits used
-    const creditsUsed = calculateCreditsUsed(request, usage);
+    // Calculate credits based on research complexity
+    const creditsUsed = calculateCreditsUsed(researchType, model, contextLevel);
 
-    const researchResponse: ResearchResponse = {
-      id: sessionId,
-      query: request.query,
-      content,
-      sources,
-      insights,
-      keywords,
-      researchType: request.researchType,
-      industry: request.industry,
+    // Store the research session
+    const { data: sessionData, error: insertError } = await supabase
+      .from('research_sessions')
+      .insert({
+        user_id: userId,
+        query,
+        research_type: researchType,
+        industry,
+        content: processedResult.content,
+        sources: processedResult.sources,
+        insights: processedResult.insights,
+        keywords: processedResult.keywords,
+        credits_used: creditsUsed,
+        model_used: model,
+        effectiveness: processedResult.effectiveness,
+        context_quality: contextLevel,
+        output_format: outputFormat,
+        metadata: {
+          processingTime,
+          sourceCount: processedResult.sources.length,
+          confidenceScore: processedResult.confidenceScore,
+          strategicValue: processedResult.strategicValue
+        }
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error storing research session:', insertError);
+      throw insertError;
+    }
+
+    return new Response(JSON.stringify({
+      id: sessionData.id,
+      query,
+      content: processedResult.content,
+      sources: processedResult.sources,
+      insights: processedResult.insights,
+      keywords: processedResult.keywords,
+      researchType,
+      industry,
       creditsUsed,
-      modelUsed: request.model || 'llama-3.1-sonar-large-128k-online',
-      createdAt: new Date().toISOString(),
-      effectiveness,
-      contextQuality: request.contextLevel || 'elite',
-      outputFormat: request.outputFormat || 'detailed-analysis',
+      modelUsed: model,
+      createdAt: sessionData.created_at,
+      effectiveness: processedResult.effectiveness,
+      contextQuality: contextLevel,
+      outputFormat,
       metadata: {
         processingTime,
-        sourceCount: sources.length,
-        confidenceScore,
-        strategicValue
+        sourceCount: processedResult.sources.length,
+        confidenceScore: processedResult.confidenceScore,
+        strategicValue: processedResult.strategicValue
       }
-    };
-
-    // Save research session
-    try {
-      await supabase
-        .from('research_sessions')
-        .insert({
-          id: sessionId,
-          user_id: user.id,
-          query: request.query,
-          research_type: request.researchType,
-          industry: request.industry,
-          content,
-          sources: sources,
-          insights: insights,
-          keywords: keywords,
-          credits_used: creditsUsed,
-          model_used: request.model || 'llama-3.1-sonar-large-128k-online',
-          effectiveness,
-          context_quality: request.contextLevel || 'elite',
-          output_format: request.outputFormat || 'detailed-analysis',
-          metadata: researchResponse.metadata
-        });
-    } catch (saveError) {
-      console.error('Failed to save research session:', saveError);
-    }
-
-    // Log usage for cost tracking
-    try {
-      await supabase.from('ai_usage_logs').insert({
-        user_id: user.id,
-        function_name: 'elite-research-engine',
-        model_name: request.model || 'llama-3.1-sonar-large-128k-online',
-        input_tokens: usage.prompt_tokens || 0,
-        output_tokens: usage.completion_tokens || 0,
-        total_cost: calculateCost(request.model || 'llama-3.1-sonar-large-128k-online', usage),
-        request_duration: processingTime,
-        status: 'success',
-        metadata: {
-          research_type: request.researchType,
-          context_level: request.contextLevel,
-          effectiveness,
-          strategic_value: strategicValue,
-          sources_found: sources.length
-        }
-      });
-    } catch (logError) {
-      console.error('Failed to log usage:', logError);
-    }
-
-    console.log('Elite Research Success:', {
-      userId: user.id,
-      sessionId,
-      sourcesFound: sources.length,
-      effectiveness,
-      strategicValue,
-      processingTime: `${processingTime}ms`
-    });
-
-    return new Response(JSON.stringify(researchResponse), {
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -256,8 +164,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       error: 'Research engine error',
-      message: 'An error occurred while conducting research. Please try again.',
-      details: error.message
+      message: error.message || 'Failed to conduct research.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -265,235 +172,208 @@ serve(async (req) => {
   }
 });
 
-function buildSystemPrompt(request: EliteResearchRequest): string {
-  const basePrompt = `You are an elite Fortune 500-grade research analyst with expertise in strategic intelligence and competitive analysis. Your task is to conduct ${request.researchType} research that meets C-suite standards.`;
-
-  const contextPrompts = {
-    'quick-scan': 'Provide rapid but comprehensive insights focusing on key data points and immediate strategic implications.',
-    'comprehensive': 'Conduct thorough analysis with multiple perspectives, detailed source validation, and strategic recommendations.',
-    'industry-deep-dive': 'Focus on industry-specific trends, competitive dynamics, regulatory environment, and market opportunities.',
-    'competitive-analysis': 'Analyze competitive positioning, market share dynamics, strategic moves, and competitive advantages.'
-  };
-
-  const outputFormatPrompts = {
-    'executive-brief': 'Structure as executive briefing: Executive Summary, Key Findings, Strategic Implications, Recommendations.',
-    'detailed-analysis': 'Provide comprehensive analysis with detailed sourcing, methodology, and multi-faceted insights.',
-    'data-points': 'Focus on quantified metrics, statistics, financial data, and measurable trends.',
-    'strategic-insights': 'Emphasize strategic implications, market opportunities, and actionable intelligence.'
-  };
-
-  return `${basePrompt}
-
-${contextPrompts[request.researchType]}
-
-Output Requirements:
-${outputFormatPrompts[request.outputFormat || 'detailed-analysis']}
-
-Quality Standards:
-- Use only high-credibility sources (academic, established news, industry reports)
-- Provide specific, quantified insights where possible
-- Include source attribution and publication dates
-- Focus on actionable intelligence
-- Maintain objective, analytical tone
-${request.industry ? `- Emphasize ${request.industry} industry context` : ''}
-
-Always structure your response with clear sections and provide direct links to sources.`;
-}
-
-function buildEliteResearchPrompt(request: EliteResearchRequest): string {
-  const industryContext = request.industry ? `Industry Context: ${request.industry}` : '';
+function buildElitePrompt(query: string, researchType: string, industry?: string, contextLevel?: string, outputFormat?: string): string {
+  const basePrompt = `Conduct ${researchType} research on: "${query}"`;
   
-  return `Research Query: ${request.query}
-
-${industryContext}
-
-Research Scope: ${request.researchType}
-Output Format: ${request.outputFormat || 'detailed-analysis'}
-Context Level: ${request.contextLevel || 'elite'}
-
-Please conduct comprehensive research focusing on:
-1. Current market state and recent developments
-2. Key data points, statistics, and trends
-3. Expert opinions and industry insights
-4. Strategic implications and opportunities
-5. Future outlook and predictions
-
-Requirements:
-- Find 8-15 high-quality sources with working links
-- Include publication dates and author credibility
-- Provide specific data points and metrics
-- Focus on recent developments (last ${request.timeFilter || 'month'})
-- Maintain Fortune 500 analytical standards`;
-}
-
-function getModelConfiguration(request: EliteResearchRequest) {
-  const baseConfig = {
-    model: request.model || 'llama-3.1-sonar-large-128k-online',
-    temperature: 0.1,
-    top_p: 0.9,
-    frequency_penalty: 0.1,
-    presence_penalty: 0.1
-  };
-
-  const typeConfigs = {
-    'quick-scan': { ...baseConfig, max_tokens: 2000 },
-    'comprehensive': { ...baseConfig, max_tokens: 4000 },
-    'industry-deep-dive': { ...baseConfig, max_tokens: 5000 },
-    'competitive-analysis': { ...baseConfig, max_tokens: 4500 }
-  };
-
-  return typeConfigs[request.researchType] || typeConfigs.comprehensive;
-}
-
-function extractEliteSources(content: string): ResearchSource[] {
-  const sources: ResearchSource[] = [];
-  const urlRegex = /https?:\/\/[^\s)]+/g;
-  const urls = [...new Set(content.match(urlRegex) || [])];
+  let enhancedPrompt = basePrompt;
   
-  for (let i = 0; i < Math.min(urls.length, 15); i++) {
-    const url = urls[i];
-    try {
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname.replace('www.', '');
-      
-      const urlIndex = content.indexOf(url);
-      const contextStart = Math.max(0, urlIndex - 200);
-      const contextEnd = Math.min(content.length, urlIndex + 200);
-      const context = content.substring(contextStart, contextEnd);
-      
-      const sentences = context.split(/[.!?]+/);
-      const meaningfulSentence = sentences.find(s => s.length > 30 && s.length < 200);
-      
-      const credibilityScore = calculateSourceCredibility(domain);
-      const sourceType = determineSourceType(domain);
-      
-      sources.push({
-        title: extractTitleFromContext(context) || `Research Source ${i + 1}`,
-        url: url,
-        snippet: meaningfulSentence?.trim() || `Quality source from ${domain}`,
-        relevance: 1 - (i * 0.05),
-        domain: domain,
-        publishDate: extractDateFromContext(context),
-        author: extractAuthorFromContext(context),
-        credibilityScore,
-        sourceType
-      });
-    } catch (error) {
-      console.warn('Failed to parse URL:', url);
-    }
+  if (industry) {
+    enhancedPrompt += ` in the ${industry} industry`;
   }
   
-  return sources.sort((a, b) => b.credibilityScore - a.credibilityScore);
+  enhancedPrompt += '\n\nProvide:';
+  
+  switch (researchType) {
+    case 'quick-scan':
+      enhancedPrompt += '\n- Executive summary with key findings\n- 3-5 critical insights\n- Immediate action items';
+      break;
+    case 'comprehensive':
+      enhancedPrompt += '\n- In-depth analysis with multiple perspectives\n- Strategic implications\n- Market trends and patterns\n- Competitive landscape overview\n- Risk and opportunity assessment';
+      break;
+    case 'industry-deep-dive':
+      enhancedPrompt += '\n- Comprehensive industry analysis\n- Market dynamics and trends\n- Key players and competitive positioning\n- Regulatory environment\n- Future outlook and predictions\n- Investment implications';
+      break;
+    case 'competitive-analysis':
+      enhancedPrompt += '\n- Detailed competitor profiles\n- Market positioning analysis\n- Competitive advantages and weaknesses\n- Strategic moves and initiatives\n- Market share dynamics\n- Competitive threats and opportunities';
+      break;
+  }
+  
+  if (contextLevel === 'elite') {
+    enhancedPrompt += '\n\nProvide Fortune 500-quality strategic insights with:';
+    enhancedPrompt += '\n- Executive-level strategic recommendations';
+    enhancedPrompt += '\n- Quantifiable metrics where available';
+    enhancedPrompt += '\n- Risk mitigation strategies';
+    enhancedPrompt += '\n- Implementation roadmap suggestions';
+  }
+  
+  return enhancedPrompt;
 }
 
-function extractStrategicInsights(content: string, outputFormat?: string): string[] {
-  const insights: string[] = [];
-  const lines = content.split('\n');
+function processEliteResearchResponse(result: any, researchType: string, outputFormat: string, processingTime: number) {
+  const content = result.choices[0]?.message?.content || '';
+  const citations = result.citations || [];
   
-  const insightIndicators = [
-    /key findings?:/i,
-    /strategic implications?:/i,
-    /opportunities?:/i,
-    /trends?:/i,
-    /insights?:/i,
-    /conclusions?:/i,
-    /recommendations?:/i
+  // Extract insights from content
+  const insights = extractInsights(content, researchType);
+  
+  // Extract keywords
+  const keywords = extractKeywords(content);
+  
+  // Process sources from citations
+  const sources = citations.map((citation: any, index: number) => ({
+    title: citation.title || `Source ${index + 1}`,
+    url: citation.url || '',
+    snippet: citation.snippet || '',
+    relevance: calculateRelevance(citation, content),
+    domain: extractDomain(citation.url || ''),
+    credibilityScore: calculateCredibilityScore(citation.url || ''),
+    sourceType: categorizeSource(citation.url || '')
+  }));
+  
+  // Calculate effectiveness score
+  const effectiveness = calculateEffectiveness(content, sources, insights, processingTime);
+  
+  return {
+    content,
+    sources,
+    insights,
+    keywords,
+    effectiveness,
+    confidenceScore: calculateConfidenceScore(sources, content),
+    strategicValue: calculateStrategicValue(insights, researchType)
+  };
+}
+
+function extractInsights(content: string, researchType: string): string[] {
+  // Extract key insights based on content patterns
+  const insights: string[] = [];
+  
+  // Look for bullet points, numbered lists, or key findings
+  const patterns = [
+    /(?:Key insights?|Main findings?|Critical points?)[:\s]*(.*?)(?:\n\n|\n(?=[A-Z])|\n$)/gis,
+    /(?:Strategic implications?|Important considerations?)[:\s]*(.*?)(?:\n\n|\n(?=[A-Z])|\n$)/gis,
+    /(?:Recommendations?|Action items?)[:\s]*(.*?)(?:\n\n|\n(?=[A-Z])|\n$)/gis
   ];
   
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Look for lines that contain strategic insights
-    if (trimmed.length > 50 && trimmed.length < 300) {
-      if (insightIndicators.some(pattern => pattern.test(trimmed)) ||
-          trimmed.includes('%') || 
-          trimmed.includes('$') || 
-          trimmed.includes('growth') ||
-          trimmed.includes('market') ||
-          /\d+/.test(trimmed)) {
-        
-        const cleaned = trimmed.replace(/^[•\-\*\d\.]+\s*/, '');
-        if (cleaned.length > 30) {
-          insights.push(cleaned);
+  patterns.forEach(pattern => {
+    const matches = content.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        const cleanMatch = match.replace(/(?:Key insights?|Main findings?|Critical points?|Strategic implications?|Important considerations?|Recommendations?|Action items?)[:\s]*/i, '').trim();
+        if (cleanMatch.length > 20) {
+          insights.push(cleanMatch);
         }
-      }
+      });
     }
-  }
+  });
   
-  return insights.slice(0, 8);
+  return insights.slice(0, 5); // Limit to top 5 insights
 }
 
-function extractKeywords(query: string, content: string): string[] {
-  const queryWords = query.toLowerCase().split(' ').filter(word => word.length > 3);
-  const contentWords = content.toLowerCase().match(/\b[a-z]{4,}\b/g) || [];
-  const frequency: Record<string, number> = {};
+function extractKeywords(content: string): string[] {
+  // Extract important keywords and phrases
+  const keywords = new Set<string>();
   
-  const stopWords = new Set(['that', 'this', 'with', 'from', 'they', 'have', 'will', 'been', 'said', 'each', 'which', 'their', 'time', 'more', 'very', 'what', 'know', 'just', 'first', 'into', 'over', 'think', 'also', 'your', 'work', 'life', 'only', 'new', 'years', 'way', 'may', 'say']);
+  // Common business and research terms
+  const importantTerms = content.match(/\b(?:market|strategy|competitive|growth|trend|innovation|technology|digital|transformation|revenue|profit|customer|industry|sector|analysis|forecast|opportunity|risk|challenge|solution)\w*\b/gi);
   
-  for (const word of contentWords) {
-    if (!queryWords.includes(word) && !stopWords.has(word) && word.length > 3) {
-      frequency[word] = (frequency[word] || 0) + 1;
-    }
+  if (importantTerms) {
+    importantTerms.forEach(term => keywords.add(term.toLowerCase()));
   }
   
-  return Object.entries(frequency)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([word]) => word);
+  return Array.from(keywords).slice(0, 10);
 }
 
-function calculateEffectiveness(sources: ResearchSource[], insights: string[], request: EliteResearchRequest): number {
+function calculateRelevance(citation: any, content: string): number {
+  // Calculate relevance based on citation usage in content
+  if (!citation.url) return 0.5;
+  
+  const domain = extractDomain(citation.url);
+  const mentions = (content.match(new RegExp(domain, 'gi')) || []).length;
+  
+  return Math.min(0.3 + (mentions * 0.2), 1.0);
+}
+
+function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace('www.', '');
+  } catch {
+    return 'unknown';
+  }
+}
+
+function calculateCredibilityScore(url: string): number {
+  const domain = extractDomain(url);
+  
+  // High credibility domains
+  const highCredibility = ['bloomberg.com', 'reuters.com', 'wsj.com', 'ft.com', 'harvard.edu', 'mit.edu', 'mckinsey.com'];
+  const mediumCredibility = ['forbes.com', 'businessinsider.com', 'techcrunch.com', 'wired.com'];
+  
+  if (highCredibility.some(d => domain.includes(d))) return 0.9;
+  if (mediumCredibility.some(d => domain.includes(d))) return 0.7;
+  if (domain.includes('.edu') || domain.includes('.gov')) return 0.8;
+  
+  return 0.6;
+}
+
+function categorizeSource(url: string): 'academic' | 'news' | 'industry' | 'government' | 'corporate' {
+  const domain = extractDomain(url);
+  
+  if (domain.includes('.edu')) return 'academic';
+  if (domain.includes('.gov')) return 'government';
+  if (['bloomberg.com', 'reuters.com', 'wsj.com', 'ft.com'].some(d => domain.includes(d))) return 'news';
+  if (['mckinsey.com', 'bcg.com', 'bain.com'].some(d => domain.includes(d))) return 'industry';
+  
+  return 'corporate';
+}
+
+function calculateEffectiveness(content: string, sources: any[], insights: string[], processingTime: number): number {
   let score = 50; // Base score
   
-  // Source quality bonus
+  // Content quality (40 points)
+  if (content.length > 1000) score += 10;
+  if (content.length > 2000) score += 10;
+  if (insights.length >= 3) score += 10;
+  if (insights.length >= 5) score += 10;
+  
+  // Source quality (30 points)
   const avgCredibility = sources.reduce((sum, s) => sum + s.credibilityScore, 0) / sources.length;
-  score += avgCredibility * 20;
+  score += Math.round(avgCredibility * 30);
   
-  // Source quantity bonus
-  score += Math.min(sources.length * 2, 20);
+  // Processing efficiency (20 points)
+  if (processingTime < 30000) score += 20;
+  else if (processingTime < 60000) score += 10;
   
-  // Insights quality bonus
-  score += Math.min(insights.length * 3, 15);
-  
-  // Research type complexity bonus
-  const complexityBonus = {
-    'quick-scan': 0,
-    'comprehensive': 5,
-    'industry-deep-dive': 8,
-    'competitive-analysis': 10
-  };
-  score += complexityBonus[request.researchType] || 0;
-  
-  return Math.min(Math.round(score), 100);
+  return Math.min(score, 100);
 }
 
-function calculateStrategicValue(content: string, sources: ResearchSource[], request: EliteResearchRequest): number {
-  let value = 60; // Base value
+function calculateConfidenceScore(sources: any[], content: string): number {
+  const sourceQuality = sources.reduce((sum, s) => sum + s.credibilityScore, 0) / sources.length;
+  const contentDepth = Math.min(content.length / 2000, 1);
   
-  // Content depth
-  value += Math.min(content.length / 100, 15);
+  return Math.round((sourceQuality * 0.6 + contentDepth * 0.4) * 100);
+}
+
+function calculateStrategicValue(insights: string[], researchType: string): number {
+  let value = 60; // Base strategic value
   
-  // Source diversity
-  const uniqueDomains = new Set(sources.map(s => s.domain)).size;
-  value += uniqueDomains * 2;
+  // Insight quality
+  value += insights.length * 5;
   
-  // Industry relevance
-  if (request.industry && content.toLowerCase().includes(request.industry.toLowerCase())) {
-    value += 10;
-  }
+  // Research type complexity
+  const typeMultipliers = {
+    'quick-scan': 1.0,
+    'comprehensive': 1.2,
+    'industry-deep-dive': 1.3,
+    'competitive-analysis': 1.4
+  };
+  
+  value *= typeMultipliers[researchType as keyof typeof typeMultipliers] || 1.0;
   
   return Math.min(Math.round(value), 100);
 }
 
-function calculateConfidenceScore(sources: ResearchSource[], content: string): number {
-  const avgCredibility = sources.reduce((sum, s) => sum + s.credibilityScore, 0) / sources.length;
-  const contentQuality = Math.min(content.length / 50, 100);
-  const sourceCount = Math.min(sources.length * 5, 50);
-  
-  return Math.round((avgCredibility * 40 + contentQuality * 30 + sourceCount * 30) / 100);
-}
-
-function calculateCreditsUsed(request: EliteResearchRequest, usage: any): number {
+function calculateCreditsUsed(researchType: string, model: string, contextLevel: string): number {
   const baseCredits = {
     'quick-scan': 2,
     'comprehensive': 5,
@@ -501,65 +381,8 @@ function calculateCreditsUsed(request: EliteResearchRequest, usage: any): number
     'competitive-analysis': 10
   };
   
-  const modelMultiplier = request.model === 'llama-3.1-sonar-large-128k-online' ? 1.5 : 1;
-  const contextMultiplier = request.contextLevel === 'elite' ? 1.3 : 1;
+  const modelMultiplier = model === 'llama-3.1-sonar-large-128k-online' ? 1.5 : 1;
+  const contextMultiplier = contextLevel === 'elite' ? 1.3 : 1;
   
-  return Math.ceil(baseCredits[request.researchType] * modelMultiplier * contextMultiplier);
-}
-
-function calculateCost(model: string, usage: any): number {
-  const pricing = {
-    'llama-3.1-sonar-large-128k-online': { input: 0.000005, output: 0.000015 },
-    'llama-3.1-sonar-small-128k-online': { input: 0.000001, output: 0.000003 }
-  };
-  
-  const rates = pricing[model] || pricing['llama-3.1-sonar-large-128k-online'];
-  return (usage.prompt_tokens || 0) * rates.input + (usage.completion_tokens || 0) * rates.output;
-}
-
-function calculateSourceCredibility(domain: string): number {
-  const highCredibility = ['reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com', 'harvard.edu', 'mit.edu', 'nature.com'];
-  const mediumCredibility = ['techcrunch.com', 'forbes.com', 'businessinsider.com', 'economist.com'];
-  
-  if (highCredibility.includes(domain)) return 95;
-  if (mediumCredibility.includes(domain)) return 80;
-  if (domain.includes('.edu')) return 90;
-  if (domain.includes('.gov')) return 95;
-  
-  return 70;
-}
-
-function determineSourceType(domain: string): 'academic' | 'news' | 'industry' | 'government' | 'corporate' {
-  if (domain.includes('.edu')) return 'academic';
-  if (domain.includes('.gov')) return 'government';
-  if (['reuters.com', 'bloomberg.com', 'wsj.com', 'ft.com'].includes(domain)) return 'news';
-  if (['techcrunch.com', 'forbes.com', 'businessinsider.com'].includes(domain)) return 'industry';
-  
-  return 'corporate';
-}
-
-function extractTitleFromContext(context: string): string | undefined {
-  const titlePatterns = [
-    /title:\s*([^\.!\?]+)/i,
-    /headline:\s*([^\.!\?]+)/i,
-    /"([^"]{20,80})"/,
-    /^([A-Z][^\.!\?]{20,80})/
-  ];
-  
-  for (const pattern of titlePatterns) {
-    const match = context.match(pattern);
-    if (match) return match[1].trim();
-  }
-  
-  return undefined;
-}
-
-function extractDateFromContext(context: string): string | undefined {
-  const dateMatch = context.match(/(\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\w+ \d{1,2}, \d{4})/);
-  return dateMatch ? dateMatch[1] : undefined;
-}
-
-function extractAuthorFromContext(context: string): string | undefined {
-  const authorMatch = context.match(/(?:by|author|written by)\s+([A-Z][a-z]+ [A-Z][a-z]+)/i);
-  return authorMatch ? authorMatch[1] : undefined;
+  return Math.ceil(baseCredits[researchType as keyof typeof baseCredits] * modelMultiplier * contextMultiplier);
 }
