@@ -1,19 +1,17 @@
 
 import { useOutputLoader } from './useOutputLoader';
 import { useOutputGenerator } from './useOutputGenerator';
+import { useOutputFinalization } from './useOutputFinalization';
 
 export function useIntelligentOutputs() {
   const { outputs, setOutputs, loadOutputs } = useOutputLoader();
   const { generateOutput, isGenerating } = useOutputGenerator();
-
-  const finalizeOutput = async (outputId: string) => {
-    // Implementation for finalizing output
-    console.log('Finalizing output:', outputId);
-  };
+  const { finalizeOutput, isFinalizingOutput } = useOutputFinalization();
 
   return {
     outputs,
     isGenerating,
+    isFinalizingOutput,
     loadOutputs,
     generateOutput: async (request: any) => {
       const output = await generateOutput(request);
