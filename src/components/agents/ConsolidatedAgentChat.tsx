@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,7 +11,10 @@ import {
   RefreshCw, 
   Settings,
   Zap,
-  Bot
+  Bot,
+  Clock,
+  Target,
+  Globe
 } from 'lucide-react';
 import { useConsolidatedAgentSystem } from '@/hooks/agents/useConsolidatedAgentSystem';
 import { ChatMessage } from '@/components/competitive-intelligence/ChatMessage';
@@ -72,6 +74,10 @@ export function ConsolidatedAgentChat({
     setInputMessage('');
   };
 
+  const requiresConfig = (agentId: string) => {
+    return ['cdv', 'cir', 'cia'].includes(agentId);
+  };
+
   const handleQuickSetup = () => {
     const quickConfig = {
       companyName: 'Mi Empresa',
@@ -90,10 +96,6 @@ export function ConsolidatedAgentChat({
       onUpdateConfig?.(localConfig);
       setShowQuickSetup(false);
     }
-  };
-
-  const requiresConfig = (agentId: string) => {
-    return ['cdv', 'cir', 'cia'].includes(agentId);
   };
 
   // Show quick setup if configuration is required but missing
@@ -213,12 +215,13 @@ export function ConsolidatedAgentChat({
 
   const hasErrorMessages = messages.some(msg => msg.hasError);
   const lastMessage = messages[messages.length - 1];
-  const validationScore = lastMessage?.metadata?.validationScore || 0;
-  const isCompetitiveAgent = ['cdv', 'cir', 'cia'].includes(selectedAgent.id);
+  const tripartiteMetrics = lastMessage?.metadata?.tripartiteMetrics;
+  const qualityScore = lastMessage?.metadata?.qualityScore || 0;
+  const isTripartiteEnabled = lastMessage?.metadata?.tripartiteFlow;
 
   return (
     <Card className="h-full flex flex-col">
-      {/* Header */}
+      {/* Enhanced Header with Tripartite Status */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -226,19 +229,26 @@ export function ConsolidatedAgentChat({
             <h3 className="font-semibold">{selectedAgent.name}</h3>
           </div>
           <div className="flex items-center gap-2">
-            {isCompetitiveAgent && (
-              <Badge variant="outline" className="text-green-600 border-green-600">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Web Data Enabled
+            {isTripartiteEnabled && (
+              <Badge variant="outline" className="text-purple-600 border-purple-600">
+                <Zap className="h-3 w-3 mr-1" />
+                Tripartite Unified
               </Badge>
             )}
-            {lastMessage?.metadata?.hasValidWebData && (
+            {tripartiteMetrics && (
               <Badge variant="outline" className={
-                validationScore >= 75 ? 'text-green-600 border-green-600' :
-                validationScore >= 50 ? 'text-yellow-600 border-yellow-600' :
+                qualityScore >= 0.8 ? 'text-green-600 border-green-600' :
+                qualityScore >= 0.6 ? 'text-yellow-600 border-yellow-600' :
                 'text-red-600 border-red-600'
               }>
-                Validación: {validationScore}%
+                <Target className="h-3 w-3 mr-1" />
+                Quality: {Math.round(qualityScore * 100)}%
+              </Badge>
+            )}
+            {tripartiteMetrics?.webSources?.length > 0 && (
+              <Badge variant="outline" className="text-blue-600 border-blue-600">
+                <Globe className="h-3 w-3 mr-1" />
+                {tripartiteMetrics.webSources.length} Sources
               </Badge>
             )}
           </div>
@@ -247,24 +257,38 @@ export function ConsolidatedAgentChat({
           {selectedAgent.description}
           {localConfig.companyName && ` • ${localConfig.companyName} • ${localConfig.industry}`}
         </p>
+        
+        {/* Tripartite Flow Indicator */}
+        {isTripartiteEnabled && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-purple-600">
+            <CheckCircle className="h-3 w-3" />
+            <span>OpenAI</span>
+            <span>→</span>
+            <CheckCircle className="h-3 w-3" />
+            <span>Perplexity</span>
+            <span>→</span>
+            <CheckCircle className="h-3 w-3" />
+            <span>Claude</span>
+          </div>
+        )}
       </div>
 
       <CardContent className="flex-1 flex flex-col space-y-4">
-        {/* Status alerts for competitive intelligence agents */}
-        {isCompetitiveAgent && validationScore >= 75 && (
+        {/* Enhanced Status Alerts */}
+        {isTripartiteEnabled && qualityScore >= 0.8 && (
           <Alert className="border-green-200 bg-green-50">
             <Shield className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              ✅ Datos web verificados con alta confianza ({validationScore}%)
+              ✅ Sistema Tripartite funcionando óptimamente - Calidad: {Math.round(qualityScore * 100)}%
             </AlertDescription>
           </Alert>
         )}
 
-        {isCompetitiveAgent && validationScore > 0 && validationScore < 75 && (
+        {isTripartiteEnabled && qualityScore > 0 && qualityScore < 0.8 && (
           <Alert className="border-yellow-200 bg-yellow-50">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
-              ⚠️ Validación parcial de datos web ({validationScore}%)
+              ⚠️ Flujo tripartite parcial - Calidad: {Math.round(qualityScore * 100)}%
             </AlertDescription>
           </Alert>
         )}
@@ -273,7 +297,7 @@ export function ConsolidatedAgentChat({
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span>Error detectado en el sistema</span>
+              <span>Error en sistema tripartite unificado</span>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -285,6 +309,24 @@ export function ConsolidatedAgentChat({
               </Button>
             </AlertDescription>
           </Alert>
+        )}
+
+        {/* Performance Metrics Display */}
+        {tripartiteMetrics && (
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              OpenAI: {Math.round(tripartiteMetrics.stages?.openaiTime / 1000 || 0)}s
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              Perplexity: {Math.round(tripartiteMetrics.stages?.perplexityTime / 1000 || 0)}s
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              Claude: {Math.round(tripartiteMetrics.stages?.claudeTime / 1000 || 0)}s
+            </div>
+          </div>
         )}
 
         {/* Messages */}
@@ -300,7 +342,7 @@ export function ConsolidatedAgentChat({
             
             {isProcessing && (
               <LoadingMessage 
-                customText={`${selectedAgent.name} procesando tu consulta...`}
+                customText={`${selectedAgent.name} ejecutando flujo tripartite...`}
               />
             )}
           </div>
@@ -313,7 +355,7 @@ export function ConsolidatedAgentChat({
           onSendMessage={handleSendMessage}
           isLoading={isProcessing}
           disabled={!sessionId}
-          placeholder={`Chatea con ${selectedAgent.name}...`}
+          placeholder={`Chatea con ${selectedAgent.name} (Sistema Tripartite)...`}
         />
       </CardContent>
     </Card>

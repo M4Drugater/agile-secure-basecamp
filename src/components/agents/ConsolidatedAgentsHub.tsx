@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,98 +26,98 @@ const availableAgents: AgentConfig[] = [
   {
     id: 'enhanced-content-generator',
     name: 'Enhanced Content Generator',
-    description: '🔧 REPARADO - Sistema multi-agente con conectividad web mejorada',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Contenido ejecutivo con flujo OpenAI→Perplexity→Claude',
+    icon: Zap,
     color: 'bg-purple-500',
     capabilities: [
-      'Contenido ejecutivo con datos web actuales',
-      'Multi-agent collaboration reparada',
-      'Intelligence estratégica integrada',
-      'Knowledge base enhancement',
-      'Outputs de nivel C-suite verificados'
+      'Flujo tripartite unificado garantizado',
+      'Contenido ejecutivo con datos web verificados',
+      'Síntesis multi-agente estandarizada',
+      'Intelligence estratégica con métricas consistentes',
+      'Outputs C-suite con validación triple'
     ],
     type: 'content',
-    status: 'repaired'
+    status: 'unified'
   },
   {
     id: 'clipogino',
     name: 'CLIPOGINO',
-    description: '🔧 REPARADO - Mentor profesional con intelligence web restaurada',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Mentor profesional con metodología unificada',
+    icon: Zap,
     color: 'bg-blue-500',
     capabilities: [
-      'Mentoría con datos de mercado actuales',
-      'Desarrollo profesional con context de industria',
-      'Insights estratégicos con fuentes verificables',
-      'Recomendaciones con evidencia web',
-      'Planificación de carrera con tendencias actuales'
+      'Flujo tripartite estandarizado para mentoría',
+      'Desarrollo profesional con contexto web actual',
+      'Insights estratégicos con validación triple',
+      'Recomendaciones con evidencia verificable',
+      'Planificación con tendencias documentadas'
     ],
     type: 'chat',
-    status: 'repaired'
+    status: 'unified'
   },
   {
     id: 'research-engine',
     name: 'Elite Research Engine',
-    description: '🔧 REPARADO - Investigación avanzada con conectividad web garantizada',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Investigación con metodología unificada',
+    icon: Zap,
     color: 'bg-indigo-500',
     capabilities: [
-      'Research con múltiples fuentes verificadas',
-      'Análisis de tendencias con datos actuales',
-      'Intelligence competitiva documentada',
-      'Validación automática de información',
-      'Síntesis estratégica con evidencia'
+      'Research con flujo tripartite garantizado',
+      'Análisis con múltiples fuentes verificadas',
+      'Intelligence competitiva estandarizada',
+      'Validación automática con métricas consistentes',
+      'Síntesis estratégica con evidencia triple'
     ],
     type: 'research',
-    status: 'repaired'
+    status: 'unified'
   },
   {
     id: 'cdv',
     name: 'CDV - Competitor Discovery & Validator',
-    description: '🔧 COMPLETAMENTE REPARADO - Conectividad web restaurada y validación garantizada',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Descubrimiento competitivo con metodología unificada',
+    icon: Zap,
     color: 'bg-purple-500',
     capabilities: [
-      'Descubrimiento con datos web verificados',
-      'Validación con métricas actuales',
-      'Análisis de posicionamiento documentado',
-      'Identificación de oportunidades con evidencia',
-      'Sistema anti-bucle infinito activado'
+      'Flujo tripartite aplicado a descubrimiento',
+      'Validación con métricas estandarizadas',
+      'Análisis de posicionamiento con evidencia triple',
+      'Identificación de oportunidades verificables',
+      'Sistema anti-bucle con calidad garantizada'
     ],
     type: 'competitive-intelligence',
-    status: 'repaired'
+    status: 'unified'
   },
   {
     id: 'cia',
     name: 'CIA - Competitive Intelligence Analysis',
-    description: '🔧 COMPLETAMENTE REPARADO - Intelligence estratégica con datos web verificados',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Análisis estratégico con metodología unificada',
+    icon: Zap,
     color: 'bg-green-500',
     capabilities: [
-      'Análisis estratégico con evidencia web',
-      'Evaluación de amenazas documentada',
-      'Síntesis ejecutiva con fuentes múltiples',
-      'Recomendaciones C-suite respaldadas',
-      'Frameworks de consultoría con datos actuales'
+      'Análisis estratégico con flujo tripartite',
+      'Evaluación de amenazas estandarizada',
+      'Síntesis ejecutiva con validación triple',
+      'Recomendaciones C-suite verificables',
+      'Frameworks con datos actuales garantizados'
     ],
     type: 'competitive-intelligence',
-    status: 'repaired'
+    status: 'unified'
   },
   {
     id: 'cir',
     name: 'CIR - Competitive Intelligence Retriever',
-    description: '🔧 COMPLETAMENTE REPARADO - Métricas y datos web con conectividad restaurada',
-    icon: Wrench,
+    description: '🚀 SISTEMA TRIPARTITE - Métricas competitivas con metodología unificada',
+    icon: Zap,
     color: 'bg-orange-500',
     capabilities: [
+      'Métricas con flujo tripartite garantizado',
       'Domain authority con fuentes verificadas',
-      'Análisis de tráfico con datos reales',
-      'Métricas de redes sociales actuales',
-      'Evaluación de equipos documentada',
-      'Benchmarking con números específicos'
+      'Análisis de tráfico con validación triple',
+      'Benchmarking con números estandarizados',
+      'Evaluación con evidencia documentada'
     ],
     type: 'competitive-intelligence',
-    status: 'repaired'
+    status: 'unified'
   }
 ];
 
@@ -187,111 +186,50 @@ export function ConsolidatedAgentsHub() {
   };
 
   const repairedAgentsCount = availableAgents.filter(
-    agent => agent.status === 'repaired'
+    agent => agent.status === 'unified'
   ).length;
 
   return (
-    <div className="space-y-6">
-      {/* System Repair Status Alert */}
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertDescription className="text-green-800">
-          <div className="flex items-center justify-between">
-            <span>
-              <strong>🔧 SISTEMA COMPLETAMENTE REPARADO</strong> - 
-              Orquestador LAIGENT y Agentes unificados en una sola interfaz con conectividad web restaurada.
-            </span>
-            <Badge variant="outline" className="text-green-600 border-green-600">
-              <Wrench className="h-3 w-3 mr-1" />
-              {repairedAgentsCount} Agentes Reparados
-            </Badge>
-          </div>
-        </AlertDescription>
-      </Alert>
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Bot className="h-8 w-8 text-blue-500" />
-            Centro de Agentes IA
-            <Badge variant="outline" className="text-green-600 border-green-600">
-              <Wrench className="h-3 w-3 mr-1" />
-              CONSOLIDADO
-            </Badge>
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Orquestador LAIGENT y workspace unificado de agentes - Todo en una sola interfaz
-          </p>
-        </div>
+    <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
+      {/* Enhanced Header with Unified Status */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+          Consolidated Agents Hub
+          <Crown className="h-8 w-8 text-yellow-500" />
+        </h1>
+        <p className="text-muted-foreground mb-4">
+          Sistema tripartite unificado - Todos los agentes ahora usan la metodología estandarizada OpenAI → Perplexity → Claude
+        </p>
         
-        <div className="flex items-center gap-2">
-          {activeMode === 'workspace' && (
-            <>
-              <Button
-                variant={collaborativeMode ? "default" : "outline"}
-                onClick={() => setCollaborativeMode(!collaborativeMode)}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Modo Colaborativo
-              </Button>
-              
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Bot className="h-3 w-3" />
-                {selectedAgents.length} Agente{selectedAgents.length !== 1 ? 's' : ''} Seleccionado{selectedAgents.length !== 1 ? 's' : ''}
-              </Badge>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Mode Selector */}
-      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-        <div className="flex-1">
-          <h3 className="font-semibold text-blue-900 mb-1">Selecciona el Modo de Trabajo</h3>
-          <p className="text-sm text-blue-700">
-            Orquestador para workflows complejos o Workspace para interacción directa con agentes
-          </p>
-        </div>
+        {/* Unified System Status */}
+        <Alert className="border-green-200 bg-green-50 mb-6">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ <strong>Sistema Tripartite Unificado Activo</strong> - Todos los agentes implementan la misma metodología para garantizar consistencia, calidad y métricas comparables.
+          </AlertDescription>
+        </Alert>
+        
         <div className="flex gap-2">
-          <Button
-            variant={activeMode === 'orchestrator' ? 'default' : 'outline'}
-            onClick={() => handleModeSwitch('orchestrator')}
-            className="flex items-center gap-2"
-          >
-            <Zap className="h-4 w-4" />
-            Orquestador LAIGENT
-            <Crown className="h-3 w-3" />
-          </Button>
-          <Button
-            variant={activeMode === 'workspace' ? 'default' : 'outline'}
-            onClick={() => handleModeSwitch('workspace')}
-            className="flex items-center gap-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Workspace de Agentes
-          </Button>
+          <Badge variant="default">Metodología Unificada</Badge>
+          <Badge variant="default">Flujo Tripartite</Badge>
+          <Badge variant="default">Métricas Consistentes</Badge>
+          <Badge variant="default">Calidad Garantizada</Badge>
         </div>
       </div>
 
-      {/* Content based on active mode */}
-      {activeMode === 'orchestrator' ? (
-        // LAIGENT Orchestrator Mode
-        <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Zap className="h-8 w-8 text-purple-600" />
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                LAIGENT Orchestrator
-              </h2>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Selecciona el tipo de orquestación de IA que necesitas. Cada bucket combina múltiples agentes 
-              especializados para brindarte resultados de calidad ejecutiva.
-            </p>
-          </div>
+      <Tabs value={activeMode} onValueChange={(value) => handleModeSwitch(value as 'orchestrator' | 'workspace')} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="orchestrator" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            LAIGENT Orchestrator
+          </TabsTrigger>
+          <TabsTrigger value="workspace" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Agent Workspace
+          </TabsTrigger>
+        </TabsList>
 
+        <TabsContent value="orchestrator" className="mt-6">
           {!selectedBucket ? (
             <LaigentBucketSelector onSelectBucket={handleSelectBucket} />
           ) : (
@@ -300,150 +238,32 @@ export function ConsolidatedAgentsHub() {
               onBack={handleBackToBuckets}
             />
           )}
-        </div>
-      ) : (
-        // Agent Workspace Mode
-        <Tabs defaultValue="selector" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="selector" className="flex items-center gap-2">
-              <Bot className="h-4 w-4" />
-              Selección de Agentes
-            </TabsTrigger>
-            <TabsTrigger 
-              value="workspace" 
-              disabled={selectedAgents.length === 0}
-              className="flex items-center gap-2"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Workspace
-              {selectedAgents.length > 0 && (
-                <CheckCircle className="h-3 w-3 text-green-600" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="collaborative"
-              disabled={selectedAgents.length < 2}
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Colaborativo
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Configuración
-            </TabsTrigger>
-          </TabsList>
+        </TabsContent>
 
-          <TabsContent value="selector" className="space-y-4">
-            <AgentSelector
-              agents={availableAgents}
-              selectedAgents={selectedAgents}
-              onAgentSelect={handleAgentSelect}
-              collaborativeMode={collaborativeMode}
+        <TabsContent value="workspace" className="mt-6">
+          {collaborativeMode ? (
+            <CollaborativeSession
+              selectedAgents={selectedAgents.map(id => availableAgents.find(a => a.id === id)!)}
+              sessionConfig={sessionConfig}
+              onUpdateConfig={setSessionConfig}
+              onBack={() => {
+                setCollaborativeMode(false);
+                setSelectedAgents([]);
+              }}
             />
-          </TabsContent>
-
-          <TabsContent value="workspace" className="space-y-4">
-            {selectedAgents.length > 0 && (
-              <AgentWorkspaceContent
-                selectedAgents={getSelectedAgentConfigs()}
-                sessionConfig={sessionConfig}
-                setSessionConfig={setSessionConfig}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="collaborative" className="space-y-4">
-            {selectedAgents.length > 1 && (
-              <CollaborativeSession
-                selectedAgents={getSelectedAgentConfigs()}
-                sessionConfig={sessionConfig}
-                setSessionConfig={setSessionConfig}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Configuración del Centro de Agentes
-                  <Badge variant="outline" className="text-green-600 border-green-600">
-                    <Wrench className="h-3 w-3 mr-1" />
-                    Sistema Consolidado
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      <strong>Estado del Sistema:</strong> Orquestador LAIGENT y Agentes unificados exitosamente.
-                      Todas las funcionalidades consolidadas bajo la ruta /agents con conectividad web restaurada.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <div>
-                    <label className="text-sm font-medium">Configuración Global de Sesión</label>
-                    <p className="text-sm text-muted-foreground">
-                      Configuración aplicada a todos los agentes y workflows del orquestador
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Empresa</label>
-                      <input
-                        type="text"
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
-                        value={sessionConfig.companyName}
-                        onChange={(e) => setSessionConfig(prev => ({ ...prev, companyName: e.target.value }))}
-                        placeholder="Nombre de la empresa"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium">Industria</label>
-                      <input
-                        type="text"
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
-                        value={sessionConfig.industry}
-                        onChange={(e) => setSessionConfig(prev => ({ ...prev, industry: e.target.value }))}
-                        placeholder="Industria principal"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Enfoque de Análisis</label>
-                      <input
-                        type="text"
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
-                        value={sessionConfig.analysisFocus}
-                        onChange={(e) => setSessionConfig(prev => ({ ...prev, analysisFocus: e.target.value }))}
-                        placeholder="Ej: análisis competitivo, investigación de mercado"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="text-sm font-medium">Objetivos</label>
-                      <input
-                        type="text"
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md"
-                        value={sessionConfig.objectives}
-                        onChange={(e) => setSessionConfig(prev => ({ ...prev, objectives: e.target.value }))}
-                        placeholder="Objetivos del análisis"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
+          ) : (
+            <AgentWorkspaceContent
+              availableAgents={availableAgents}
+              selectedAgents={selectedAgents}
+              collaborativeMode={collaborativeMode}
+              sessionConfig={sessionConfig}
+              onAgentSelect={handleAgentSelect}
+              onToggleCollaborative={() => setCollaborativeMode(!collaborativeMode)}
+              onUpdateConfig={setSessionConfig}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
