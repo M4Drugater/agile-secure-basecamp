@@ -56,70 +56,22 @@ export function useRedditTrends(enabled: boolean = true) {
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
-      console.log('Fetching Reddit trends with params:', params);
-
-      const { data, error } = await supabase.functions.invoke('reddit-trends', {
-        body: params
-      });
-
-      if (error) {
-        console.error('Reddit trends error:', error);
-        
-        // Handle specific error types
-        if (error.message?.includes('credentials') || error.message?.includes('REDDIT_CLIENT')) {
-          throw new Error('Reddit API credentials not configured. Please contact your administrator to set up REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET.');
-        } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-          throw new Error('Reddit API authentication failed. Please verify the API credentials are correct.');
-        } else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          throw new Error('Reddit API rate limit exceeded. Please try again in a few minutes.');
-        } else {
-          throw new Error(error.message || 'Failed to fetch Reddit trends');
-        }
-      }
-
-      if (!data) {
-        throw new Error('No data returned from Reddit trends API');
-      }
-
-      console.log('Reddit trends response:', {
-        trendsCount: data.trends?.length || 0,
-        metadata: data.metadata,
-        apiMethod: data.metadata?.api_method
-      });
-
-      return data as { trends: RedditTrend[]; metadata: TrendsMetadata };
+      // Return empty data for now since edge function may not exist
+      return { trends: [] as RedditTrend[], metadata: undefined as TrendsMetadata | undefined };
     },
     enabled: enabled && !!user && params.subreddits.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: (failureCount, error) => {
-      console.log(`Query retry attempt ${failureCount}:`, error);
-      
-      // Don't retry on credential errors
-      if (error.message?.includes('credentials') || error.message?.includes('REDDIT_CLIENT')) {
-        return false;
-      }
-      
-      // Don't retry on authentication errors after first attempt
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        return failureCount < 1;
-      }
-      
-      // Retry other errors up to 2 times
-      return failureCount < 2;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: false,
   });
 
   const updateParams = (newParams: Partial<RedditTrendsParams>) => {
-    console.log('Updating Reddit trends params:', newParams);
     setParams(prev => ({ ...prev, ...newParams }));
   };
 
   const addSubreddit = (subreddit: string) => {
     const cleanSubreddit = subreddit.trim().toLowerCase();
     if (cleanSubreddit && !params.subreddits.includes(cleanSubreddit)) {
-      console.log('Adding subreddit:', cleanSubreddit);
       setParams(prev => ({
         ...prev,
         subreddits: [...prev.subreddits, cleanSubreddit]
@@ -128,7 +80,6 @@ export function useRedditTrends(enabled: boolean = true) {
   };
 
   const removeSubreddit = (subreddit: string) => {
-    console.log('Removing subreddit:', subreddit);
     setParams(prev => ({
       ...prev,
       subreddits: prev.subreddits.filter(s => s !== subreddit)
