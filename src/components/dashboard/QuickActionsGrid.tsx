@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { 
   MessageSquare, 
-  Shield, 
   FileText, 
   BookOpen, 
-  TrendingUp, 
   Search,
   Brain,
-  Sparkles
+  Sparkles,
+  Bot,
+  BarChart3
 } from 'lucide-react';
 
 export function QuickActionsGrid() {
@@ -29,13 +29,13 @@ export function QuickActionsGrid() {
       route: '/chat'
     },
     {
-      title: 'Inteligencia Competitiva',
-      description: 'Agentes CDV, CIA y CIR',
-      icon: Shield,
+      title: 'Agentes Unificados',
+      description: 'Acceso a todos los agentes IA',
+      icon: Bot,
       badge: 'AGENTES',
       color: 'bg-green-50 border-green-200',
       iconColor: 'text-green-600',
-      route: '/competitive-intelligence'
+      route: '/agents'
     },
     {
       title: 'Generador de Contenido',
@@ -55,15 +55,6 @@ export function QuickActionsGrid() {
       route: '/knowledge'
     },
     {
-      title: 'Descubrimiento de Tendencias',
-      description: 'Tendencias de Reddit en tiempo real',
-      icon: TrendingUp,
-      badge: 'LIVE',
-      color: 'bg-red-50 border-red-200',
-      iconColor: 'text-red-600',
-      route: '/trends'
-    },
-    {
       title: 'Research Workbench',
       description: 'Investigación con Perplexity AI',
       icon: Search,
@@ -80,11 +71,19 @@ export function QuickActionsGrid() {
       route: '/learning'
     },
     {
-      title: 'Analytics de Contenido',
-      description: 'Métricas y rendimiento',
+      title: 'Biblioteca de Contenido',
+      description: 'Gestión de contenido creado',
       icon: Brain,
       color: 'bg-indigo-50 border-indigo-200',
       iconColor: 'text-indigo-600',
+      route: '/content/library'
+    },
+    {
+      title: 'Analytics de Contenido',
+      description: 'Métricas y rendimiento',
+      icon: BarChart3,
+      color: 'bg-cyan-50 border-cyan-200',
+      iconColor: 'text-cyan-600',
       route: '/content/analytics'
     }
   ];
@@ -114,12 +113,7 @@ export function QuickActionsGrid() {
                     )}
                   </div>
                   <h3 className="font-semibold text-sm mb-1">{action.title}</h3>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {action.description}
-                  </p>
-                  <Button size="sm" variant="outline" className="w-full">
-                    Acceder
-                  </Button>
+                  <p className="text-xs text-muted-foreground">{action.description}</p>
                 </CardContent>
               </Card>
             );

@@ -6,7 +6,10 @@ import {
   User,
   CreditCard,
   Brain,
-  Bot
+  Bot,
+  Search,
+  FileText,
+  Sparkles
 } from 'lucide-react';
 
 export const navigationItems = [
@@ -19,10 +22,19 @@ export const navigationItems = [
     ]
   },
   { 
+    section: 'Contenido',
+    items: [
+      { title: 'Generador de Contenido', href: '/content/generator', icon: FileText, badge: 'AI', description: 'Creación de contenido con IA' },
+      { title: 'Biblioteca de Contenido', href: '/content/library', icon: BookOpen, description: 'Gestión de contenido creado' },
+      { title: 'Analytics de Contenido', href: '/content/analytics', icon: Brain, description: 'Métricas y rendimiento' }
+    ]
+  },
+  { 
     section: 'Gestión',
     items: [
       { title: 'Base de Conocimiento', href: '/knowledge', icon: Brain, description: 'Documentos y recursos' },
-      { title: 'Learning', href: '/learning', icon: BookOpen, description: 'Rutas y módulos de aprendizaje' }
+      { title: 'Research Workbench', href: '/research', icon: Search, description: 'Investigación con IA' },
+      { title: 'Learning', href: '/learning', icon: Sparkles, description: 'Rutas y módulos de aprendizaje' }
     ]
   },
   { 

@@ -9,7 +9,6 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 // Pages
 import Dashboard from '@/pages/Dashboard';
 import KnowledgeBase from '@/pages/KnowledgeBase';
-import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
 import UnifiedAgents from '@/pages/UnifiedAgents';
 import Chat from '@/pages/Chat';
 import Content from '@/pages/Content';
@@ -19,13 +18,9 @@ import ContentAnalytics from '@/pages/ContentAnalytics';
 import Profile from '@/pages/Profile';
 import Admin from '@/pages/Admin';
 import Billing from '@/pages/Billing';
-import TrendsDiscovery from '@/pages/TrendsDiscovery';
 import ResearchWorkbench from '@/pages/ResearchWorkbench';
 import LearningManagement from '@/pages/LearningManagement';
 import OnboardingPage from '@/pages/OnboardingPage';
-import Pricing from '@/pages/Pricing';
-import Terms from '@/pages/Terms';
-import Privacy from '@/pages/Privacy';
 
 function App() {
   return (
@@ -73,18 +68,6 @@ function App() {
               <Route path="/agents" element={
                 <ProtectedRoute>
                   <UnifiedAgents />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/competitive-intelligence" element={
-                <ProtectedRoute>
-                  <CompetitiveIntelligence />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/trends" element={
-                <ProtectedRoute>
-                  <TrendsDiscovery />
                 </ProtectedRoute>
               } />
               
@@ -144,11 +127,6 @@ function App() {
                   <Admin />
                 </ProtectedRoute>
               } />
-              
-              {/* Public Routes */}
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
             </Routes>
           </div>
         </BrowserRouter>
