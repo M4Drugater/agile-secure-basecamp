@@ -8,9 +8,10 @@ import { ChatHeader } from './ChatHeader';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { LoadingMessage } from './LoadingMessage';
+import { RealTimeSearchStatus } from './RealTimeSearchStatus';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Globe, Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Globe, Zap, AlertCircle, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface EnhancedAgentChatProps {
@@ -35,8 +36,11 @@ export function EnhancedAgentChat({ agentId, sessionConfig }: EnhancedAgentChatP
     isLoading, 
     sendMessage, 
     addWelcomeMessage, 
+    retryLastMessage,
+    retrySearch,
     searchData, 
-    searchError 
+    searchError,
+    canRetry
   } = useEnhancedAgentChat(agentId, localConfig);
 
   // Auto-scroll to bottom when new messages arrive
@@ -51,13 +55,22 @@ export function EnhancedAgentChat({ agentId, sessionConfig }: EnhancedAgentChatP
     if (sessionId && messages.length === 0) {
       addWelcomeMessage();
     }
-  }, [sessionId, messages.length]);
+  }, [sessionId, messages.length, addWelcomeMessage]);
 
   const handleSendMessage = async () => {
     if (!sessionId) return;
     
     await sendMessage(inputMessage, sessionId);
     setInputMessage('');
+  };
+
+  const handleRetryMessage = async () => {
+    if (!sessionId) return;
+    await retryLastMessage(sessionId);
+  };
+
+  const handleRetrySearch = async () => {
+    await retrySearch();
   };
 
   const handleQuickSetup = () => {
@@ -174,40 +187,38 @@ export function EnhancedAgentChat({ agentId, sessionConfig }: EnhancedAgentChatP
     );
   }
 
+  const hasErrorMessages = messages.some(msg => msg.hasError);
+
   return (
     <Card className="h-full flex flex-col">
       <ChatHeader agentId={agentId} sessionConfig={localConfig} />
 
       {/* Real-time Intelligence Status */}
       <div className="px-4 py-2 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="h-4 w-4 text-blue-500" />
-            <span className="text-sm font-medium">Inteligencia en Tiempo Real</span>
-            <Badge variant="default" className="flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              Activo
-            </Badge>
-          </div>
-          
-          {searchData && (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">
-                Confianza: {(searchData.metadata.dataConfidence * 100).toFixed(0)}%
-              </span>
-            </div>
-          )}
-        </div>
+        <RealTimeSearchStatus
+          searchData={searchData}
+          searchError={searchError}
+          isSearching={isLoading}
+          onRetry={handleRetrySearch}
+        />
       </div>
 
       <CardContent className="flex-1 flex flex-col space-y-4">
-        {/* Search Error Alert */}
-        {searchError && (
-          <Alert variant="destructive">
+        {/* Error Recovery */}
+        {hasErrorMessages && canRetry && (
+          <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Error en búsqueda web: {searchError}. El agente seguirá funcionando con datos disponibles.
+            <AlertDescription className="flex items-center justify-between">
+              <span>Hubo un error en la conversación. Puedes intentar de nuevo.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRetryMessage}
+                className="h-6 px-2 text-xs"
+              >
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Reintentar
+              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -216,7 +227,11 @@ export function EnhancedAgentChat({ agentId, sessionConfig }: EnhancedAgentChatP
         <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage 
+                key={message.id} 
+                message={message}
+                showMetadata={true}
+              />
             ))}
             
             {isLoading && <LoadingMessage />}

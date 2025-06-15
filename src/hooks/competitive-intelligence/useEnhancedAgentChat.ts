@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useAgentPrompts } from './useAgentPrompts';
 import { useRealTimeWebSearch } from './useRealTimeWebSearch';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -12,6 +13,8 @@ interface Message {
   agentType?: string;
   searchData?: any;
   metadata?: any;
+  hasError?: boolean;
+  canRetry?: boolean;
 }
 
 interface SessionConfig {
@@ -24,6 +27,7 @@ interface SessionConfig {
 export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConfig) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { supabase, user } = useSupabase();
   const { getSystemPrompt } = useAgentPrompts();
   const webSearch = useRealTimeWebSearch();
@@ -31,7 +35,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
   const getWelcomeMessage = () => {
     const agentNames = {
       cdv: 'CDV Agent',
-      cir: 'CIR Agent',
+      cir: 'CIR Agent', 
       cia: 'CIA Agent'
     };
     
@@ -40,13 +44,13 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     
     switch (agentId) {
       case 'cdv':
-        return `¡Hola! Soy ${agentName}, tu especialista en descubrimiento y validación competitiva. Tengo acceso a búsquedas web en tiempo real para proporcionarte inteligencia competitiva actual sobre ${company}. Puedo ayudarte a identificar competidores, analizar amenazas y descubrir oportunidades de mercado con datos reales.`;
+        return `¡Hola! Soy ${agentName}, tu especialista en descubrimiento y validación competitiva. Tengo acceso a búsquedas web inteligentes para proporcionarte inteligencia competitiva sobre ${company}. Puedo ayudarte a identificar competidores, analizar amenazas y descubrir oportunidades de mercado.`;
       case 'cir':
-        return `¡Hola! Soy ${agentName}, tu especialista en investigación de inteligencia competitiva. Utilizo búsquedas web en tiempo real para obtener datos financieros, métricas de mercado y análisis regulatorios actuales sobre ${company}. ¿Qué datos específicos te interesan?`;
+        return `¡Hola! Soy ${agentName}, tu especialista en investigación de inteligencia competitiva. Utilizo búsquedas web inteligentes para obtener datos financieros, métricas de mercado y análisis regulatorios sobre ${company}. ¿Qué datos específicos te interesan?`;
       case 'cia':
-        return `¡Hola! Soy ${agentName}, tu analista de inteligencia estratégica. Combino múltiples fuentes de datos en tiempo real para proporcionarte análisis estratégicos profundos sobre ${company} y el panorama competitivo. ¿Qué aspectos estratégicos quieres explorar?`;
+        return `¡Hola! Soy ${agentName}, tu analista de inteligencia estratégica. Combino múltiples fuentes de datos para proporcionarte análisis estratégicos profundos sobre ${company} y el panorama competitivo. ¿Qué aspectos estratégicos quieres explorar?`;
       default:
-        return `¡Hola! Estoy aquí para ayudarte con análisis competitivo en tiempo real de ${company}. ¿En qué puedo asistirte?`;
+        return `¡Hola! Estoy aquí para ayudarte con análisis competitivo de ${company}. ¿En qué puedo asistirte?`;
     }
   };
 
@@ -84,7 +88,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
 
   const performAgentSearch = async (query: string, messageContext: string) => {
     try {
-      console.log(`${agentId.toUpperCase()} Agent performing specialized search:`, query);
+      console.log(`${agentId.toUpperCase()} Agent performing search:`, query);
 
       // Determine search type based on agent specialization
       let searchType: 'news' | 'financial' | 'competitive' | 'market' | 'regulatory' = 'competitive';
@@ -115,6 +119,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
       return searchResults;
     } catch (error) {
       console.error('Agent search failed:', error);
+      // Don't throw - return null to allow chat to continue
       return null;
     }
   };
@@ -145,7 +150,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     setIsLoading(true);
 
     try {
-      // Perform real-time search before sending to AI
+      // Perform web search (will gracefully handle failures)
       const searchResults = await performAgentSearch(inputMessage, inputMessage);
       
       const userContext = await buildUserContext();
@@ -164,7 +169,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
       // Build enhanced system prompt with search data
       let enhancedSystemPrompt = getSystemPrompt(agentId, userContext, sessionConfig);
       
-      if (searchResults) {
+      if (searchResults && searchResults.metadata?.apiProvider !== 'fallback') {
         enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE DATA ===\n`;
         enhancedSystemPrompt += `Recent Web Intelligence:\n${searchResults.searchResults.webData}\n\n`;
         enhancedSystemPrompt += `Strategic Analysis:\n${searchResults.searchResults.strategicAnalysis}\n\n`;
@@ -177,7 +182,9 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
           enhancedSystemPrompt += `\n`;
         }
         
-        enhancedSystemPrompt += `IMPORTANT: Use this real-time data in your analysis. Reference specific data points, metrics, and sources. Do not provide simulated or generic responses.`;
+        enhancedSystemPrompt += `IMPORTANT: Use this real-time data in your analysis. Reference specific data points and insights.`;
+      } else if (searchResults?.metadata?.apiProvider === 'fallback') {
+        enhancedSystemPrompt += `\n\n=== SYSTEM STATUS ===\nNote: Real-time search is operating in fallback mode. Provide analysis based on general market knowledge and advise the user that live data is temporarily limited.`;
       }
 
       const apiMessages = [
@@ -211,11 +218,13 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
           tokensUsed: data.tokensUsed,
           cost: data.cost,
           searchPerformed: !!searchResults,
-          dataConfidence: searchResults?.metadata?.dataConfidence || 0
+          dataConfidence: searchResults?.metadata?.dataConfidence || 0,
+          searchStatus: searchResults?.metadata?.apiProvider || 'none'
         }
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setRetryCount(0); // Reset retry count on success
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -223,14 +232,40 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Lo siento, hubo un error al obtener la inteligencia en tiempo real. Por favor, inténtalo de nuevo.',
+        content: 'Lo siento, hubo un error al procesar tu solicitud. El sistema continúa funcionando y puedes intentar de nuevo. Si el problema persiste, por favor contacta al soporte.',
         timestamp: new Date(),
-        agentType: agentId
+        agentType: agentId,
+        hasError: true,
+        canRetry: retryCount < 3
       };
 
       setMessages(prev => [...prev, errorMessage]);
+      setRetryCount(prev => prev + 1);
+      
+      toast.error('Error en el chat. Puedes intentar de nuevo.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const retryLastMessage = async (sessionId: string) => {
+    if (!sessionId) return;
+    
+    const lastUserMessage = messages
+      .filter(msg => msg.role === 'user')
+      .pop();
+    
+    if (lastUserMessage) {
+      // Remove error message
+      setMessages(prev => prev.filter(msg => !msg.hasError));
+      await sendMessage(lastUserMessage.content, sessionId);
+    }
+  };
+
+  const retrySearch = async () => {
+    await webSearch.clearResults();
+    if (webSearch.searchResults) {
+      toast.success('Búsqueda reiniciada. Puedes intentar de nuevo.');
     }
   };
 
@@ -239,7 +274,10 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     isLoading,
     sendMessage,
     addWelcomeMessage,
+    retryLastMessage,
+    retrySearch,
     searchData: webSearch.searchResults,
-    searchError: webSearch.error
+    searchError: webSearch.error,
+    canRetry: retryCount < 3
   };
 }
