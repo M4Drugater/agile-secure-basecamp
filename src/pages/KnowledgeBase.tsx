@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EnhancedUserKnowledgeManager } from '@/components/knowledge/EnhancedUserKnowledgeManager';
+import { RefactoredKnowledgeManager } from '@/components/knowledge/RefactoredKnowledgeManager';
 import { SystemKnowledgeViewer } from '@/components/knowledge/SystemKnowledgeViewer';
 import { DownloadableResourcesManager } from '@/components/knowledge/DownloadableResourcesManager';
 import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
@@ -40,7 +40,7 @@ export default function KnowledgeBase() {
           </TabsList>
 
           <TabsContent value="personal" className="mt-6">
-            <EnhancedUserKnowledgeManager />
+            <RefactoredKnowledgeManager />
           </TabsContent>
 
           <TabsContent value="system" className="mt-6">
