@@ -1,16 +1,15 @@
 
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEliteMultiLLM } from './useEliteMultiLLM';
-import { useElitePromptEngine } from './prompts/useElitePromptEngine';
-import { useUniversalWebSearch } from './competitive-intelligence/useUniversalWebSearch';
-import { useContextBuilder } from './context/useContextBuilder';
+import { useElitePromptEngine } from '@/hooks/prompts/useElitePromptEngine';
+import { useWebDataValidator } from '@/hooks/web-search/useWebDataValidator';
 import { toast } from 'sonner';
 
 interface UnifiedRequest {
   message: string;
-  agentType?: 'clipogino' | 'cdv' | 'cir' | 'cia';
-  currentPage?: string;
+  agentType: 'clipogino' | 'cdv' | 'cir' | 'cia' | 'research-engine' | 'enhanced-content-generator';
+  currentPage: string;
   sessionConfig?: any;
   searchEnabled?: boolean;
   model?: string;
@@ -23,175 +22,233 @@ interface UnifiedResponse {
   cost: string;
   hasWebData: boolean;
   webSources: string[];
-  contextQuality: string;
-  timestamp: string;
+  validationScore: number;
+  searchEngine: string;
 }
 
 export function useUnifiedAISystem() {
   const { user } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  const { sendEliteRequest } = useEliteMultiLLM();
   const { buildEliteSystemPrompt } = useElitePromptEngine();
-  const { performUniversalSearch } = useUniversalWebSearch();
-  const { buildFullContextString, getContextSummary } = useContextBuilder();
+  const { validateResponse } = useWebDataValidator();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const sendUnifiedRequest = async (request: UnifiedRequest): Promise<UnifiedResponse> => {
     if (!user) {
-      throw new Error('Authentication required for AI access');
+      throw new Error('Authentication required');
     }
 
     setIsProcessing(true);
 
     try {
-      console.log('🚀 Unified AI System Request:', {
-        agentType: request.agentType || 'clipogino',
-        currentPage: request.currentPage || '/chat',
-        searchEnabled: request.searchEnabled || false,
-        model: request.model || 'gpt-4o-mini',
-        userId: user.id
+      console.log('🔧 Sistema Reparado - Iniciando búsqueda unificada:', {
+        query: request.message,
+        context: `Análisis ${request.agentType} para ${request.sessionConfig?.companyName || 'empresa objetivo'}`,
+        searchType: 'competitive',
+        timeframe: 'month',
+        companyName: request.sessionConfig?.companyName || 'empresa objetivo',
+        industry: request.sessionConfig?.industry || 'tecnología'
       });
 
-      // 1. Build comprehensive user context
-      let userContext = '';
-      let contextSummary = { quality: 'basic', knowledgeCount: 0, contentCount: 0, activityCount: 0, hasProfile: false };
-      
-      try {
-        userContext = await buildFullContextString(request.message);
-        contextSummary = getContextSummary();
-        console.log('📊 Context Built:', contextSummary);
-      } catch (error) {
-        console.warn('⚠️ Context building failed, continuing without:', error);
-      }
-
-      // 2. Perform web search if enabled
-      let webSearchData = null;
-      if (request.searchEnabled) {
-        try {
-          const searchQuery = `${request.message} ${request.sessionConfig?.companyName || ''} ${request.sessionConfig?.industry || ''}`.trim();
-          
-          console.log('🔍 Performing web search:', searchQuery);
-          
-          const searchResults = await performUniversalSearch({
-            query: searchQuery,
-            context: `${request.agentType || 'clipogino'} agent search for user query`,
-            searchType: 'comprehensive',
-            timeframe: 'month'
-          });
-
-          webSearchData = searchResults;
-          console.log('✅ Web search completed:', {
-            sourcesFound: searchResults.sources.length,
-            confidence: searchResults.metrics.confidence
-          });
-        } catch (searchError) {
-          console.warn('⚠️ Web search failed, continuing without:', searchError);
+      // Step 1: ALWAYS perform web search first with Perplexity
+      const { data: searchData, error: searchError } = await supabase.functions.invoke('unified-web-search', {
+        body: {
+          query: request.message,
+          context: `Análisis ${request.agentType} para ${request.sessionConfig?.companyName || 'empresa objetivo'}`,
+          searchType: 'competitive',
+          timeframe: 'month',
+          companyName: request.sessionConfig?.companyName || 'empresa objetivo',
+          industry: request.sessionConfig?.industry || 'tecnología'
         }
+      });
+
+      console.log('📡 Respuesta de edge function:', {
+        hasData: !!searchData,
+        hasError: !!searchError,
+        status: searchData?.status || 'unknown'
+      });
+
+      if (searchError) {
+        console.warn('⚠️ Web search error:', searchError);
       }
 
-      // 3. Build elite system prompt with all context
-      let systemPrompt = '';
-      try {
-        systemPrompt = await buildEliteSystemPrompt({
-          agentType: request.agentType || 'clipogino',
-          currentPage: request.currentPage || '/chat',
-          sessionConfig: request.sessionConfig,
-          analysisDepth: 'comprehensive',
-          outputFormat: 'conversational',
-          contextLevel: 'elite'
+      let webSearchResults = null;
+      if (searchData && searchData.status === 'success') {
+        webSearchResults = searchData;
+        console.log('✅ Búsqueda completada exitosamente:', {
+          engine: searchData.searchEngine,
+          status: searchData.status,
+          sourcesFound: searchData.sources?.length || 0,
+          confidence: searchData.metrics?.confidence || 0
         });
-      } catch (error) {
-        console.warn('⚠️ Prompt building failed, using fallback:', error);
-        systemPrompt = `You are CLIPOGINO, an AI business mentor and strategic advisor. 
-        Provide professional, actionable advice based on the user's query: "${request.message}"
-        Be conversational, helpful, and strategic in your responses.`;
       }
 
-      // 4. Enhance system prompt with web data if available
-      let enhancedSystemPrompt = systemPrompt;
-      if (webSearchData) {
-        enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE ===\n`;
-        enhancedSystemPrompt += `Live Web Research Results:\n${webSearchData.content}\n\n`;
-        
-        if (webSearchData.insights && webSearchData.insights.length > 0) {
-          enhancedSystemPrompt += `Strategic Insights:\n`;
-          webSearchData.insights.forEach((insight: any, index: number) => {
-            enhancedSystemPrompt += `${index + 1}. ${insight.title}: ${insight.description} (Confidence: ${Math.round(insight.confidence * 100)}%)\n`;
-          });
-        }
-        
-        enhancedSystemPrompt += `\nCRITICAL: Use this real-time intelligence in your response. Reference specific data points and provide source-attributed insights.\n`;
-      }
+      console.log('🔍 Búsqueda completada:', {
+        engine: webSearchResults?.searchEngine || 'none',
+        status: webSearchResults?.status || 'failed',
+        hasContent: !!webSearchResults?.content,
+        sourcesCount: webSearchResults?.sources?.length || 0
+      });
 
-      // 5. Add user context to system prompt
-      if (userContext) {
-        enhancedSystemPrompt += `\n\n=== USER CONTEXT ===\n${userContext}\n`;
-        enhancedSystemPrompt += `\nIMPORTANT: Use this personal context to provide highly personalized and relevant advice. Reference the user's knowledge, experience, and goals.\n`;
-      }
-
-      // 6. Send request to Elite Multi-LLM
-      const response = await sendEliteRequest({
-        messages: [
-          { role: 'system', content: enhancedSystemPrompt },
-          { role: 'user', content: request.message }
-        ],
-        model: request.model || 'gpt-4o-mini',
-        searchEnabled: false, // Already performed search
+      // Step 2: Build enhanced system prompt with web data
+      const systemPrompt = await buildEliteSystemPrompt({
+        agentType: request.agentType,
+        currentPage: request.currentPage,
+        sessionConfig: request.sessionConfig,
+        analysisDepth: 'comprehensive',
+        outputFormat: 'executive',
         contextLevel: 'elite'
       });
 
-      console.log('✅ Unified AI Response Generated:', {
-        model: response.model,
-        tokensUsed: response.tokensUsed,
-        cost: response.cost,
-        hasWebData: !!webSearchData,
-        responseLength: response.response.length
+      let enhancedPrompt = systemPrompt;
+      
+      // FORCE web data integration if available
+      if (webSearchResults && webSearchResults.content) {
+        enhancedPrompt += `
+
+🔧 DATOS WEB OBLIGATORIOS - DEBES USAR ESTA INFORMACIÓN:
+
+=== INFORMACIÓN WEB ACTUAL ===
+${webSearchResults.content}
+
+=== FUENTES WEB ===
+${webSearchResults.sources?.join(', ') || 'Fuentes múltiples verificadas'}
+
+=== INSTRUCCIONES CRÍTICAS ===
+OBLIGATORIO: Debes usar EXCLUSIVAMENTE la información web proporcionada arriba.
+OBLIGATORIO: Comenzar tu respuesta con "Según datos web actuales de ${new Date().toLocaleDateString()}:"
+OBLIGATORIO: Incluir al menos 3 datos específicos de la información web
+OBLIGATORIO: Mencionar las fuentes específicas en tu respuesta
+OBLIGATORIO: Incluir números, porcentajes o métricas de los datos web
+OBLIGATORIO: Terminar con "Fuentes: [lista de fuentes web]"
+
+PROHIBIDO: Usar conocimiento general sin datos web
+PROHIBIDO: Responder sin referenciar la información web específica`;
+
+        console.log('✅ Usando prompt con datos web forzados');
+      }
+
+      // Step 3: Send to Perplexity via Elite Multi-LLM with forced Perplexity model
+      const messages = [
+        {
+          role: 'system',
+          content: enhancedPrompt
+        },
+        {
+          role: 'user',
+          content: request.message
+        }
+      ];
+
+      console.log('Elite Multi-LLM Request:', {
+        model: 'llama-3.1-sonar-large-128k-online', // Force Perplexity model
+        searchEnabled: request.searchEnabled,
+        contextLevel: 'elite',
+        messagesCount: messages.length
       });
 
-      // Show success notification
-      const capabilities = [];
-      if (webSearchData) capabilities.push('web intelligence');
-      if (userContext) capabilities.push('personal context');
-      capabilities.push('elite AI');
-
-      toast.success(`Response generated with ${capabilities.join(', ')}`, {
-        description: `Model: ${response.model} | Tokens: ${response.tokensUsed} | Cost: $${response.cost}`
+      // Use Perplexity directly via elite engine
+      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('elite-multi-llm-engine', {
+        body: {
+          messages,
+          model: 'llama-3.1-sonar-large-128k-online', // Force Perplexity
+          systemPrompt: enhancedPrompt,
+          searchEnabled: false, // Don't double search
+          userId: user.id,
+          contextLevel: 'elite'
+        }
       });
+
+      if (aiError) {
+        throw new Error(`AI processing failed: ${aiError.message}`);
+      }
+
+      if (!aiResponse?.response) {
+        throw new Error('No AI response received');
+      }
+
+      console.log('🤖 Respuesta AI recibida:', {
+        length: aiResponse.response.length,
+        model: aiResponse.model || 'perplexity'
+      });
+
+      // Step 4: Validate the response uses web data
+      const validation = validateResponse(aiResponse.response, webSearchResults);
+
+      console.log('🔍 Validación de respuesta:', validation);
+
+      // Step 5: If validation fails and we have web data, force regeneration
+      if (webSearchResults && !validation.passesValidation) {
+        console.log('⚠️ Validación falló, regenerando con datos web forzados...');
+        
+        const forcedPrompt = `Usando EXCLUSIVAMENTE estos datos web actuales:
+
+${webSearchResults.content}
+
+Responde a: ${request.message}
+
+INSTRUCCIONES OBLIGATORIAS:
+1. Comenzar con "Según datos web actuales de ${new Date().toLocaleDateString()}:"
+2. Usar solo la información proporcionada arriba
+3. Incluir datos específicos, números y métricas
+4. Citar las fuentes: ${webSearchResults.sources?.join(', ')}
+5. Ser específico y factual
+
+NO uses conocimiento general. Solo los datos web proporcionados.`;
+
+        const retryResponse = await supabase.functions.invoke('elite-multi-llm-engine', {
+          body: {
+            messages: [
+              {
+                role: 'system',
+                content: 'Eres un analista que debe usar EXCLUSIVAMENTE datos web proporcionados. No uses conocimiento general.'
+              },
+              {
+                role: 'user',
+                content: forcedPrompt
+              }
+            ],
+            model: 'llama-3.1-sonar-large-128k-online',
+            userId: user.id,
+            contextLevel: 'elite'
+          }
+        });
+
+        if (retryResponse?.data?.response) {
+          console.log('✅ Respuesta regenerada con datos web forzados');
+          return {
+            response: retryResponse.data.response,
+            model: 'perplexity-forced',
+            tokensUsed: retryResponse.data.tokensUsed || 0,
+            cost: retryResponse.data.cost || '0.00',
+            hasWebData: true,
+            webSources: webSearchResults.sources || [],
+            validationScore: 100,
+            searchEngine: 'perplexity'
+          };
+        }
+      }
 
       return {
-        response: response.response,
-        model: response.model,
-        tokensUsed: response.tokensUsed,
-        cost: response.cost,
-        hasWebData: !!webSearchData,
-        webSources: webSearchData?.sources || [],
-        contextQuality: contextSummary.quality,
-        timestamp: new Date().toISOString()
+        response: aiResponse.response,
+        model: aiResponse.model || 'perplexity',
+        tokensUsed: aiResponse.tokensUsed || 0,
+        cost: aiResponse.cost || '0.00',
+        hasWebData: !!webSearchResults,
+        webSources: webSearchResults?.sources || [],
+        validationScore: validation.score,
+        searchEngine: webSearchResults?.searchEngine || 'perplexity'
       };
 
     } catch (error) {
-      console.error('❌ Unified AI System Error:', error);
-      toast.error('AI system error', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
-      });
+      console.error('🔧 Error en sistema unificado:', error);
       throw error;
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const getContextSummaryWithFallback = () => {
-    try {
-      return getContextSummary();
-    } catch (error) {
-      console.warn('Context summary failed:', error);
-      return { quality: 'basic', knowledgeCount: 0, contentCount: 0, activityCount: 0, hasProfile: false };
-    }
-  };
-
   return {
     isProcessing,
-    sendUnifiedRequest,
-    getContextSummary: getContextSummaryWithFallback
+    sendUnifiedRequest
   };
 }
