@@ -4,15 +4,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthContextProvider } from '@/contexts/AuthContext';
 import { QueryProvider } from '@/contexts/QueryContext';
-import Home from '@/pages/Home';
-import KnowledgeBase from '@/pages/KnowledgeBase';
-import Agents from '@/pages/Agents';
-import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { UniversalLayout } from '@/layouts/UniversalLayout';
-import Pricing from '@/pages/Pricing';
-import Terms from '@/pages/Terms';
-import Privacy from '@/pages/Privacy';
+
+// Pages
+import Dashboard from '@/pages/Dashboard';
+import KnowledgeBase from '@/pages/KnowledgeBase';
+import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
 import Chat from '@/pages/Chat';
 import Content from '@/pages/Content';
 import ContentGenerator from '@/pages/ContentGenerator';
@@ -25,6 +22,9 @@ import TrendsDiscovery from '@/pages/TrendsDiscovery';
 import ResearchWorkbench from '@/pages/ResearchWorkbench';
 import LearningManagement from '@/pages/LearningManagement';
 import OnboardingPage from '@/pages/OnboardingPage';
+import Pricing from '@/pages/Pricing';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
 
 function App() {
   return (
@@ -34,167 +34,114 @@ function App() {
           <div className="min-h-screen bg-background">
             <Toaster />
             <Routes>
-              {/* Dashboard */}
+              {/* Main Dashboard */}
               <Route path="/" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <Home />
-                  </UniversalLayout>
+                  <Dashboard />
                 </ProtectedRoute>
               } />
               
-              {/* Onboarding Route */}
+              {/* Redirect legacy routes to main dashboard */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Onboarding */}
               <Route path="/onboarding" element={
                 <ProtectedRoute>
                   <OnboardingPage />
                 </ProtectedRoute>
               } />
               
-              {/* Knowledge Base - Updated route */}
-              <Route path="/knowledge" element={
+              {/* Core Features */}
+              <Route path="/chat" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <KnowledgeBase />
-                  </UniversalLayout>
+                  <Chat />
                 </ProtectedRoute>
               } />
               
-              {/* Legacy knowledge-base redirect for compatibility */}
-              <Route path="/knowledge-base" element={
+              <Route path="/knowledge" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <KnowledgeBase />
-                  </UniversalLayout>
+                  <KnowledgeBase />
                 </ProtectedRoute>
               } />
               
               {/* AI Modules */}
-              <Route path="/agents" element={
-                <ProtectedRoute>
-                  <UniversalLayout>
-                    <Agents />
-                  </UniversalLayout>
-                </ProtectedRoute>
-              } />
-              
               <Route path="/competitive-intelligence" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <CompetitiveIntelligence />
-                  </UniversalLayout>
+                  <CompetitiveIntelligence />
                 </ProtectedRoute>
               } />
               
               <Route path="/trends" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <TrendsDiscovery />
-                  </UniversalLayout>
+                  <TrendsDiscovery />
                 </ProtectedRoute>
               } />
               
               <Route path="/research" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <ResearchWorkbench />
-                  </UniversalLayout>
+                  <ResearchWorkbench />
                 </ProtectedRoute>
               } />
               
-              {/* Chat */}
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <UniversalLayout>
-                    <Chat />
-                  </UniversalLayout>
-                </ProtectedRoute>
-              } />
-              
-              {/* Content Routes - Organized properly */}
+              {/* Content Management */}
               <Route path="/content" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <Content />
-                  </UniversalLayout>
+                  <Content />
                 </ProtectedRoute>
               } />
               
               <Route path="/content/generator" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <ContentGenerator />
-                  </UniversalLayout>
+                  <ContentGenerator />
                 </ProtectedRoute>
               } />
               
               <Route path="/content/library" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <ContentLibrary />
-                  </UniversalLayout>
+                  <ContentLibrary />
                 </ProtectedRoute>
               } />
               
               <Route path="/content/analytics" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <ContentAnalytics />
-                  </UniversalLayout>
+                  <ContentAnalytics />
                 </ProtectedRoute>
               } />
               
-              {/* Learning Management */}
+              {/* Learning */}
               <Route path="/learning" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <LearningManagement />
-                  </UniversalLayout>
+                  <LearningManagement />
                 </ProtectedRoute>
               } />
               
-              {/* Account & Settings */}
+              {/* Account & Admin */}
               <Route path="/profile" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <Profile />
-                  </UniversalLayout>
+                  <Profile />
                 </ProtectedRoute>
               } />
               
               <Route path="/billing" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <Billing />
-                  </UniversalLayout>
+                  <Billing />
                 </ProtectedRoute>
               } />
               
               <Route path="/admin" element={
                 <ProtectedRoute>
-                  <UniversalLayout>
-                    <Admin />
-                  </UniversalLayout>
+                  <Admin />
                 </ProtectedRoute>
               } />
               
               {/* Public Routes */}
-              <Route path="/pricing" element={
-                <UniversalLayout>
-                  <Pricing />
-                </UniversalLayout>
-              } />
-              
-              <Route path="/terms" element={
-                <UniversalLayout>
-                  <Terms />
-                </UniversalLayout>
-              } />
-              
-              <Route path="/privacy" element={
-                <UniversalLayout>
-                  <Privacy />
-                </UniversalLayout>
-              } />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
             </Routes>
           </div>
         </BrowserRouter>
