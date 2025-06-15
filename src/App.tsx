@@ -35,14 +35,15 @@ function App() {
                 <Route path="/agents" element={<ConsolidatedAgents />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/content" element={<ContentGenerator />} />
-                {/* Redirect content-library to unified content studio */}
-                <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
                 <Route path="/content-analytics" element={<ContentAnalytics />} />
                 <Route path="/knowledge" element={<KnowledgeBase />} />
                 <Route path="/research" element={<OptimizedResearchWorkbench />} />
                 <Route path="/learning" element={<LearningManagement />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/admin" element={<Admin />} />
+                {/* Redirect legacy routes to unified content studio */}
+                <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
+                <Route path="/content-generator" element={<Navigate to="/content?tab=generator" replace />} />
               </Routes>
             </ConsolidatedAppLayout>
           </BrowserRouter>

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
@@ -138,21 +137,35 @@ export function useUnifiedContentGeneration() {
           purpose: formData.purpose || ''
         };
 
+        // Convert metrics to a plain object compatible with Json type
+        const metricsPlain = {
+          tokensUsed: metrics.tokensUsed,
+          generationTime: metrics.generationTime,
+          qualityScore: metrics.qualityScore,
+          personalizedElements: metrics.personalizedElements,
+          tripartiteUsed: metrics.tripartiteUsed,
+          sources: metrics.sources || []
+        };
+
+        const metadataPlain = {
+          generatedBy: useTripartite ? 'unified-tripartite' : 'unified-studio',
+          formData: formDataPlain,
+          metrics: metricsPlain,
+          ...(useTripartite ? {
+            tripartiteMetadata: {
+              sources: metrics.sources || [],
+              qualityScore: metrics.qualityScore
+            }
+          } : {})
+        };
+
         await createContentItem.mutateAsync({
           title: generateContentTitle(formData),
           content: result.content,
           content_type: mapContentType(formData.type),
           status: 'draft',
           tags: generateTags(formData, useTripartite),
-          metadata: {
-            generatedBy: useTripartite ? 'unified-tripartite' : 'unified-studio',
-            formData: formDataPlain,
-            metrics,
-            tripartiteMetadata: useTripartite ? {
-              sources: metrics.sources || [],
-              qualityScore: metrics.qualityScore
-            } : undefined
-          }
+          metadata: metadataPlain
         });
         
         toast.success(`Content generated${useTripartite ? ' with web research' : ''} and saved to library!`);
