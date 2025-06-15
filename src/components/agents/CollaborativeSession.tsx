@@ -11,9 +11,13 @@ import {
   Users, 
   Play, 
   Pause,
-  Clock
+  Clock,
+  Target
 } from 'lucide-react';
 import { AgentConfig } from './UnifiedAgentWorkspace';
+import { CollaborativeChatInterface } from './CollaborativeChatInterface';
+import { CollaborativeSettings } from './CollaborativeSettings';
+import { CollaborativeAnalysis } from './CollaborativeAnalysis';
 
 interface CollaborativeSessionProps {
   selectedAgents: AgentConfig[];
@@ -28,10 +32,12 @@ export function CollaborativeSession({
 }: CollaborativeSessionProps) {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState('chat');
 
   const startSession = () => {
     setIsSessionActive(true);
     setSessionStartTime(new Date());
+    setActiveTab('chat'); // Switch to chat when starting session
   };
 
   const pauseSession = () => {
@@ -57,10 +63,10 @@ export function CollaborativeSession({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Collaborative Session
+                Sesión Colaborativa Multi-Agente
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {selectedAgents.length} agents working together
+                {selectedAgents.length} agentes especializados trabajando en equipo
               </p>
             </div>
             
@@ -75,16 +81,17 @@ export function CollaborativeSession({
               <Button
                 onClick={isSessionActive ? pauseSession : startSession}
                 className="flex items-center gap-2"
+                variant={isSessionActive ? "outline" : "default"}
               >
                 {isSessionActive ? (
                   <>
                     <Pause className="h-4 w-4" />
-                    Pause Session
+                    Pausar Sesión
                   </>
                 ) : (
                   <>
                     <Play className="h-4 w-4" />
-                    Start Session
+                    Iniciar Sesión
                   </>
                 )}
               </Button>
@@ -110,101 +117,91 @@ export function CollaborativeSession({
               );
             })}
           </div>
+          
+          {isSessionActive && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700">
+                <Target className="h-4 w-4" />
+                <span className="text-sm font-medium">Sesión Activa</span>
+              </div>
+              <p className="text-sm text-green-600 mt-1">
+                Todos los agentes están listos para colaborar. Ve a la pestaña "Chat" para comenzar.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Session Interface */}
-      <Tabs defaultValue="chat" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
-            Chat
+            Chat Colaborativo
           </TabsTrigger>
           <TabsTrigger value="analysis" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Analysis
+            Análisis
           </TabsTrigger>
           <TabsTrigger value="coordination" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Coordination
+            Coordinación
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Settings
+            Configuración
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="chat">
-          <Card>
-            <CardHeader>
-              <CardTitle>Multi-Agent Chat</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Collaborative Chat Interface</h3>
-                <p className="text-muted-foreground">
-                  Chat with multiple agents simultaneously for comprehensive analysis
-                </p>
-                {!isSessionActive && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Start the session to begin chatting with your selected agents
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <CollaborativeChatInterface
+            selectedAgents={selectedAgents}
+            sessionConfig={sessionConfig}
+            setSessionConfig={setSessionConfig}
+          />
         </TabsContent>
 
         <TabsContent value="analysis">
-          <Card>
-            <CardHeader>
-              <CardTitle>Collaborative Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Cross-Agent Analysis</h3>
-                <p className="text-muted-foreground">
-                  View combined insights and analysis from all active agents
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <CollaborativeAnalysis
+            selectedAgents={selectedAgents}
+            sessionConfig={sessionConfig}
+          />
         </TabsContent>
 
         <TabsContent value="coordination">
           <Card>
             <CardHeader>
-              <CardTitle>Agent Coordination</CardTitle>
+              <CardTitle>Panel de Coordinación</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Agent Coordination Panel</h3>
-                <p className="text-muted-foreground">
-                  Manage how agents work together and share information
+                <h3 className="text-lg font-semibold mb-2">Coordinación de Agentes</h3>
+                <p className="text-muted-foreground mb-4">
+                  Gestiona cómo los agentes se coordinan y comparten información durante la sesión
                 </p>
+                <div className="space-y-4 max-w-md mx-auto">
+                  <div className="text-left space-y-2">
+                    <h4 className="font-medium">Funcionalidades planeadas:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Asignación dinámica de tareas</li>
+                      <li>• Monitoreo de dependencias entre agentes</li>
+                      <li>• Escalación automática de conflictos</li>
+                      <li>• Optimización de flujos de trabajo</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Session Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Collaborative Settings</h3>
-                <p className="text-muted-foreground">
-                  Configure how agents collaborate and share context
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <CollaborativeSettings
+            selectedAgents={selectedAgents}
+            sessionConfig={sessionConfig}
+            setSessionConfig={setSessionConfig}
+          />
         </TabsContent>
       </Tabs>
     </div>
