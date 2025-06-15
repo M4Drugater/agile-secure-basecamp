@@ -28,6 +28,8 @@ interface SearchResults {
     timestamp: string;
     dataConfidence: number;
     sources: string[];
+    model?: string;
+    apiProvider?: string;
   };
 }
 
