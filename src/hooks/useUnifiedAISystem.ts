@@ -45,23 +45,24 @@ export function useUnifiedAISystem() {
 
     try {
       console.log('🚀 Unified AI System Request:', {
-        agentType: request.agentType,
-        currentPage: request.currentPage,
-        searchEnabled: request.searchEnabled,
-        model: request.model,
+        agentType: request.agentType || 'clipogino',
+        currentPage: request.currentPage || '/chat',
+        searchEnabled: request.searchEnabled || false,
+        model: request.model || 'gpt-4o-mini',
         userId: user.id
       });
 
       // 1. Build comprehensive user context
-      const userContext = await buildFullContextString(request.message);
-      const contextSummary = getContextSummary();
-
-      console.log('📊 Context Built:', {
-        knowledgeCount: contextSummary.knowledgeCount,
-        contentCount: contextSummary.contentCount,
-        activityCount: contextSummary.activityCount,
-        quality: contextSummary.quality
-      });
+      let userContext = '';
+      let contextSummary = { quality: 'basic', knowledgeCount: 0, contentCount: 0, activityCount: 0, hasProfile: false };
+      
+      try {
+        userContext = await buildFullContextString(request.message);
+        contextSummary = getContextSummary();
+        console.log('📊 Context Built:', contextSummary);
+      } catch (error) {
+        console.warn('⚠️ Context building failed, continuing without:', error);
+      }
 
       // 2. Perform web search if enabled
       let webSearchData = null;
@@ -73,7 +74,7 @@ export function useUnifiedAISystem() {
           
           const searchResults = await performUniversalSearch({
             query: searchQuery,
-            context: `${request.agentType} agent search for user query`,
+            context: `${request.agentType || 'clipogino'} agent search for user query`,
             searchType: 'comprehensive',
             timeframe: 'month'
           });
@@ -85,19 +86,26 @@ export function useUnifiedAISystem() {
           });
         } catch (searchError) {
           console.warn('⚠️ Web search failed, continuing without:', searchError);
-          // Continue without web search rather than failing
         }
       }
 
       // 3. Build elite system prompt with all context
-      const systemPrompt = await buildEliteSystemPrompt({
-        agentType: request.agentType || 'clipogino',
-        currentPage: request.currentPage || '/chat',
-        sessionConfig: request.sessionConfig,
-        analysisDepth: 'comprehensive',
-        outputFormat: 'conversational',
-        contextLevel: 'elite'
-      });
+      let systemPrompt = '';
+      try {
+        systemPrompt = await buildEliteSystemPrompt({
+          agentType: request.agentType || 'clipogino',
+          currentPage: request.currentPage || '/chat',
+          sessionConfig: request.sessionConfig,
+          analysisDepth: 'comprehensive',
+          outputFormat: 'conversational',
+          contextLevel: 'elite'
+        });
+      } catch (error) {
+        console.warn('⚠️ Prompt building failed, using fallback:', error);
+        systemPrompt = `You are CLIPOGINO, an AI business mentor and strategic advisor. 
+        Provide professional, actionable advice based on the user's query: "${request.message}"
+        Be conversational, helpful, and strategic in your responses.`;
+      }
 
       // 4. Enhance system prompt with web data if available
       let enhancedSystemPrompt = systemPrompt;
@@ -105,9 +113,9 @@ export function useUnifiedAISystem() {
         enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE ===\n`;
         enhancedSystemPrompt += `Live Web Research Results:\n${webSearchData.content}\n\n`;
         
-        if (webSearchData.insights.length > 0) {
+        if (webSearchData.insights && webSearchData.insights.length > 0) {
           enhancedSystemPrompt += `Strategic Insights:\n`;
-          webSearchData.insights.forEach((insight, index) => {
+          webSearchData.insights.forEach((insight: any, index: number) => {
             enhancedSystemPrompt += `${index + 1}. ${insight.title}: ${insight.description} (Confidence: ${Math.round(insight.confidence * 100)}%)\n`;
           });
         }
@@ -172,9 +180,18 @@ export function useUnifiedAISystem() {
     }
   };
 
+  const getContextSummary = () => {
+    try {
+      return getContextSummary();
+    } catch (error) {
+      console.warn('Context summary failed:', error);
+      return { quality: 'basic', knowledgeCount: 0, contentCount: 0, activityCount: 0, hasProfile: false };
+    }
+  };
+
   return {
     isProcessing,
     sendUnifiedRequest,
-    getContextSummary
+    getContextSummary: getContextSummary
   };
 }

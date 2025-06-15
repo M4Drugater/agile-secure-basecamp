@@ -27,6 +27,14 @@ interface EliteRequest {
   contextLevel?: 'basic' | 'enhanced' | 'elite';
 }
 
+// Model pricing per 1K tokens (approximate)
+const MODEL_PRICING = {
+  'gpt-4o': { input: 0.00250, output: 0.01000 },
+  'gpt-4o-mini': { input: 0.00015, output: 0.00060 },
+  'claude-3-5-sonnet-20241022': { input: 0.00300, output: 0.01500 },
+  'claude-3-opus-20240229': { input: 0.01500, output: 0.07500 }
+};
+
 async function performWebSearch(query: string, type: string = 'comprehensive') {
   if (!perplexityApiKey) {
     return {
@@ -37,6 +45,8 @@ async function performWebSearch(query: string, type: string = 'comprehensive') {
   }
 
   try {
+    console.log('🔍 Performing web search with Perplexity:', query);
+
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -78,6 +88,9 @@ Make this suitable for C-suite decision making.`
     }
 
     const data = await response.json();
+    
+    console.log('✅ Web search completed successfully');
+    
     return {
       success: true,
       data: {
@@ -89,7 +102,7 @@ Make this suitable for C-suite decision making.`
       }
     };
   } catch (error) {
-    console.error('Web search error:', error);
+    console.error('❌ Web search error:', error);
     return {
       success: false,
       data: null,
@@ -102,6 +115,8 @@ async function callOpenAI(messages: any[], model: string) {
   if (!openaiApiKey) {
     throw new Error('OpenAI API key not configured');
   }
+
+  console.log('🤖 Calling OpenAI API:', model);
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -118,16 +133,21 @@ async function callOpenAI(messages: any[], model: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorData = await response.text();
+    throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log('✅ OpenAI response received');
+  return data;
 }
 
 async function callClaude(messages: any[], model: string) {
   if (!claudeApiKey) {
     throw new Error('Claude API key not configured');
   }
+
+  console.log('🧠 Calling Claude API:', model);
 
   // Convert messages to Claude format
   const systemMessage = messages.find(m => m.role === 'system');
@@ -150,10 +170,14 @@ async function callClaude(messages: any[], model: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`);
+    const errorData = await response.text();
+    throw new Error(`Claude API error: ${response.status} - ${errorData}`);
   }
 
   const data = await response.json();
+  
+  // Convert Claude response to OpenAI format
+  console.log('✅ Claude response received');
   return {
     choices: [{
       message: {
@@ -164,17 +188,32 @@ async function callClaude(messages: any[], model: string) {
   };
 }
 
+function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
+  const pricing = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
+  if (!pricing) {
+    return 0; // Unknown model, return 0 cost
+  }
+  
+  const inputCost = (inputTokens / 1000) * pricing.input;
+  const outputCost = (outputTokens / 1000) * pricing.output;
+  return inputCost + outputCost;
+}
+
 async function logUsage(userId: string, model: string, tokensUsed: number, cost: number) {
   try {
-    await supabase.from('ai_usage_logs').insert({
+    const { error } = await supabase.from('ai_usage_logs').insert({
       user_id: userId,
       model,
       tokens_used: tokensUsed,
       cost,
       timestamp: new Date().toISOString()
     });
+    
+    if (error) {
+      console.error('Usage logging error:', error);
+    }
   } catch (error) {
-    console.error('Usage logging error:', error);
+    console.error('Usage logging failed:', error);
   }
 }
 
@@ -195,7 +234,7 @@ serve(async (req) => {
       contextLevel = 'elite'
     }: EliteRequest = await req.json();
 
-    console.log('Elite Multi-LLM Engine Request:', {
+    console.log('🚀 Elite Multi-LLM Engine Request:', {
       model,
       searchEnabled,
       contextLevel,
@@ -208,7 +247,7 @@ serve(async (req) => {
 
     // Perform web search if enabled
     if (searchEnabled && searchQuery) {
-      console.log('Performing web search:', searchQuery);
+      console.log('🔍 Performing web search:', searchQuery);
       const searchResult = await performWebSearch(searchQuery, 'comprehensive');
       
       if (searchResult.success && searchResult.data) {
@@ -234,12 +273,16 @@ serve(async (req) => {
     // Route to appropriate LLM
     if (model.startsWith('claude')) {
       response = await callClaude(enhancedMessages, model);
-      tokensUsed = response.usage?.input_tokens + response.usage?.output_tokens || 0;
-      cost = tokensUsed * 0.00001; // Approximate Claude pricing
+      const inputTokens = response.usage?.input_tokens || 0;
+      const outputTokens = response.usage?.output_tokens || 0;
+      tokensUsed = inputTokens + outputTokens;
+      cost = calculateCost(model, inputTokens, outputTokens);
     } else {
       response = await callOpenAI(enhancedMessages, model);
       tokensUsed = response.usage?.total_tokens || 0;
-      cost = model === 'gpt-4o' ? tokensUsed * 0.00003 : tokensUsed * 0.0000015;
+      const promptTokens = response.usage?.prompt_tokens || 0;
+      const completionTokens = response.usage?.completion_tokens || 0;
+      cost = calculateCost(model, promptTokens, completionTokens);
     }
 
     // Log usage
@@ -258,7 +301,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     };
 
-    console.log('Elite Multi-LLM Engine Success:', {
+    console.log('✅ Elite Multi-LLM Engine Success:', {
       userId,
       model,
       tokensUsed,
@@ -272,11 +315,16 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Elite Multi-LLM Engine Error:', error);
-    return new Response(JSON.stringify({
+    console.error('❌ Elite Multi-LLM Engine Error:', error);
+    
+    // Return a structured error response
+    const errorResponse = {
       error: error.message,
-      fallback: 'Elite AI system temporarily unavailable. Core functionality continues.'
-    }), {
+      fallback: 'Elite AI system temporarily unavailable. Core functionality continues.',
+      timestamp: new Date().toISOString()
+    };
+
+    return new Response(JSON.stringify(errorResponse), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

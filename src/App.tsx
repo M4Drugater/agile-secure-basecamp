@@ -16,6 +16,7 @@ import ChatPage from '@/pages/Chat';
 import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligence';
 import EnhancedChatPage from '@/pages/EnhancedChat';
 import UnifiedChatPage from '@/pages/UnifiedChatPage';
+import AgentsPage from '@/pages/Agents';
 
 function App() {
   return (
@@ -52,17 +53,24 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Updated chat route to use unified system */}
+            {/* Chat routes - unified system */}
             <Route path="/chat" element={
               <ProtectedRoute>
                 <UnifiedChatPage />
               </ProtectedRoute>
             } />
             
-            {/* Keep enhanced chat as alternative */}
+            {/* Enhanced chat as alternative */}
             <Route path="/enhanced-chat" element={
               <ProtectedRoute>
                 <EnhancedChatPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Agents workspace */}
+            <Route path="/agents" element={
+              <ProtectedRoute>
+                <AgentsPage />
               </ProtectedRoute>
             } />
             

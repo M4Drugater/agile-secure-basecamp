@@ -1,195 +1,250 @@
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 
-interface ElitePromptConfig {
-  agentType?: string;
-  currentPage?: string;
+interface PromptConfig {
+  agentType: 'clipogino' | 'cdv' | 'cir' | 'cia';
+  currentPage: string;
   sessionConfig?: any;
-  analysisDepth?: 'standard' | 'detailed' | 'comprehensive';
-  outputFormat?: 'conversational' | 'structured' | 'executive';
-  contextLevel?: 'basic' | 'enhanced' | 'elite';
+  analysisDepth: 'basic' | 'enhanced' | 'comprehensive';
+  outputFormat: 'conversational' | 'structured' | 'executive';
+  contextLevel: 'basic' | 'enhanced' | 'elite';
 }
 
 export function useElitePromptEngine() {
   const { user } = useAuth();
-  const { buildFullContextString, getContextSummary } = useContextBuilder();
+  const [isBuilding, setIsBuilding] = useState(false);
 
-  const buildEliteSystemPrompt = async (config: ElitePromptConfig = {}) => {
-    const {
-      agentType = 'clipogino',
-      currentPage = '/chat',
-      analysisDepth = 'detailed',
-      outputFormat = 'conversational',
-      contextLevel = 'elite'
-    } = config;
+  const buildEliteSystemPrompt = async (config: PromptConfig): Promise<string> => {
+    setIsBuilding(true);
 
-    // Build user context based on context level
-    let userContext = '';
-    if (contextLevel === 'elite' || contextLevel === 'enhanced') {
-      userContext = await buildFullContextString('system prompt generation');
+    try {
+      console.log('🎯 Building Elite System Prompt:', config);
+
+      // Base agent personalities
+      const agentPersonalities = {
+        clipogino: {
+          name: 'CLIPOGINO',
+          role: 'AI Business Mentor & Strategic Advisor',
+          personality: 'Professional, strategic, and empathetic business mentor',
+          expertise: 'Business strategy, leadership development, career growth, market analysis'
+        },
+        cdv: {
+          name: 'CDV Agent',
+          role: 'Competitive Discovery & Validation Specialist',
+          personality: 'Analytical, thorough, and insight-driven researcher',
+          expertise: 'Competitive analysis, market validation, business intelligence'
+        },
+        cir: {
+          name: 'CIR Agent',
+          role: 'Competitive Intelligence Researcher',
+          personality: 'Data-driven, investigative, and detail-oriented analyst',
+          expertise: 'Market research, competitor analysis, industry trends'
+        },
+        cia: {
+          name: 'CIA Agent',
+          role: 'Competitive Intelligence Analyst',
+          personality: 'Strategic, comprehensive, and executive-level advisor',
+          expertise: 'Strategic analysis, competitive positioning, executive insights'
+        }
+      };
+
+      const agent = agentPersonalities[config.agentType];
+
+      let systemPrompt = `You are ${agent.name}, a ${agent.role}.
+
+PERSONALITY: ${agent.personality}
+EXPERTISE: ${agent.expertise}
+
+CONTEXT AWARENESS:
+- Current page: ${config.currentPage}
+- Analysis depth: ${config.analysisDepth}
+- Output format: ${config.outputFormat}
+- Context level: ${config.contextLevel}
+`;
+
+      // Add session-specific configuration
+      if (config.sessionConfig) {
+        systemPrompt += `
+SESSION CONFIGURATION:
+- Company: ${config.sessionConfig.companyName || 'Not specified'}
+- Industry: ${config.sessionConfig.industry || 'Not specified'}
+- Analysis Focus: ${config.sessionConfig.analysisFocus || 'General'}
+- Objectives: ${config.sessionConfig.objectives || 'Strategic guidance'}
+`;
+      }
+
+      // Add agent-specific instructions
+      switch (config.agentType) {
+        case 'clipogino':
+          systemPrompt += `
+CORE MISSION: Provide strategic business mentoring with a focus on:
+- Leadership development and career advancement
+- Business strategy and decision-making
+- Professional growth and skill development
+- Market insights and competitive positioning
+
+RESPONSE STYLE:
+- Be conversational yet professional
+- Provide actionable, practical advice
+- Use real-world examples and case studies
+- Ask clarifying questions when needed
+- Maintain an encouraging and supportive tone
+`;
+          break;
+
+        case 'cdv':
+          systemPrompt += `
+CORE MISSION: Discover and validate competitive opportunities through:
+- Market gap analysis and opportunity identification
+- Competitive positioning assessment
+- Business model validation
+- Strategic advantage discovery
+
+RESPONSE STYLE:
+- Present findings in structured, analytical format
+- Include data-driven insights and recommendations
+- Highlight key opportunities and risks
+- Provide actionable next steps
+`;
+          break;
+
+        case 'cir':
+          systemPrompt += `
+CORE MISSION: Conduct comprehensive competitive intelligence research:
+- Deep dive competitor analysis
+- Market trend identification and analysis
+- Industry benchmark comparisons
+- Regulatory and market environment assessment
+
+RESPONSE STYLE:
+- Deliver thorough, research-backed insights
+- Include quantitative data when available
+- Present findings in executive summary format
+- Highlight critical intelligence and implications
+`;
+          break;
+
+        case 'cia':
+          systemPrompt += `
+CORE MISSION: Provide strategic intelligence analysis for executive decision-making:
+- Strategic option evaluation and recommendations
+- Competitive threat and opportunity assessment
+- Market positioning and strategic planning
+- Executive-level strategic insights
+
+RESPONSE STYLE:
+- Focus on strategic implications and recommendations
+- Use frameworks like SWOT, Porter's Five Forces, McKinsey 7-S
+- Present findings suitable for C-suite consumption
+- Include risk assessment and mitigation strategies
+`;
+          break;
+      }
+
+      // Add output format specifications
+      switch (config.outputFormat) {
+        case 'conversational':
+          systemPrompt += `
+OUTPUT FORMAT: Conversational
+- Use natural, engaging language
+- Include questions to deepen understanding
+- Provide examples and analogies
+- Maintain interactive dialogue flow
+`;
+          break;
+
+        case 'structured':
+          systemPrompt += `
+OUTPUT FORMAT: Structured Analysis
+- Use clear headings and bullet points
+- Organize information hierarchically
+- Include executive summary when appropriate
+- Present data in logical sequence
+`;
+          break;
+
+        case 'executive':
+          systemPrompt += `
+OUTPUT FORMAT: Executive Brief
+- Lead with key recommendations
+- Include supporting data and rationale
+- Focus on strategic implications
+- Provide clear action items
+`;
+          break;
+      }
+
+      // Add context level instructions
+      if (config.contextLevel === 'elite') {
+        systemPrompt += `
+ELITE CONTEXT PROCESSING:
+- Leverage all available user context for personalized responses
+- Reference user's professional background and goals
+- Connect insights to user's specific industry and experience
+- Provide tailored recommendations based on user's context
+- Use personal knowledge base when relevant
+`;
+      }
+
+      // Add quality and professionalism standards
+      systemPrompt += `
+QUALITY STANDARDS:
+- Maintain professional excellence in all responses
+- Ensure accuracy and reliability of information
+- Provide balanced, objective analysis
+- Include relevant sources and citations when applicable
+- Adapt communication style to user's level and needs
+
+IMPORTANT: Always provide valuable, actionable insights. If you don't have specific information, acknowledge limitations while still offering helpful guidance based on general best practices.
+`;
+
+      console.log('✅ Elite System Prompt Built Successfully');
+      return systemPrompt;
+
+    } catch (error) {
+      console.error('❌ Elite Prompt Building Error:', error);
+      // Return a fallback prompt
+      return `You are ${agentPersonalities[config.agentType].name}, a professional AI assistant specializing in ${agentPersonalities[config.agentType].expertise}. Provide helpful, accurate, and actionable advice based on the user's query.`;
+    } finally {
+      setIsBuilding(false);
     }
-
-    const contextSummary = getContextSummary();
-
-    // Core elite prompt foundation
-    const eliteFoundation = `You are CLIPOGINO, an elite AI executive advisor and strategic mentor operating at Fortune 500 C-suite level. You provide McKinsey-quality strategic guidance using premier consulting frameworks and methodologies.
-
-## CORE EXCELLENCE STANDARDS
-- **Strategic Intelligence**: Apply McKinsey frameworks (7-S, Porter's Five Forces, 3-Horizons)
-- **Executive Communication**: C-suite ready insights with pyramid principle structure
-- **Investment-Grade Analysis**: Verifiable, source-attributed, board-presentation quality
-- **Personalized Guidance**: Tailored to user's experience, role, and strategic objectives
-- **Action-Oriented**: Every insight connects to specific, executable strategic actions
-
-## USER CONTEXT INTELLIGENCE
-${userContext ? `**Enhanced User Profile**: Based on comprehensive analysis of user's knowledge base, activity patterns, and strategic objectives.\n${userContext}` : '**Basic Profile**: Professional executive seeking strategic guidance.'}
-
-**Context Quality**: ${contextLevel.toUpperCase()} (${contextSummary.knowledgeCount} knowledge assets, ${contextSummary.conversationCount} interactions)
-**Current Session**: ${currentPage} - ${getCurrentPageContext(currentPage)}
-**Analysis Depth**: ${analysisDepth.toUpperCase()} level strategic analysis`;
-
-    // Agent-specific specializations
-    const agentSpecialization = getAgentSpecialization(agentType, config.sessionConfig);
-
-    // Output format optimization
-    const outputGuidelines = getOutputFormatGuidelines(outputFormat, analysisDepth);
-
-    // Contextual intelligence layer
-    const contextualLayer = getContextualIntelligence(currentPage, contextSummary);
-
-    return `${eliteFoundation}
-
-${agentSpecialization}
-
-${outputGuidelines}
-
-${contextualLayer}
-
-## STRATEGIC INTERACTION PROTOCOL
-1. **Lead with Strategic Insight**: Always open with the key strategic implication
-2. **Apply Consulting Frameworks**: Use McKinsey, BCG, or Bain methodologies
-3. **Quantify Impact**: Provide business case metrics where possible
-4. **Actionable Recommendations**: Clear next steps with timelines and accountability
-5. **Risk Assessment**: Address potential challenges and mitigation strategies
-
-Remember: You are advising on decisions that affect careers, revenue, and market position. Maintain the highest standards of strategic rigor and executive-level insight.`;
   };
 
-  const getCurrentPageContext = (page: string): string => {
-    const pageContextMap = {
-      '/chat': 'Strategic mentoring and executive advisory session',
-      '/competitive-intelligence': 'Advanced competitive intelligence and market analysis',
-      '/content': 'Strategic content creation and thought leadership development',
-      '/knowledge': 'Knowledge management and organizational learning optimization',
-      '/learning': 'Executive development and capability building',
-      '/research': 'Strategic research and market intelligence gathering',
-      '/trends': 'Market trend analysis and future-state planning'
-    };
-    return pageContextMap[page] || 'Strategic consultation session';
-  };
-
-  const getAgentSpecialization = (agentType: string, sessionConfig?: any): string => {
-    switch (agentType) {
-      case 'cdv':
-        return `## CDV SPECIALIZATION - COMPETITOR DISCOVERY & VALIDATION
-**Mission**: Systematic competitive threat identification and strategic validation
-**Frameworks**: Porter's Five Forces, BCG Matrix, Threat Assessment Matrix
-**Output Focus**: Quantified threat analysis with business impact assessment
-**Company Context**: ${sessionConfig?.companyName || 'Target Organization'} in ${sessionConfig?.industry || 'Technology'} sector`;
-
-      case 'cir':
-        return `## CIR SPECIALIZATION - COMPETITIVE INTELLIGENCE RETRIEVAL
-**Mission**: Premium data intelligence and financial analysis
-**Frameworks**: Financial ratio analysis, market benchmarking, industry comparison
-**Output Focus**: Investment-grade financial intelligence with strategic implications
-**Company Context**: ${sessionConfig?.companyName || 'Target Organization'} competitive positioning analysis`;
-
-      case 'cia':
-        return `## CIA SPECIALIZATION - COMPETITIVE INTELLIGENCE ANALYSIS
-**Mission**: Strategic synthesis and C-suite decision support
-**Frameworks**: McKinsey 7-S, 3-Horizons Model, Strategic Options Analysis
-**Output Focus**: Board-ready strategic recommendations with implementation roadmaps
-**Company Context**: ${sessionConfig?.companyName || 'Target Organization'} strategic planning support`;
-
-      case 'clipogino':
-      default:
-        return `## CLIPOGINO SPECIALIZATION - EXECUTIVE STRATEGIC ADVISORY
-**Mission**: Comprehensive strategic mentoring and executive development
-**Frameworks**: Situational Leadership, Strategic Thinking Models, Executive Presence
-**Output Focus**: Personalized strategic guidance with career and business impact
-**Advisory Style**: Senior executive mentor with Fortune 500 experience`;
-    }
-  };
-
-  const getOutputFormatGuidelines = (format: string, depth: string): string => {
-    const baseGuidelines = {
-      conversational: `## CONVERSATIONAL OUTPUT GUIDELINES
-- **Tone**: Executive mentor - warm but authoritative
-- **Structure**: Natural flow with strategic insights woven throughout
-- **Length**: Comprehensive yet focused (3-5 paragraphs typical)
-- **Engagement**: Ask strategic questions to deepen insight`,
-
-      structured: `## STRUCTURED OUTPUT GUIDELINES
-- **Format**: Clear sections with headers and bullet points
-- **Components**: Executive Summary, Key Insights, Strategic Recommendations, Next Steps
-- **Logic**: Pyramid principle - conclusions first, supporting evidence follows
-- **Metrics**: Include quantitative analysis where applicable`,
-
-      executive: `## EXECUTIVE OUTPUT GUIDELINES
-- **Format**: Board presentation quality with executive summary
-- **Components**: Strategic Synopsis, Framework Analysis, Recommendations, Implementation Plan
-- **Standards**: Investment-grade accuracy with confidence levels
-- **Length**: Comprehensive analysis (5-10 structured sections)`
+  const getAgentCapabilities = (agentType: string) => {
+    const capabilities = {
+      clipogino: [
+        'Strategic business mentoring',
+        'Leadership development guidance',
+        'Career advancement planning',
+        'Market analysis and insights'
+      ],
+      cdv: [
+        'Competitive discovery',
+        'Market validation',
+        'Opportunity identification',
+        'Business model analysis'
+      ],
+      cir: [
+        'Competitive intelligence research',
+        'Market trend analysis',
+        'Industry benchmarking',
+        'Regulatory environment assessment'
+      ],
+      cia: [
+        'Strategic analysis',
+        'Competitive positioning',
+        'Executive-level insights',
+        'Strategic planning support'
+      ]
     };
 
-    const depthModifiers = {
-      standard: '- **Depth**: Focused analysis with key strategic points',
-      detailed: '- **Depth**: Comprehensive analysis with multiple framework application',
-      comprehensive: '- **Depth**: Deep-dive analysis with scenario planning and risk assessment'
-    };
-
-    return `${baseGuidelines[format] || baseGuidelines.conversational}
-${depthModifiers[depth] || depthModifiers.detailed}`;
-  };
-
-  const getContextualIntelligence = (currentPage: string, contextSummary: any): string => {
-    const hasRichContext = contextSummary.knowledgeCount > 3 && contextSummary.conversationCount > 5;
-    
-    return `## CONTEXTUAL INTELLIGENCE LAYER
-**Context Richness**: ${hasRichContext ? 'High' : 'Standard'} - ${contextSummary.quality.toUpperCase()} quality context available
-**Page Context**: ${currentPage} - Optimize responses for current workflow
-**User Journey**: ${getUserJourneyStage(contextSummary)}
-**Strategic Focus**: ${getStrategicFocus(currentPage, contextSummary)}
-
-**Context-Aware Adaptations**:
-${hasRichContext ? '- Leverage user\'s knowledge base for personalized insights' : '- Build foundational understanding through strategic questioning'}
-- Reference previous conversations and established strategic context
-- Adapt complexity to user's demonstrated experience level
-- Connect insights to user's specific industry and role context`;
-  };
-
-  const getUserJourneyStage = (contextSummary: any): string => {
-    if (contextSummary.conversationCount < 3) return 'Initial Discovery - Building strategic foundation';
-    if (contextSummary.conversationCount < 10) return 'Active Engagement - Developing strategic insights';
-    return 'Advanced Partnership - Deep strategic collaboration';
-  };
-
-  const getStrategicFocus = (page: string, contextSummary: any): string => {
-    const focusMap = {
-      '/competitive-intelligence': 'Market positioning and competitive advantage development',
-      '/content': 'Thought leadership and strategic communication optimization',
-      '/knowledge': 'Organizational learning and knowledge capital enhancement',
-      '/learning': 'Executive capability development and strategic skill building'
-    };
-    return focusMap[page] || 'Executive advisory and strategic guidance';
+    return capabilities[agentType as keyof typeof capabilities] || [];
   };
 
   return {
+    isBuilding,
     buildEliteSystemPrompt,
-    getCurrentPageContext,
-    getAgentSpecialization,
-    getOutputFormatGuidelines,
-    getContextualIntelligence
+    getAgentCapabilities
   };
 }
