@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEliteMultiLLM } from './useEliteMultiLLM';
@@ -33,7 +32,7 @@ export function useUnifiedAISystem() {
   
   const { sendEliteRequest } = useEliteMultiLLM();
   const { buildEliteSystemPrompt } = useElitePromptEngine();
-  const { performUniversalSearch } = useUniversalWebSearch();
+  const { performUniversalWebSearch } = useUniversalWebSearch();
   const { buildFullContextString, getContextSummary } = useContextBuilder();
 
   const sendUnifiedRequest = async (request: UnifiedRequest): Promise<UnifiedResponse> => {
@@ -72,7 +71,7 @@ export function useUnifiedAISystem() {
           
           console.log('🔍 Performing web search:', searchQuery);
           
-          const searchResults = await performUniversalSearch({
+          const searchResults = await performUniversalWebSearch({
             query: searchQuery,
             context: `${request.agentType || 'clipogino'} agent search for user query`,
             searchType: 'comprehensive',
@@ -180,7 +179,7 @@ export function useUnifiedAISystem() {
     }
   };
 
-  const getContextSummary = () => {
+  const getContextSummaryWithFallback = () => {
     try {
       return getContextSummary();
     } catch (error) {
@@ -192,6 +191,6 @@ export function useUnifiedAISystem() {
   return {
     isProcessing,
     sendUnifiedRequest,
-    getContextSummary: getContextSummary
+    getContextSummary: getContextSummaryWithFallback
   };
 }

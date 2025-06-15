@@ -205,6 +205,25 @@ IMPORTANT: Always provide valuable, actionable insights. If you don't have speci
     } catch (error) {
       console.error('❌ Elite Prompt Building Error:', error);
       // Return a fallback prompt
+      const agentPersonalities = {
+        clipogino: {
+          name: 'CLIPOGINO',
+          expertise: 'Business strategy, leadership development, career growth, market analysis'
+        },
+        cdv: {
+          name: 'CDV Agent',
+          expertise: 'Competitive analysis, market validation, business intelligence'
+        },
+        cir: {
+          name: 'CIR Agent',
+          expertise: 'Market research, competitor analysis, industry trends'
+        },
+        cia: {
+          name: 'CIA Agent',
+          expertise: 'Strategic analysis, competitive positioning, executive insights'
+        }
+      };
+      
       return `You are ${agentPersonalities[config.agentType].name}, a professional AI assistant specializing in ${agentPersonalities[config.agentType].expertise}. Provide helpful, accurate, and actionable advice based on the user's query.`;
     } finally {
       setIsBuilding(false);
