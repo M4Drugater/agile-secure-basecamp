@@ -18,7 +18,7 @@ export function ConsolidatedAppLayout({ children, className }: ConsolidatedAppLa
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex w-full">
       {/* Sidebar */}
       <aside 
         className={cn(
