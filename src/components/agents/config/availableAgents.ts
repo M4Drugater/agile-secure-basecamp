@@ -1,5 +1,5 @@
 
-import { Zap } from 'lucide-react';
+import { Zap, Search } from 'lucide-react';
 import type { AgentConfig } from '../UnifiedAgentWorkspace';
 
 export const availableAgents: AgentConfig[] = [
@@ -38,8 +38,8 @@ export const availableAgents: AgentConfig[] = [
   {
     id: 'research-engine',
     name: 'Elite Research Engine',
-    description: '🚀 SISTEMA TRIPARTITE - Investigación con metodología unificada',
-    icon: Zap,
+    description: '🚀 SISTEMA TRIPARTITE - Investigación Fortune 500 con metodología unificada',
+    icon: Search,
     color: 'bg-indigo-500',
     capabilities: [
       'Research con flujo tripartite garantizado',

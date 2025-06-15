@@ -7,7 +7,7 @@ import { useConsolidatedAgentsHub } from './hooks/useConsolidatedAgentsHub';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Search } from 'lucide-react';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -67,6 +67,44 @@ export function AgentWorkspaceContent({
             size="lg"
           >
             Go to Unified Content Studio
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Special handling for Research Engine - redirect to unified research
+  if (primaryAgent.id === 'research-engine') {
+    return (
+      <Card className="max-w-2xl mx-auto mt-8">
+        <CardHeader className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-indigo-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search className="h-8 w-8 text-white" />
+          </div>
+          <CardTitle className="text-2xl">Elite Research Engine</CardTitle>
+          <p className="text-muted-foreground">
+            The Elite Research Engine has been unified with our dedicated Research Platform for enhanced capabilities.
+          </p>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border">
+            <h3 className="font-semibold mb-2">Unified Research Features</h3>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Tripartite AI System (OpenAI → Perplexity → Claude)</li>
+              <li>• Fortune 500-grade research capabilities</li>
+              <li>• Advanced source verification and ranking</li>
+              <li>• Multiple research types and depth levels</li>
+              <li>• Comprehensive analytics and insights</li>
+            </ul>
+          </div>
+          
+          <Button 
+            onClick={() => navigate('/research')}
+            className="w-full"
+            size="lg"
+          >
+            Go to Unified Research Platform
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </CardContent>

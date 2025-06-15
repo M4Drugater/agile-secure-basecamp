@@ -39,7 +39,7 @@ function App() {
                 <Route path="/learning" element={<LearningManagement />} />
                 <Route path="/billing" element={<Billing />} />
                 <Route path="/admin" element={<Admin />} />
-                {/* Redirect legacy routes to unified content studio */}
+                {/* Redirect legacy routes to unified systems */}
                 <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
                 <Route path="/content-generator" element={<Navigate to="/content?tab=generator" replace />} />
                 <Route path="/content-analytics" element={<Navigate to="/content?tab=library" replace />} />

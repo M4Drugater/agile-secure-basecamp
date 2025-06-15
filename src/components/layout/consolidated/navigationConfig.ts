@@ -7,7 +7,6 @@ import {
   CreditCard,
   Brain,
   Bot,
-  Search,
   Sparkles,
   FileText,
   Settings
@@ -19,19 +18,13 @@ export const navigationItems = [
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: Home, description: 'Vista general del sistema' },
       { title: 'Chat con CLIPOGINO', href: '/chat', icon: MessageSquare, badge: 'AI', description: 'Asistente inteligente personalizado' },
-      { title: 'Agentes IA', href: '/agents', icon: Bot, badge: 'ELITE', description: 'Centro unificado de agentes IA' }
+      { title: 'Agentes IA', href: '/agents', icon: Bot, badge: 'ELITE', description: 'Centro unificado de agentes IA con metodología tripartite' }
     ]
   },
   { 
     section: 'IA y Contenido',
     items: [
       { title: 'Content Studio', href: '/content', icon: FileText, description: 'Creación y gestión unificada de contenido' }
-    ]
-  },
-  { 
-    section: 'Investigación',
-    items: [
-      { title: 'Motor de Investigación', href: '/research', icon: Search, description: 'Investigación avanzada con IA' }
     ]
   },
   { 
