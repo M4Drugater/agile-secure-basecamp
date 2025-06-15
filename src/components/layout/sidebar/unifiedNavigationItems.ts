@@ -12,7 +12,10 @@ import {
   CreditCard,
   Brain,
   Bot,
-  Search
+  Search,
+  Target,
+  Eye,
+  Activity
 } from 'lucide-react';
 
 export interface UnifiedNavItem {
@@ -34,7 +37,8 @@ export const mainNavItems: UnifiedNavItem[] = [
     title: 'AI Agents',
     href: '/agents',
     icon: Bot,
-    description: 'Workspace unificado de agentes IA'
+    description: 'Workspace unificado de agentes IA',
+    badge: 'NEW'
   },
   {
     title: 'Chat Unificado',
@@ -47,15 +51,22 @@ export const mainNavItems: UnifiedNavItem[] = [
 export const aiModulesItems: UnifiedNavItem[] = [
   {
     title: 'Content Generator',
-    href: '/content',
+    href: '/agents?tab=selector&agent=enhanced-content-generator',
     icon: FileText,
     description: 'Generador avanzado de contenido'
   },
   {
     title: 'Research Engine',
-    href: '/research',
+    href: '/agents?tab=selector&agent=research-engine',
     icon: Search,
     description: 'Motor de investigación con IA'
+  },
+  {
+    title: 'Competitive Intelligence',
+    href: '/agents?tab=selector&agent=cdv',
+    icon: Target,
+    description: 'Inteligencia competitiva avanzada',
+    badge: 'AI'
   },
   {
     title: 'Knowledge Base',

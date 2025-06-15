@@ -13,7 +13,6 @@ import KnowledgePage from '@/pages/KnowledgeBase';
 import ContentPage from '@/pages/Content';
 import LearningPage from '@/pages/LearningManagement';
 import ChatPage from '@/pages/Chat';
-import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligence';
 import EnhancedChatPage from '@/pages/EnhancedChat';
 import UnifiedChatPage from '@/pages/UnifiedChatPage';
 import AgentsPage from '@/pages/Agents';
@@ -67,16 +66,17 @@ function App() {
               </ProtectedRoute>
             } />
             
-            {/* Agents workspace */}
+            {/* Unified Agents workspace - now includes all competitive intelligence functionality */}
             <Route path="/agents" element={
               <ProtectedRoute>
                 <AgentsPage />
               </ProtectedRoute>
             } />
             
+            {/* Redirect legacy competitive intelligence route to unified agents */}
             <Route path="/competitive-intelligence" element={
               <ProtectedRoute>
-                <CompetitiveIntelligencePage />
+                <AgentsPage />
               </ProtectedRoute>
             } />
           </Routes>

@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,9 @@ import {
   Play,
   Users,
   Sparkles,
-  FileText
+  FileText,
+  Target,
+  Crown
 } from 'lucide-react';
 import { AgentSelector } from './AgentSelector';
 import { AgentWorkspaceContent } from './AgentWorkspaceContent';
@@ -132,6 +135,7 @@ const availableAgents: AgentConfig[] = [
 ];
 
 export function UnifiedAgentWorkspace() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('selector');
   const [collaborativeMode, setCollaborativeMode] = useState(false);
@@ -141,6 +145,23 @@ export function UnifiedAgentWorkspace() {
     analysisFocus: '',
     objectives: ''
   });
+
+  // Handle URL parameters for direct agent access
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    const agent = searchParams.get('agent');
+    
+    if (tab) {
+      setActiveTab(tab);
+    }
+    
+    if (agent && availableAgents.find(a => a.id === agent)) {
+      setSelectedAgents([agent]);
+      if (tab !== 'selector') {
+        setActiveTab('workspace');
+      }
+    }
+  }, [searchParams]);
 
   const handleAgentSelect = (agentId: string) => {
     if (collaborativeMode) {
@@ -152,18 +173,25 @@ export function UnifiedAgentWorkspace() {
     } else {
       setSelectedAgents([agentId]);
       setActiveTab('workspace');
+      // Update URL params for shareable links
+      setSearchParams({ tab: 'workspace', agent: agentId });
     }
   };
 
   const startCollaborativeSession = () => {
     if (selectedAgents.length > 1) {
       setActiveTab('collaborative');
+      setSearchParams({ tab: 'collaborative' });
     }
   };
 
   const getSelectedAgentConfigs = () => {
     return availableAgents.filter(agent => selectedAgents.includes(agent.id));
   };
+
+  const competitiveIntelligenceAgents = availableAgents.filter(
+    agent => agent.type === 'competitive-intelligence'
+  );
 
   return (
     <div className="space-y-6">
@@ -175,7 +203,7 @@ export function UnifiedAgentWorkspace() {
             Unified Agent Workspace
           </h1>
           <p className="text-muted-foreground mt-2">
-            Sistema consolidado para todos los agentes de IA
+            Sistema consolidado para todos los agentes de IA - Incluye Competitive Intelligence
           </p>
         </div>
         
@@ -203,8 +231,45 @@ export function UnifiedAgentWorkspace() {
         </div>
       </div>
 
+      {/* Quick Access for Competitive Intelligence */}
+      {competitiveIntelligenceAgents.length > 0 && (
+        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700">
+              <Target className="h-5 w-5" />
+              Competitive Intelligence Suite
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-purple-600 mb-3">
+              Acceso rápido a los agentes especializados en inteligencia competitiva
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {competitiveIntelligenceAgents.map((agent) => {
+                const Icon = agent.icon;
+                return (
+                  <Button
+                    key={agent.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAgentSelect(agent.id)}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {agent.name}
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        setSearchParams({ tab: value });
+      }}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="selector" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
