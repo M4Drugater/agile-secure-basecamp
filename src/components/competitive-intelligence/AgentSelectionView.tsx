@@ -5,10 +5,21 @@ import { AgentCard } from './AgentCard';
 import { agents } from './agentConfig';
 
 interface AgentSelectionViewProps {
-  onAgentSelect: (agentId: string) => void;
+  selectedAgent: string;
+  setSelectedAgent: React.Dispatch<React.SetStateAction<string>>;
+  onAgentSelected: () => void;
 }
 
-export function AgentSelectionView({ onAgentSelect }: AgentSelectionViewProps) {
+export function AgentSelectionView({ 
+  selectedAgent, 
+  setSelectedAgent, 
+  onAgentSelected 
+}: AgentSelectionViewProps) {
+  const handleAgentSelect = (agentId: string) => {
+    setSelectedAgent(agentId);
+    onAgentSelected();
+  };
+
   return (
     <div className="text-center py-12">
       <Bot className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -25,7 +36,8 @@ export function AgentSelectionView({ onAgentSelect }: AgentSelectionViewProps) {
             description={agent.description}
             icon={agent.icon}
             color={agent.color}
-            onSelect={onAgentSelect}
+            onSelect={handleAgentSelect}
+            isSelected={selectedAgent === id}
           />
         ))}
       </div>
