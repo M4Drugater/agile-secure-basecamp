@@ -30,6 +30,9 @@ export interface CreateLearningPathData {
   learning_objectives?: string[];
   prerequisites?: string[];
   tags?: string[];
+  is_published?: boolean;
+  is_featured?: boolean;
+  metadata?: any;
 }
 
 export function useLearningPaths() {
@@ -104,8 +107,8 @@ export function useLearningPaths() {
         tags: data.tags || [],
         enrollment_count: 0,
         completion_rate: 0,
-        is_published: false,
-        is_featured: false,
+        is_published: data.is_published || false,
+        is_featured: data.is_featured || false,
         average_rating: 0
       };
       return newPath;
