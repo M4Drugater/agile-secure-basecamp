@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface UnifiedSearchRequest {
   query: string;
@@ -26,25 +27,33 @@ interface UnifiedSearchResult {
   };
   timestamp: string;
   searchEngine: string;
+  status: 'success' | 'partial' | 'fallback' | 'error';
+  errorMessage?: string;
 }
 
 export function useUnifiedWebSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<UnifiedSearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'partial' | 'disconnected'>('disconnected');
 
   const performUnifiedSearch = async (request: UnifiedSearchRequest): Promise<UnifiedSearchResult> => {
     setIsSearching(true);
     setSearchError(null);
     
-    console.log('🔍 Unified Web Search Request:', request);
+    console.log('🔧 Sistema Reparado - Iniciando búsqueda unificada:', request);
 
     try {
-      // Call the new unified web search edge function
+      // Validate request
+      if (!request.query?.trim()) {
+        throw new Error('Query is required for search');
+      }
+
+      // Call the repaired unified web search edge function
       const { data, error } = await supabase.functions.invoke('unified-web-search', {
         body: {
-          query: request.query,
-          context: request.context || 'General search',
+          query: request.query.trim(),
+          context: request.context || 'Análisis estratégico',
           searchType: request.searchType || 'comprehensive',
           timeframe: request.timeframe || 'month',
           companyName: request.companyName,
@@ -52,47 +61,107 @@ export function useUnifiedWebSearch() {
         }
       });
 
+      console.log('📡 Respuesta de edge function:', { 
+        hasData: !!data, 
+        hasError: !!error,
+        status: data?.status 
+      });
+
       if (error) {
-        throw new Error(`Unified search failed: ${error.message}`);
+        console.error('Edge function error:', error);
+        // Don't throw immediately, try to work with partial data
+        if (!data) {
+          throw new Error(`Edge function failed: ${error.message}`);
+        }
       }
 
       if (!data) {
-        throw new Error('No data returned from unified search');
+        throw new Error('No data returned from search service');
       }
 
-      console.log('✅ Unified Search Success:', {
+      // Update connection status based on search result
+      setConnectionStatus(
+        data.status === 'success' ? 'connected' :
+        data.status === 'partial' ? 'partial' : 
+        'disconnected'
+      );
+
+      console.log('✅ Búsqueda completada exitosamente:', {
+        engine: data.searchEngine,
+        status: data.status,
         sourcesFound: data.sources?.length || 0,
-        confidence: data.metrics?.confidence || 0,
-        searchEngine: data.searchEngine
+        confidence: data.metrics?.confidence || 0
       });
 
       setSearchResults(data);
+      
+      // Show appropriate notification
+      if (data.status === 'success') {
+        toast.success('Conectividad Web Restaurada', {
+          description: `Motor: ${data.searchEngine} | Fuentes: ${data.sources?.length || 0} | Confianza: ${Math.round(data.metrics?.confidence * 100 || 0)}%`
+        });
+      } else if (data.status === 'partial') {
+        toast.warning('Conectividad Parcial', {
+          description: `Sistema funcionando con ${data.searchEngine}. Algunas fuentes no disponibles.`
+        });
+      } else {
+        toast.info('Sistema de Respaldo Activo', {
+          description: 'Funcionando con análisis estratégico basado en conocimiento.'
+        });
+      }
+
       return data;
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Search failed';
-      console.error('❌ Unified Search Error:', error);
-      setSearchError(errorMessage);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido en búsqueda';
+      console.error('❌ Error crítico en búsqueda unificada:', error);
       
-      // Return fallback result to prevent agent failure
+      setSearchError(errorMessage);
+      setConnectionStatus('disconnected');
+      
+      // Create comprehensive fallback result
       const fallbackResult: UnifiedSearchResult = {
-        content: `Search for "${request.query}" encountered technical difficulties. Providing analysis based on general knowledge.`,
+        content: `El sistema de búsqueda web está experimentando dificultades técnicas. 
+
+**Error**: ${errorMessage}
+
+**Análisis Disponible**: Aunque la conectividad web esté limitada, puedo proporcionar análisis estratégico basado en metodologías estándar de consultoría:
+
+1. **Marco de Análisis Competitivo**: Aplicación de metodologías McKinsey y BCG
+2. **Evaluación Estratégica**: Análisis FODA y Porter Five Forces  
+3. **Recomendaciones**: Basadas en mejores prácticas del sector
+
+Para obtener datos de mercado en tiempo real, intenta de nuevo en unos momentos o contacta al soporte técnico.`,
         sources: [],
-        insights: [{
-          title: 'Technical Notice',
-          description: 'Search system is recovering. Analysis provided from knowledge base.',
-          confidence: 0.5
-        }],
+        insights: [
+          {
+            title: 'Sistema en Recuperación',
+            description: 'Conectividad web limitada, funcionalidad analítica disponible',
+            confidence: 0.5
+          },
+          {
+            title: 'Análisis Alternativo',
+            description: 'Marcos estratégicos estándar disponibles para consultoría',
+            confidence: 0.7
+          }
+        ],
         metrics: {
-          confidence: 0.5,
+          confidence: 0.4,
           sourceCount: 0,
           relevanceScore: 0.3
         },
         timestamp: new Date().toISOString(),
-        searchEngine: 'fallback'
+        searchEngine: 'system-error',
+        status: 'error',
+        errorMessage
       };
       
       setSearchResults(fallbackResult);
+      
+      toast.error('Error en Conectividad Web', {
+        description: 'Sistema de respaldo activo. Funcionalidad básica disponible.'
+      });
+      
       return fallbackResult;
     } finally {
       setIsSearching(false);
@@ -101,8 +170,8 @@ export function useUnifiedWebSearch() {
 
   const searchCompetitiveIntelligence = async (companyName: string, industry: string) => {
     return performUnifiedSearch({
-      query: `competitive analysis market position ${companyName}`,
-      context: `Competitive intelligence for ${companyName} in ${industry}`,
+      query: `análisis competitivo completo ${companyName}`,
+      context: `Inteligencia competitiva para ${companyName} en ${industry}`,
       searchType: 'competitive',
       timeframe: 'month',
       companyName,
@@ -112,8 +181,8 @@ export function useUnifiedWebSearch() {
 
   const searchFinancialData = async (companyName: string, industry: string) => {
     return performUnifiedSearch({
-      query: `financial performance earnings revenue ${companyName}`,
-      context: `Financial analysis for ${companyName}`,
+      query: `rendimiento financiero datos económicos ${companyName}`,
+      context: `Análisis financiero para ${companyName}`,
       searchType: 'financial',
       timeframe: 'quarter',
       companyName,
@@ -123,22 +192,43 @@ export function useUnifiedWebSearch() {
 
   const searchMarketTrends = async (industry: string, keywords: string = '') => {
     return performUnifiedSearch({
-      query: `market trends industry analysis ${industry} ${keywords}`,
-      context: `Market trends for ${industry}`,
+      query: `tendencias de mercado análisis industria ${industry} ${keywords}`,
+      context: `Tendencias de mercado para ${industry}`,
       searchType: 'market',
       timeframe: 'month',
       industry
     });
   };
 
+  const testConnection = async () => {
+    try {
+      setIsSearching(true);
+      const result = await performUnifiedSearch({
+        query: 'test conectividad sistema',
+        context: 'Test de conectividad del sistema',
+        searchType: 'comprehensive',
+        timeframe: 'day'
+      });
+      
+      return result.status === 'success';
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      return false;
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return {
     isSearching,
     searchResults,
     searchError,
+    connectionStatus,
     performUnifiedSearch,
     searchCompetitiveIntelligence,
     searchFinancialData,
     searchMarketTrends,
+    testConnection,
     clearResults: () => {
       setSearchResults(null);
       setSearchError(null);

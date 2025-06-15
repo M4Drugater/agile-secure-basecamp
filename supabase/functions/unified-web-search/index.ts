@@ -17,102 +17,130 @@ interface SearchRequest {
   industry?: string;
 }
 
+interface SearchResult {
+  content: string;
+  sources: string[];
+  insights: Array<{
+    title: string;
+    description: string;
+    confidence: number;
+  }>;
+  metrics: {
+    confidence: number;
+    sourceCount: number;
+    relevanceScore: number;
+  };
+  timestamp: string;
+  searchEngine: string;
+  status: 'success' | 'partial' | 'fallback' | 'error';
+  errorMessage?: string;
+}
+
 serve(async (req) => {
+  console.log('🔧 Unified Web Search - Request received:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let searchRequest: SearchRequest;
+  let searchResult: SearchResult;
+
   try {
-    const searchRequest: SearchRequest = await req.json();
-    console.log('🔍 Unified Web Search Request:', searchRequest);
+    searchRequest = await req.json();
+    console.log('📋 Search request parsed:', {
+      query: searchRequest.query?.substring(0, 50) + '...',
+      searchType: searchRequest.searchType,
+      companyName: searchRequest.companyName
+    });
+
+    // Validate required fields
+    if (!searchRequest.query || !searchRequest.context) {
+      throw new Error('Missing required fields: query and context');
+    }
 
     // Get API keys from environment
     const perplexityKey = Deno.env.get('PERPLEXITY_API_KEY');
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
 
-    let searchResult = null;
-    let searchEngine = 'none';
+    console.log('🔑 API Keys availability:', {
+      perplexity: !!perplexityKey,
+      openai: !!openaiKey
+    });
 
     // Try Perplexity first (best for real-time web search)
     if (perplexityKey) {
       try {
-        console.log('Attempting Perplexity search...');
+        console.log('🌐 Attempting Perplexity search...');
         searchResult = await performPerplexitySearch(perplexityKey, searchRequest);
-        searchEngine = 'perplexity';
         console.log('✅ Perplexity search successful');
       } catch (error) {
         console.warn('⚠️ Perplexity search failed:', error.message);
+        searchResult = null;
       }
     }
 
     // Fallback to OpenAI if Perplexity fails
     if (!searchResult && openaiKey) {
       try {
-        console.log('Fallback to OpenAI analysis...');
+        console.log('🔄 Fallback to OpenAI analysis...');
         searchResult = await performOpenAIAnalysis(openaiKey, searchRequest);
-        searchEngine = 'openai';
         console.log('✅ OpenAI analysis successful');
       } catch (error) {
         console.warn('⚠️ OpenAI analysis failed:', error.message);
+        searchResult = null;
       }
     }
 
-    // Ultimate fallback
+    // Final fallback with structured response
     if (!searchResult) {
-      console.log('Using knowledge-based fallback...');
-      searchResult = createFallbackResult(searchRequest);
-      searchEngine = 'fallback';
+      console.log('📋 Using structured fallback...');
+      searchResult = createStructuredFallback(searchRequest);
     }
 
     // Log successful search
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    await logSearchAttempt(searchRequest, searchResult);
 
-    await logSearchRequest(supabase, {
-      ...searchRequest,
-      searchEngine,
-      success: true,
-      confidence: searchResult.metrics.confidence
-    });
-
-    return new Response(JSON.stringify({
-      ...searchResult,
-      searchEngine,
-      timestamp: new Date().toISOString()
-    }), {
+    // Return successful response
+    return new Response(JSON.stringify(searchResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
     });
 
   } catch (error) {
-    console.error('❌ Unified search error:', error);
+    console.error('❌ Critical error in unified search:', error);
     
-    return new Response(JSON.stringify({
-      content: 'Search system temporarily unavailable. Analysis provided from knowledge base.',
+    // Create error response
+    const errorResult: SearchResult = {
+      content: `Error en búsqueda: ${error.message}. El sistema mantendrá funcionalidad básica.`,
       sources: [],
       insights: [{
-        title: 'System Status',
-        description: 'Search capabilities are being restored.',
-        confidence: 0.3
+        title: 'Error de Sistema',
+        description: `Problema técnico: ${error.message}`,
+        confidence: 0.1
       }],
       metrics: {
-        confidence: 0.3,
+        confidence: 0.1,
         sourceCount: 0,
-        relevanceScore: 0.2
+        relevanceScore: 0.1
       },
+      timestamp: new Date().toISOString(),
       searchEngine: 'error',
-      timestamp: new Date().toISOString()
-    }), {
+      status: 'error',
+      errorMessage: error.message
+    };
+
+    return new Response(JSON.stringify(errorResult), {
       status: 200, // Return 200 to prevent agent failures
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
 
-async function performPerplexitySearch(apiKey: string, request: SearchRequest) {
-  const searchQuery = buildOptimizedQuery(request);
-  
+async function performPerplexitySearch(apiKey: string, request: SearchRequest): Promise<SearchResult> {
+  const optimizedQuery = buildOptimizedQuery(request);
+  console.log('🔍 Perplexity query built:', optimizedQuery.substring(0, 100) + '...');
+
   const response = await fetch('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: {
@@ -124,11 +152,11 @@ async function performPerplexitySearch(apiKey: string, request: SearchRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are a professional research analyst. Provide detailed, factual analysis with specific data points and sources. Focus on ${request.searchType} intelligence.`
+          content: `Eres un analista de inteligencia competitiva experto. Proporciona análisis detallado y factual con datos específicos y fuentes. Enfócate en inteligencia ${request.searchType}.`
         },
         {
           role: 'user',
-          content: searchQuery
+          content: optimizedQuery
         }
       ],
       temperature: 0.1,
@@ -139,29 +167,36 @@ async function performPerplexitySearch(apiKey: string, request: SearchRequest) {
   });
 
   if (!response.ok) {
-    throw new Error(`Perplexity API error: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`Perplexity API error ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content || '';
-  
+  const citations = data.citations || [];
+
+  if (!content) {
+    throw new Error('Empty response from Perplexity API');
+  }
+
   return {
     content,
-    sources: extractSourcesFromPerplexity(data),
-    insights: extractInsightsFromContent(content),
+    sources: extractSourcesFromPerplexity(citations),
+    insights: extractInsightsFromContent(content, request),
     metrics: {
       confidence: 0.9,
-      sourceCount: data.citations?.length || 0,
-      relevanceScore: 0.8
-    }
+      sourceCount: citations.length,
+      relevanceScore: 0.85
+    },
+    timestamp: new Date().toISOString(),
+    searchEngine: 'perplexity',
+    status: 'success'
   };
 }
 
-async function performOpenAIAnalysis(apiKey: string, request: SearchRequest) {
-  const analysisPrompt = `Provide detailed analysis about: ${request.query}
-Context: ${request.context}
-Focus on ${request.searchType} insights for ${request.companyName || 'the industry'}.
-Include specific recommendations and strategic insights.`;
+async function performOpenAIAnalysis(apiKey: string, request: SearchRequest): Promise<SearchResult> {
+  const analysisPrompt = buildAnalysisPrompt(request);
+  console.log('🤖 OpenAI analysis prompt built');
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -174,7 +209,7 @@ Include specific recommendations and strategic insights.`;
       messages: [
         {
           role: 'system',
-          content: 'You are an expert business analyst. Provide detailed, strategic analysis with actionable insights.'
+          content: 'Eres un analista de negocio experto. Proporciona análisis estratégico detallado con insights accionables.'
         },
         {
           role: 'user',
@@ -187,128 +222,179 @@ Include specific recommendations and strategic insights.`;
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
   }
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content || '';
-  
+
+  if (!content) {
+    throw new Error('Empty response from OpenAI API');
+  }
+
   return {
     content,
     sources: ['OpenAI Knowledge Base'],
-    insights: extractInsightsFromContent(content),
+    insights: extractInsightsFromContent(content, request),
     metrics: {
       confidence: 0.7,
       sourceCount: 1,
       relevanceScore: 0.7
-    }
+    },
+    timestamp: new Date().toISOString(),
+    searchEngine: 'openai',
+    status: 'partial'
   };
 }
 
-function createFallbackResult(request: SearchRequest) {
-  const fallbackContent = `Analysis for "${request.query}" in ${request.industry || 'the market'}:
+function createStructuredFallback(request: SearchRequest): SearchResult {
+  const companyContext = request.companyName || 'la empresa objetivo';
+  const industryContext = request.industry || 'el sector correspondiente';
 
-Based on general market knowledge and industry patterns:
+  const fallbackAnalysis = `Análisis estratégico para ${companyContext} en ${industryContext}:
 
-1. Market Position: Companies in this sector typically focus on competitive differentiation through innovation and customer experience.
+**Contexto de Análisis:**
+- Consulta: ${request.query}
+- Enfoque: ${request.searchType}
+- Marco temporal: ${request.timeframe}
 
-2. Strategic Considerations: Key factors include market timing, competitive landscape, and operational efficiency.
+**Análisis General:**
+1. **Posicionamiento Competitivo**: Es fundamental evaluar la posición actual en el mercado mediante análisis de fortalezas, debilidades y diferenciación competitiva.
 
-3. Growth Opportunities: Consider expansion strategies, partnership opportunities, and technology adoption.
+2. **Tendencias del Sector**: ${industryContext} presenta dinámicas específicas que requieren monitoreo continuo de innovaciones, regulaciones y cambios en preferencias del consumidor.
 
-Note: This analysis is based on general knowledge patterns. For real-time market data, please ensure search connectivity is restored.`;
+3. **Oportunidades Estratégicas**: Identificación de nichos de mercado, expansión geográfica, alianzas estratégicas y desarrollo de nuevos productos/servicios.
+
+4. **Gestión de Riesgos**: Evaluación de amenazas competitivas, riesgos regulatorios, cambios tecnológicos y volatilidad del mercado.
+
+**Recomendaciones Inmediatas:**
+- Realizar investigación primaria con datos actuales del mercado
+- Establecer sistema de monitoreo competitivo continuo
+- Desarrollar métricas de performance específicas del sector
+- Implementar análisis FODA actualizado
+
+*Nota: Este análisis se basa en patrones generales del sector. Para insights más específicos, se recomienda acceso a datos de mercado en tiempo real.*`;
 
   return {
-    content: fallbackContent,
-    sources: ['Knowledge Base'],
+    content: fallbackAnalysis,
+    sources: ['Base de Conocimiento Estratégico'],
     insights: [
       {
-        title: 'Strategic Focus',
-        description: 'Emphasis on competitive positioning and market differentiation',
+        title: 'Análisis Competitivo Requerido',
+        description: 'Necesidad de datos actuales del mercado para análisis profundo',
         confidence: 0.6
       },
       {
-        title: 'Growth Strategy',
-        description: 'Opportunities in expansion and partnerships',
-        confidence: 0.5
+        title: 'Oportunidad de Investigación',
+        description: 'Potencial para investigación primaria especializada',
+        confidence: 0.7
+      },
+      {
+        title: 'Marco Estratégico',
+        description: 'Aplicación de metodologías de análisis competitivo estándar',
+        confidence: 0.8
       }
     ],
     metrics: {
-      confidence: 0.5,
+      confidence: 0.6,
       sourceCount: 1,
-      relevanceScore: 0.4
-    }
+      relevanceScore: 0.5
+    },
+    timestamp: new Date().toISOString(),
+    searchEngine: 'fallback',
+    status: 'fallback'
   };
 }
 
 function buildOptimizedQuery(request: SearchRequest): string {
-  let query = request.query;
+  const { query, companyName, industry, searchType, timeframe } = request;
   
-  if (request.companyName) {
-    query += ` ${request.companyName}`;
-  }
-  
-  if (request.industry) {
-    query += ` ${request.industry} industry`;
-  }
+  const timeframeMap = {
+    'hour': 'última hora',
+    'day': 'últimas 24 horas', 
+    'week': 'última semana',
+    'month': 'último mes',
+    'quarter': 'últimos 3 meses'
+  };
 
-  // Add search type specific terms
-  switch (request.searchType) {
-    case 'competitive':
-      query += ' competitive analysis market share positioning';
-      break;
-    case 'financial':
-      query += ' financial performance revenue earnings stock price';
-      break;
-    case 'market':
-      query += ' market trends industry analysis growth forecast';
-      break;
-    default:
-      query += ' analysis insights trends';
-  }
+  const searchFocus = {
+    'financial': 'rendimiento financiero, ingresos, métricas clave, precio de acciones',
+    'competitive': 'análisis competitivo, posición de mercado, movimientos estratégicos',
+    'market': 'tendencias de mercado, análisis de industria, dinámicas del sector',
+    'comprehensive': 'análisis integral, estrategia empresarial, inteligencia de mercado'
+  };
 
-  return query;
+  let optimizedQuery = `Analiza ${companyName || 'empresa'} en la industria ${industry || 'correspondiente'}. `;
+  optimizedQuery += `Enfócate en ${searchFocus[searchType]} durante ${timeframeMap[timeframe]}. `;
+  optimizedQuery += `Consulta específica: ${query}. `;
+  optimizedQuery += `Proporciona datos específicos con fuentes verificables.`;
+
+  return optimizedQuery;
+}
+
+function buildAnalysisPrompt(request: SearchRequest): string {
+  return `Proporciona análisis estratégico detallado sobre: ${request.query}
+
+Contexto:
+- Empresa: ${request.companyName || 'No especificada'}
+- Industria: ${request.industry || 'General'}
+- Tipo de análisis: ${request.searchType}
+- Marco temporal: ${request.timeframe}
+
+Incluye:
+1. Análisis de situación actual
+2. Identificación de tendencias clave
+3. Oportunidades y amenazas
+4. Recomendaciones estratégicas
+5. Métricas de seguimiento sugeridas
+
+Proporciona insights accionables y específicos.`;
 }
 
 function mapTimeframeToRecency(timeframe: string): string {
-  switch (timeframe) {
-    case 'hour': return 'hour';
-    case 'day': return 'day';
-    case 'week': return 'week';
-    case 'month': return 'month';
-    default: return 'month';
-  }
+  const recencyMap = {
+    'hour': 'hour',
+    'day': 'day', 
+    'week': 'week',
+    'month': 'month',
+    'quarter': 'month'
+  };
+  return recencyMap[timeframe] || 'month';
 }
 
-function extractSourcesFromPerplexity(data: any): string[] {
-  if (data.citations && Array.isArray(data.citations)) {
-    return data.citations.map((citation: any) => citation.url || citation.title || 'Web Source');
-  }
-  return ['Perplexity Search'];
-}
-
-function extractInsightsFromContent(content: string): Array<{title: string, description: string, confidence: number}> {
-  const insights = [];
+function extractSourcesFromPerplexity(citations: any[]): string[] {
+  if (!Array.isArray(citations)) return ['Perplexity Search'];
   
-  // Simple extraction logic - can be enhanced
+  return citations.map(citation => 
+    citation.url || citation.title || citation.source || 'Fuente Web'
+  ).slice(0, 5); // Limit to 5 sources
+}
+
+function extractInsightsFromContent(content: string, request: SearchRequest): Array<{title: string, description: string, confidence: number}> {
+  const insights = [];
   const lines = content.split('\n').filter(line => line.trim().length > 20);
   
+  // Extract key insights based on content analysis
   for (let i = 0; i < Math.min(3, lines.length); i++) {
     const line = lines[i].trim();
-    if (line.includes(':')) {
-      const [title, ...rest] = line.split(':');
-      insights.push({
-        title: title.trim(),
-        description: rest.join(':').trim(),
-        confidence: 0.8
-      });
+    if (line.includes(':') && line.length > 30) {
+      const parts = line.split(':');
+      if (parts.length >= 2) {
+        insights.push({
+          title: parts[0].replace(/^\d+\.\s*/, '').trim(),
+          description: parts.slice(1).join(':').trim(),
+          confidence: 0.8 - (i * 0.1)
+        });
+      }
     }
   }
   
+  // Ensure at least one insight
   if (insights.length === 0) {
     insights.push({
-      title: 'Market Analysis',
-      description: 'Comprehensive analysis provided based on available data',
+      title: 'Análisis Competitivo',
+      description: 'Análisis estratégico basado en información disponible',
       confidence: 0.7
     });
   }
@@ -316,19 +402,26 @@ function extractInsightsFromContent(content: string): Array<{title: string, desc
   return insights;
 }
 
-async function logSearchRequest(supabase: any, searchData: any) {
+async function logSearchAttempt(request: SearchRequest, result: SearchResult) {
   try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
     await supabase.from('web_search_logs').insert({
-      query: searchData.query,
-      search_type: searchData.searchType,
-      search_engine: searchData.searchEngine,
-      success: searchData.success,
-      confidence: searchData.confidence,
-      company_name: searchData.companyName,
-      industry: searchData.industry,
+      query: request.query,
+      search_type: request.searchType,
+      search_engine: result.searchEngine,
+      success: result.status === 'success',
+      confidence: result.metrics.confidence,
+      company_name: request.companyName,
+      industry: request.industry,
+      error_message: result.errorMessage,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Failed to log search request:', error);
+    console.error('Failed to log search attempt:', error);
+    // Don't throw - logging shouldn't break the main flow
   }
 }

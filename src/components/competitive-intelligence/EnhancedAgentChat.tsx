@@ -1,7 +1,6 @@
-import React from 'react';
-import { RepairedAgentChat } from './RepairedAgentChat';
 
-// ... keep existing code (imports and interface)
+import React from 'react';
+import { FixedAgentChat } from './FixedAgentChat';
 
 interface EnhancedAgentChatProps {
   agentId: string;
@@ -15,6 +14,6 @@ interface EnhancedAgentChatProps {
 
 export function EnhancedAgentChat({ agentId, sessionConfig }: EnhancedAgentChatProps) {
   return (
-    <RepairedAgentChat agentId={agentId} sessionConfig={sessionConfig} />
+    <FixedAgentChat agentId={agentId} sessionConfig={sessionConfig} />
   );
 }
