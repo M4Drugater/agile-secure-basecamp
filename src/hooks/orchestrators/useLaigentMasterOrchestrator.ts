@@ -144,12 +144,10 @@ export function useLaigentMasterOrchestrator() {
 
       const processingTime = Date.now() - startTime;
 
-      // Calculate total metrics with fallbacks
-      const researchTokens = researchResults.metadata?.metrics?.totalTokens || 0;
-      const researchCost = parseFloat(researchResults.metadata?.metrics?.totalCost || '0');
-      
-      totalTokens += researchTokens;
-      totalCost += researchCost;
+      // For now, we'll use estimated values for tokens and cost since they're not available in the research results
+      // This can be enhanced later when the research engine provides these metrics
+      totalTokens = Math.floor(stylingResults.content.length / 4); // Rough token estimate
+      totalCost = totalTokens * 0.00002; // Rough cost estimate
 
       // Build comprehensive response
       const laigentResponse: LaigentResponse = {
