@@ -2,9 +2,8 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, PanelLeftOpen, PanelLeftClose, User, BookOpen, Zap, Brain, Activity } from 'lucide-react';
+import { MessageSquare, PanelLeftOpen, PanelLeftClose, User, BookOpen, Zap, Brain } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMessageHandling } from './useMessageHandling';
 import { useConversationState } from './useConversationState';
@@ -12,8 +11,8 @@ import { useChatHistory } from './useChatHistory';
 import { useConsolidatedContext } from '@/hooks/useConsolidatedContext';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useKnowledgeBase } from '@/hooks/useKnowledgeBase';
-import { ChatHeader } from './ChatHeader';
-import { UsageWarning } from './UsageWarning';
+import { ChatContextStatus } from './ChatContextStatus';
+import { ChatContextDetails } from './ChatContextDetails';
 import { WelcomeMessage } from './WelcomeMessage';
 import { ChatMessage } from './ChatMessage';
 import { LoadingMessage } from './LoadingMessage';
@@ -62,38 +61,15 @@ export function ConsolidatedChat() {
   const hasCompletedChat = chatStep?.completed || false;
   const hasKnowledgeFiles = (documents && documents.length > 0) || false;
 
-  console.log('ConsolidatedChat - Journey Debug:', {
-    chatStepCompleted: hasCompletedChat,
-    messagesCount: messages.length,
-    hasChatStepCompleted,
-    isInitialized,
-    chatStep: chatStep ? { id: chatStep.id, completed: chatStep.completed } : null
-  });
-
   // Auto-complete chat step after successful conversation
   useEffect(() => {
-    if (!isInitialized) {
-      console.log('Journey not initialized yet, skipping chat completion check');
-      return;
-    }
+    if (!isInitialized) return;
 
-    // Check if we have a successful conversation (user message + AI response)
     const hasUserMessage = messages.some(m => m.role === 'user');
     const hasAssistantMessage = messages.some(m => m.role === 'assistant');
     const shouldCompleteChat = hasUserMessage && hasAssistantMessage && messages.length >= 2;
 
-    console.log('Chat step completion check:', {
-      hasUserMessage,
-      hasAssistantMessage,
-      messagesLength: messages.length,
-      shouldCompleteChat,
-      hasCompletedChat,
-      hasChatStepCompleted,
-      isInitialized
-    });
-
     if (shouldCompleteChat && !hasCompletedChat && !hasChatStepCompleted) {
-      console.log('Auto-completing chat step...');
       setHasChatStepCompleted(true);
       completeStep('chat');
     }
@@ -136,30 +112,15 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
       timestamp: new Date(),
     };
 
-    // Add user message to UI immediately
     addMessage(userMessage);
 
     try {
-      // Save user message to database and get conversation ID
       const conversationId = await saveMessageToHistory(userMessage, currentConversationId);
-      
-      // Build full context using consolidated context builder
       const fullContext = await buildFullContextString(input);
-      
-      // Update knowledge recommendations
       await updateKnowledgeRecommendations(input);
-      
-      // Send message to AI and get response
       const assistantMessage = await sendMessageToAI(userMessage, fullContext, messages);
-      
-      // Add assistant message to UI
       addMessage(assistantMessage);
-      
-      // Save assistant message to database
       await saveMessageToHistory(assistantMessage, conversationId);
-
-      console.log('Chat interaction completed successfully');
-
     } catch (error) {
       console.error('Error in sendMessage:', error);
     }
@@ -183,103 +144,38 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
     console.log('View knowledge resource:', resource);
   };
 
-  const getContextQualityColor = () => {
-    if (contextSummary.quality === 'excellent') return 'bg-green-500';
-    if (contextSummary.quality === 'good') return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   return (
     <div className="space-y-6">
-      {/* Enhanced Context Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Alert className="border-blue-200 bg-blue-50/50">
-          <Brain className="h-4 w-4 text-blue-600" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <div>
-                <strong>Context Quality: {contextSummary.quality}</strong>
-                <p className="text-sm text-muted-foreground mt-1">
-                  CLIPOGINO has access to {contextSummary.knowledgeCount} knowledge items, 
-                  {contextSummary.contentCount} content pieces, and {contextSummary.activityCount} recent activities.
-                </p>
-              </div>
-              <div className={`w-3 h-3 rounded-full ${getContextQualityColor()}`}></div>
-            </div>
-          </AlertDescription>
-        </Alert>
+      <ChatContextStatus 
+        contextSummary={contextSummary}
+        showContextDetails={showContextDetails}
+        setShowContextDetails={setShowContextDetails}
+      />
 
-        <Alert className="border-purple-200 bg-purple-50/50">
-          <Activity className="h-4 w-4 text-purple-600" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <div>
-                <strong>AI Enhancement: Active</strong>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Enhanced context with {contextSummary.conversationCount} recent conversations
-                  and comprehensive activity tracking.
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowContextDetails(!showContextDetails)}
-                className="text-purple-600 hover:text-purple-700"
-              >
-                {showContextDetails ? 'Hide' : 'Details'}
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-
-      {/* Context Details Expansion */}
       {showContextDetails && (
-        <Card className="border-purple-200">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-blue-600">{contextSummary.knowledgeCount}</div>
-                <div className="text-sm text-muted-foreground">Knowledge Items</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-green-600">{contextSummary.contentCount}</div>
-                <div className="text-sm text-muted-foreground">Content Created</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-orange-600">{contextSummary.learningCount}</div>
-                <div className="text-sm text-muted-foreground">Learning Paths</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-purple-600">{contextSummary.activityCount}</div>
-                <div className="text-sm text-muted-foreground">Recent Activities</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-red-600">{contextSummary.conversationCount}</div>
-                <div className="text-sm text-muted-foreground">Conversations</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ChatContextDetails contextSummary={contextSummary} />
       )}
 
       <div className="flex gap-6">
-        {/* Conversation Sidebar */}
         {showSidebar && (
           <div className="w-80 flex-shrink-0">
             <ConversationSidebar 
-              onSelectConversation={handleSelectConversation}
-              onNewConversation={handleNewConversation}
+              onSelectConversation={(id) => {
+                setCurrentConversationId(id);
+                selectConv(id);
+              }}
+              onNewConversation={() => {
+                setCurrentConversationId(null);
+                startNewConv();
+              }}
             />
           </div>
         )}
 
-        {/* Main Chat Area */}
         <div className="flex-1 space-y-4">
-          {/* Prompt Suggestion - only show if chat step not completed and no messages */}
           {!hasCompletedChat && messages.length === 0 && (
             <ChatPromptSuggestion 
-              onUseSuggestion={handleUseSuggestedPrompt}
+              onUseSuggestion={sendMessage}
               hasKnowledgeFiles={hasKnowledgeFiles}
             />
           )}
@@ -362,11 +258,10 @@ ${af.uploadData.extracted_content ? `Content: ${af.uploadData.extracted_content.
           </Card>
         </div>
 
-        {/* Knowledge Recommendations Panel */}
         {showKnowledgePanel && knowledgeRecommendations?.length > 0 && (
           <KnowledgeRecommendations
             recommendations={knowledgeRecommendations}
-            onViewResource={handleViewKnowledgeResource}
+            onViewResource={(resource) => console.log('View knowledge resource:', resource)}
           />
         )}
       </div>
