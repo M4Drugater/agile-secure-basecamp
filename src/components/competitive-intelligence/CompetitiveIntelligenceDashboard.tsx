@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { AgentSelectionView } from './AgentSelectionView';
 import { EnhancedAgentWorkspace } from './EnhancedAgentWorkspace';
-import { SystemValidator } from './SystemValidator';
+import { EnhancedUnifiedDashboard } from './EnhancedUnifiedDashboard';
 import { SessionManager } from './SessionManager';
+import { SystemValidator } from './SystemValidator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Brain, Settings, History, Zap, Star } from 'lucide-react';
+import { Brain, Settings, History, Zap, Star, Target, Network } from 'lucide-react';
 
 interface SessionConfig {
   companyName: string;
@@ -30,7 +31,7 @@ export function CompetitiveIntelligenceDashboard() {
     analysisFocus: '',
     objectives: ''
   });
-  const [activeView, setActiveView] = useState<'selection' | 'workspace' | 'sessions' | 'system'>('selection');
+  const [activeView, setActiveView] = useState<'unified' | 'agents' | 'workspace' | 'sessions' | 'system'>('unified');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,16 +41,20 @@ export function CompetitiveIntelligenceDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Enhanced Competitive Intelligence Platform
+                LAIGENT v2.0 - Competitive Intelligence Platform
               </h1>
               <p className="text-lg text-gray-600">
-                McKinsey-level strategic analysis with real-time market intelligence
+                Enterprise-grade AI-first competitive intelligence with collaborative agents
               </p>
             </div>
             <div className="flex items-center gap-3">
               <Badge className="bg-blue-600 flex items-center gap-1 px-4 py-2">
                 <Zap className="h-4 w-4" />
                 AI-Powered
+              </Badge>
+              <Badge className="bg-green-600 flex items-center gap-1 px-4 py-2">
+                <Network className="h-4 w-4" />
+                Collaborative
               </Badge>
               <Badge variant="outline" className="flex items-center gap-1 px-4 py-2">
                 <Star className="h-4 w-4" />
@@ -61,14 +66,18 @@ export function CompetitiveIntelligenceDashboard() {
 
         {/* Navigation */}
         <Tabs value={activeView} onValueChange={(value: any) => setActiveView(value)} className="mb-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-md">
-            <TabsTrigger value="selection" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
+            <TabsTrigger value="unified" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Unified
+            </TabsTrigger>
+            <TabsTrigger value="agents" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               Agents
             </TabsTrigger>
             <TabsTrigger value="workspace" disabled={!selectedAgent}>
               <Zap className="h-4 w-4" />
-              Analysis
+              Workspace
             </TabsTrigger>
             <TabsTrigger value="sessions">
               <History className="h-4 w-4" />
@@ -80,7 +89,14 @@ export function CompetitiveIntelligenceDashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="selection" className="space-y-0">
+          <TabsContent value="unified" className="space-y-0">
+            <EnhancedUnifiedDashboard 
+              selectedAgent={selectedAgent}
+              onAgentSelect={setSelectedAgent}
+            />
+          </TabsContent>
+
+          <TabsContent value="agents" className="space-y-0">
             <AgentSelectionView 
               selectedAgent={selectedAgent}
               setSelectedAgent={setSelectedAgent}
@@ -105,7 +121,7 @@ export function CompetitiveIntelligenceDashboard() {
                   <p className="text-gray-500 mb-4">
                     Please select an agent from the Agents tab to begin your analysis.
                   </p>
-                  <Button onClick={() => setActiveView('selection')}>
+                  <Button onClick={() => setActiveView('agents')}>
                     Select Agent
                   </Button>
                 </CardContent>

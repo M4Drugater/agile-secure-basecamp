@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      agent_collaborations: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          interaction_data: Json
+          interaction_type: string
+          session_id: string
+          source_agent: string
+          target_agent: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          interaction_data: Json
+          interaction_type: string
+          session_id: string
+          source_agent: string
+          target_agent: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          interaction_data?: Json
+          interaction_type?: string
+          session_id?: string
+          source_agent?: string
+          target_agent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_collaborations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "unified_ci_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_learning_insights: {
         Row: {
           action_items: string[] | null
@@ -767,6 +808,68 @@ export type Database = {
         }
         Relationships: []
       }
+      intelligent_outputs: {
+        Row: {
+          action_items: Json | null
+          auto_applied_to_kb: boolean | null
+          content: string
+          content_suggestions: Json | null
+          created_at: string
+          id: string
+          insights_generated: string[] | null
+          knowledge_updates: Json | null
+          metadata: Json | null
+          output_type: string
+          session_id: string
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_items?: Json | null
+          auto_applied_to_kb?: boolean | null
+          content: string
+          content_suggestions?: Json | null
+          created_at?: string
+          id?: string
+          insights_generated?: string[] | null
+          knowledge_updates?: Json | null
+          metadata?: Json | null
+          output_type: string
+          session_id: string
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_items?: Json | null
+          auto_applied_to_kb?: boolean | null
+          content?: string
+          content_suggestions?: Json | null
+          created_at?: string
+          id?: string
+          insights_generated?: string[] | null
+          knowledge_updates?: Json | null
+          metadata?: Json | null
+          output_type?: string
+          session_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligent_outputs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "unified_ci_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base_config: {
         Row: {
           config_key: string
@@ -1483,6 +1586,59 @@ export type Database = {
         }
         Relationships: []
       }
+      session_analytics: {
+        Row: {
+          agents_used: string[]
+          content_pieces_generated: number | null
+          created_at: string
+          effectiveness_score: number | null
+          id: string
+          insights_generated: number | null
+          knowledge_updates: number | null
+          reports_created: number | null
+          session_duration: number | null
+          session_id: string
+          user_id: string
+          user_satisfaction: number | null
+        }
+        Insert: {
+          agents_used: string[]
+          content_pieces_generated?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          insights_generated?: number | null
+          knowledge_updates?: number | null
+          reports_created?: number | null
+          session_duration?: number | null
+          session_id: string
+          user_id: string
+          user_satisfaction?: number | null
+        }
+        Update: {
+          agents_used?: string[]
+          content_pieces_generated?: number | null
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          insights_generated?: number | null
+          knowledge_updates?: number | null
+          reports_created?: number | null
+          session_duration?: number | null
+          session_id?: string
+          user_id?: string
+          user_satisfaction?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_analytics_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "unified_ci_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -1646,6 +1802,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unified_ci_sessions: {
+        Row: {
+          active_agents: string[] | null
+          analysis_depth: string | null
+          analysis_focus: string | null
+          company_name: string
+          created_at: string
+          geographic_scope: string | null
+          id: string
+          industry: string
+          objectives: string | null
+          progress_tracker: Json | null
+          session_name: string
+          session_state: Json | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active_agents?: string[] | null
+          analysis_depth?: string | null
+          analysis_focus?: string | null
+          company_name: string
+          created_at?: string
+          geographic_scope?: string | null
+          id?: string
+          industry: string
+          objectives?: string | null
+          progress_tracker?: Json | null
+          session_name: string
+          session_state?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active_agents?: string[] | null
+          analysis_depth?: string | null
+          analysis_focus?: string | null
+          company_name?: string
+          created_at?: string
+          geographic_scope?: string | null
+          id?: string
+          industry?: string
+          objectives?: string | null
+          progress_tracker?: Json | null
+          session_name?: string
+          session_state?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_credits: {
         Row: {
@@ -1974,6 +2184,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      auto_update_knowledge_from_session: {
+        Args: { session_uuid: string; user_uuid: string }
+        Returns: boolean
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
@@ -1984,6 +2198,10 @@ export type Database = {
       }
       calculate_profile_completeness: {
         Args: { profile_row: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: number
+      }
+      calculate_session_effectiveness: {
+        Args: { session_uuid: string }
         Returns: number
       }
       consume_credits: {
