@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+// Unified research types that are compatible with both systems
 export interface ResearchRequest {
   query: string;
   researchType: 'quick-scan' | 'comprehensive' | 'industry-deep-dive' | 'competitive-analysis';
@@ -37,7 +38,7 @@ export interface ResearchSession {
   sources: ResearchSource[];
   insights: string[];
   keywords: string[];
-  researchType: ResearchRequest['researchType'];
+  researchType: 'quick-scan' | 'comprehensive' | 'industry-deep-dive' | 'competitive-analysis';
   industry?: string;
   creditsUsed: number;
   modelUsed: string;
@@ -132,7 +133,7 @@ export function useEliteResearchEngine() {
         sources: item.sources || [],
         insights: item.insights || [],
         keywords: item.keywords || [],
-        researchType: item.research_type,
+        researchType: item.research_type as 'quick-scan' | 'comprehensive' | 'industry-deep-dive' | 'competitive-analysis',
         industry: item.industry,
         creditsUsed: item.credits_used,
         modelUsed: item.model_used,
@@ -151,7 +152,7 @@ export function useEliteResearchEngine() {
     enabled: !!user,
   });
 
-  // Load research analytics using the new enhanced function
+  // Load research analytics using the enhanced function
   const { data: analytics } = useQuery({
     queryKey: ['research-analytics', user?.id],
     queryFn: async () => {

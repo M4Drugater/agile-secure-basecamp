@@ -3,5 +3,9 @@ import React from 'react';
 import { EliteResearchInterface } from './EliteResearchInterface';
 
 export function OptimizedResearchWorkbench() {
-  return <EliteResearchInterface />;
+  return (
+    <div className="w-full">
+      <EliteResearchInterface />
+    </div>
+  );
 }
