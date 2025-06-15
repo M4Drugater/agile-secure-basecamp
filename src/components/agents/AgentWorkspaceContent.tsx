@@ -5,6 +5,7 @@ import { ClipoginoChat } from '@/components/chat/ClipoginoChat';
 import { EnhancedAgentWorkspace } from '@/components/competitive-intelligence/EnhancedAgentWorkspace';
 import { OptimizedResearchWorkbench } from '@/components/research/OptimizedResearchWorkbench';
 import { EnhancedContentGenerator } from '@/components/content/EnhancedContentGenerator';
+import { AgentChat } from '@/components/competitive-intelligence/AgentChat';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -27,6 +28,22 @@ export function AgentWorkspaceContent({
     );
   }
 
+  // Initialize default session config for competitive intelligence agents if not set
+  const ensureSessionConfig = () => {
+    if (!sessionConfig.companyName && (primaryAgent.type === 'competitive-intelligence')) {
+      return {
+        companyName: '',
+        industry: '',
+        analysisFocus: '',
+        objectives: '',
+        ...sessionConfig
+      };
+    }
+    return sessionConfig;
+  };
+
+  const currentSessionConfig = ensureSessionConfig();
+
   // Route to the appropriate agent interface based on type and ID
   switch (primaryAgent.id) {
     case 'enhanced-content-generator':
@@ -41,12 +58,15 @@ export function AgentWorkspaceContent({
     case 'cdv':
     case 'cia':
     case 'cir':
+      // For competitive intelligence agents, use the direct chat interface
+      // instead of the full workspace when in single-agent mode
       return (
-        <EnhancedAgentWorkspace
-          selectedAgent={primaryAgent.id}
-          sessionConfig={sessionConfig}
-          setSessionConfig={setSessionConfig}
-        />
+        <div className="max-w-4xl mx-auto">
+          <AgentChat
+            agentId={primaryAgent.id}
+            sessionConfig={currentSessionConfig}
+          />
+        </div>
       );
     
     default:
