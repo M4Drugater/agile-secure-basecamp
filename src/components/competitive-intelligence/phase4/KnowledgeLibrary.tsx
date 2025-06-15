@@ -242,7 +242,7 @@ export function KnowledgeLibrary() {
                         {getTypeIcon(item.type)}
                         {item.title}
                         {item.aiEnhanced && (
-                          <Lightbulb className="h-4 w-4 text-yellow-500" title="AI Enhanced" />
+                          <Lightbulb className="h-4 w-4 text-yellow-500" />
                         )}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">

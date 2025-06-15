@@ -44,7 +44,14 @@ export function useIntelligentOutputs() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOutputs(data || []);
+      
+      // Type assertion to ensure output_type matches our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        output_type: item.output_type as 'strategic_report' | 'market_analysis' | 'competitive_brief' | 'action_plan'
+      })) as IntelligentOutput[];
+      
+      setOutputs(typedData);
     } catch (error) {
       console.error('Error loading outputs:', error);
       toast.error('Failed to load outputs');
@@ -168,7 +175,7 @@ Porter's Five Forces analysis indicates:
 - Competitive rivalry intensity: High
 - Threat of new entrants: Medium-High
 - Bargaining power of suppliers: Medium
-- Bargaining power of buyers: High
+- Threat of buyers: High
 - Threat of substitutes: Medium
 
 ## FINANCIAL & PERFORMANCE INTELLIGENCE
