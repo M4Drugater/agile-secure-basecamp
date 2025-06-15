@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -350,32 +351,3 @@ serve(async (req) => {
     });
   }
 });
-
-function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
-  const pricing = MODEL_PRICING[model as keyof typeof MODEL_PRICING];
-  if (!pricing) {
-    return 0;
-  }
-  
-  const inputCost = (inputTokens / 1000) * pricing.input;
-  const outputCost = (outputTokens / 1000) * pricing.output;
-  return inputCost + outputCost;
-}
-
-async function logUsage(userId: string, model: string, tokensUsed: number, cost: number) {
-  try {
-    const { error } = await supabase.from('ai_usage_logs').insert({
-      user_id: userId,
-      model,
-      tokens_used: tokensUsed,
-      cost,
-      timestamp: new Date().toISOString()
-    });
-    
-    if (error) {
-      console.error('Usage logging error:', error);
-    }
-  } catch (error) {
-    console.error('Usage logging failed:', error);
-  }
-}

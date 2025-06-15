@@ -24,6 +24,15 @@ interface UnifiedResponse {
   webSources: string[];
   validationScore: number;
   searchEngine: string;
+  contextQuality?: string; // Add missing contextQuality property
+}
+
+interface ContextSummary {
+  hasProfile: boolean;
+  knowledgeCount: number;
+  contentCount: number;
+  activityCount: number;
+  quality: string;
 }
 
 export function useUnifiedAISystem() {
@@ -223,7 +232,8 @@ NO uses conocimiento general. Solo los datos web proporcionados.`;
             hasWebData: true,
             webSources: webSearchResults.sources || [],
             validationScore: 100,
-            searchEngine: 'perplexity'
+            searchEngine: 'perplexity',
+            contextQuality: 'elite'
           };
         }
       }
@@ -236,7 +246,8 @@ NO uses conocimiento general. Solo los datos web proporcionados.`;
         hasWebData: !!webSearchResults,
         webSources: webSearchResults?.sources || [],
         validationScore: validation.score,
-        searchEngine: webSearchResults?.searchEngine || 'perplexity'
+        searchEngine: webSearchResults?.searchEngine || 'perplexity',
+        contextQuality: webSearchResults ? 'elite' : 'standard'
       };
 
     } catch (error) {
@@ -247,8 +258,21 @@ NO uses conocimiento general. Solo los datos web proporcionados.`;
     }
   };
 
+  // Add the missing getContextSummary method
+  const getContextSummary = (): ContextSummary => {
+    // This is a simplified implementation - in a real app you'd fetch this from your context system
+    return {
+      hasProfile: !!user,
+      knowledgeCount: 0, // Would be fetched from user's knowledge base
+      contentCount: 0,   // Would be fetched from user's content
+      activityCount: 0,  // Would be fetched from user's activity logs
+      quality: 'standard'
+    };
+  };
+
   return {
     isProcessing,
-    sendUnifiedRequest
+    sendUnifiedRequest,
+    getContextSummary
   };
 }
