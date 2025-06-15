@@ -1,0 +1,245 @@
+
+import { useState } from 'react';
+import { useSupabase } from '@/hooks/useSupabase';
+import { useAgentPrompts } from './useAgentPrompts';
+import { useRealTimeWebSearch } from './useRealTimeWebSearch';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  agentType?: string;
+  searchData?: any;
+  metadata?: any;
+}
+
+interface SessionConfig {
+  companyName: string;
+  industry: string;
+  analysisFocus: string;
+  objectives: string;
+}
+
+export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConfig) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { supabase, user } = useSupabase();
+  const { getSystemPrompt } = useAgentPrompts();
+  const webSearch = useRealTimeWebSearch();
+
+  const getWelcomeMessage = () => {
+    const agentNames = {
+      cdv: 'CDV Agent',
+      cir: 'CIR Agent',
+      cia: 'CIA Agent'
+    };
+    
+    const agentName = agentNames[agentId as keyof typeof agentNames];
+    const company = sessionConfig.companyName;
+    
+    switch (agentId) {
+      case 'cdv':
+        return `¡Hola! Soy ${agentName}, tu especialista en descubrimiento y validación competitiva. Tengo acceso a búsquedas web en tiempo real para proporcionarte inteligencia competitiva actual sobre ${company}. Puedo ayudarte a identificar competidores, analizar amenazas y descubrir oportunidades de mercado con datos reales.`;
+      case 'cir':
+        return `¡Hola! Soy ${agentName}, tu especialista en investigación de inteligencia competitiva. Utilizo búsquedas web en tiempo real para obtener datos financieros, métricas de mercado y análisis regulatorios actuales sobre ${company}. ¿Qué datos específicos te interesan?`;
+      case 'cia':
+        return `¡Hola! Soy ${agentName}, tu analista de inteligencia estratégica. Combino múltiples fuentes de datos en tiempo real para proporcionarte análisis estratégicos profundos sobre ${company} y el panorama competitivo. ¿Qué aspectos estratégicos quieres explorar?`;
+      default:
+        return `¡Hola! Estoy aquí para ayudarte con análisis competitivo en tiempo real de ${company}. ¿En qué puedo asistirte?`;
+    }
+  };
+
+  const buildUserContext = async () => {
+    if (!user || !supabase) return '';
+
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      let context = `\n=== CONTEXTO DEL USUARIO ===\n`;
+      
+      if (profile) {
+        context += `Profesión: ${profile.current_position || 'No especificada'}\n`;
+        context += `Industria: ${profile.industry || 'No especificada'}\n`;
+        context += `Experiencia: ${profile.experience_level || 'No especificada'}\n`;
+        context += `Objetivos: ${profile.career_goals || 'No especificados'}\n`;
+      }
+
+      context += `\n=== CONFIGURACIÓN DE ANÁLISIS ===\n`;
+      context += `Empresa objetivo: ${sessionConfig.companyName}\n`;
+      context += `Industria: ${sessionConfig.industry}\n`;
+      context += `Enfoque: ${sessionConfig.analysisFocus}\n`;
+      context += `Objetivos: ${sessionConfig.objectives}\n`;
+
+      return context;
+    } catch (error) {
+      console.error('Error building context:', error);
+      return '';
+    }
+  };
+
+  const performAgentSearch = async (query: string, messageContext: string) => {
+    try {
+      console.log(`${agentId.toUpperCase()} Agent performing specialized search:`, query);
+
+      // Determine search type based on agent specialization
+      let searchType: 'news' | 'financial' | 'competitive' | 'market' | 'regulatory' = 'competitive';
+      let timeframe: 'hour' | 'day' | 'week' | 'month' | 'quarter' = 'week';
+
+      switch (agentId) {
+        case 'cdv':
+          searchType = messageContext.toLowerCase().includes('financ') ? 'financial' : 'competitive';
+          break;
+        case 'cir':
+          searchType = messageContext.toLowerCase().includes('regulat') ? 'regulatory' : 'financial';
+          timeframe = 'month';
+          break;
+        case 'cia':
+          searchType = messageContext.toLowerCase().includes('market') ? 'market' : 'competitive';
+          timeframe = 'quarter';
+          break;
+      }
+
+      const searchResults = await webSearch.performWebSearch({
+        query: `${query} ${sessionConfig.companyName} ${sessionConfig.industry}`,
+        companyName: sessionConfig.companyName,
+        industry: sessionConfig.industry,
+        searchType,
+        timeframe
+      });
+
+      return searchResults;
+    } catch (error) {
+      console.error('Agent search failed:', error);
+      return null;
+    }
+  };
+
+  const addWelcomeMessage = () => {
+    const welcomeMessage: Message = {
+      id: `welcome-${Date.now()}`,
+      role: 'assistant',
+      content: getWelcomeMessage(),
+      timestamp: new Date(),
+      agentType: agentId
+    };
+    
+    setMessages([welcomeMessage]);
+  };
+
+  const sendMessage = async (inputMessage: string, sessionId: string) => {
+    if (!inputMessage.trim() || isLoading || !sessionId) return;
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      // Perform real-time search before sending to AI
+      const searchResults = await performAgentSearch(inputMessage, inputMessage);
+      
+      const userContext = await buildUserContext();
+      
+      const conversationMessages = [
+        ...messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        {
+          role: 'user' as const,
+          content: inputMessage.trim()
+        }
+      ];
+
+      // Build enhanced system prompt with search data
+      let enhancedSystemPrompt = getSystemPrompt(agentId, userContext, sessionConfig);
+      
+      if (searchResults) {
+        enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE DATA ===\n`;
+        enhancedSystemPrompt += `Recent Web Intelligence:\n${searchResults.searchResults.webData}\n\n`;
+        enhancedSystemPrompt += `Strategic Analysis:\n${searchResults.searchResults.strategicAnalysis}\n\n`;
+        
+        if (searchResults.insights.length > 0) {
+          enhancedSystemPrompt += `Key Insights:\n`;
+          searchResults.insights.forEach((insight, index) => {
+            enhancedSystemPrompt += `${index + 1}. ${insight.title}: ${insight.description}\n`;
+          });
+          enhancedSystemPrompt += `\n`;
+        }
+        
+        enhancedSystemPrompt += `IMPORTANT: Use this real-time data in your analysis. Reference specific data points, metrics, and sources. Do not provide simulated or generic responses.`;
+      }
+
+      const apiMessages = [
+        { role: 'system' as const, content: enhancedSystemPrompt },
+        ...conversationMessages
+      ];
+
+      const { data, error } = await supabase.functions.invoke('competitive-intelligence-chat', {
+        body: {
+          messages: apiMessages,
+          agentType: agentId,
+          sessionConfig,
+          userContext: {
+            userId: user?.id,
+            sessionId
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      const assistantMessage: Message = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date(),
+        agentType: agentId,
+        searchData: searchResults,
+        metadata: {
+          model: data.model,
+          tokensUsed: data.tokensUsed,
+          cost: data.cost,
+          searchPerformed: !!searchResults,
+          dataConfidence: searchResults?.metadata?.dataConfidence || 0
+        }
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: 'Lo siento, hubo un error al obtener la inteligencia en tiempo real. Por favor, inténtalo de nuevo.',
+        timestamp: new Date(),
+        agentType: agentId
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    messages,
+    isLoading,
+    sendMessage,
+    addWelcomeMessage,
+    searchData: webSearch.searchResults,
+    searchError: webSearch.error
+  };
+}

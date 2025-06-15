@@ -5,7 +5,7 @@ import { ClipoginoChat } from '@/components/chat/ClipoginoChat';
 import { EnhancedAgentWorkspace } from '@/components/competitive-intelligence/EnhancedAgentWorkspace';
 import { OptimizedResearchWorkbench } from '@/components/research/OptimizedResearchWorkbench';
 import { EnhancedContentGenerator } from '@/components/content/EnhancedContentGenerator';
-import { AgentChat } from '@/components/competitive-intelligence/AgentChat';
+import { EnhancedAgentChat } from '@/components/competitive-intelligence/EnhancedAgentChat';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -58,11 +58,10 @@ export function AgentWorkspaceContent({
     case 'cdv':
     case 'cia':
     case 'cir':
-      // For competitive intelligence agents, use the direct chat interface
-      // instead of the full workspace when in single-agent mode
+      // Use the enhanced agent chat with real-time web search integration
       return (
         <div className="max-w-4xl mx-auto">
-          <AgentChat
+          <EnhancedAgentChat
             agentId={primaryAgent.id}
             sessionConfig={currentSessionConfig}
           />
