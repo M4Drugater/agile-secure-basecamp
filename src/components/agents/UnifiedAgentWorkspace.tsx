@@ -26,7 +26,7 @@ export interface AgentConfig {
   icon: React.ComponentType<any>;
   color: string;
   capabilities: string[];
-  type: 'competitive-intelligence' | 'research' | 'chat' | 'content' | 'learning';
+  type: 'competitive-intelligence' | 'research' | 'chat' | 'learning';
   status: 'active' | 'idle' | 'processing';
 }
 
@@ -201,7 +201,7 @@ export function UnifiedAgentWorkspace() {
             className="flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
-            Collaborative
+            Collaborative Session
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -209,7 +209,7 @@ export function UnifiedAgentWorkspace() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="selector" className="space-y-4">
+        <TabsContent value="selector" className="mt-6">
           <AgentSelector
             agents={availableAgents}
             selectedAgents={selectedAgents}
@@ -218,34 +218,30 @@ export function UnifiedAgentWorkspace() {
           />
         </TabsContent>
 
-        <TabsContent value="workspace" className="space-y-4">
-          {selectedAgents.length > 0 && (
-            <AgentWorkspaceContent
-              selectedAgents={getSelectedAgentConfigs()}
-              sessionConfig={sessionConfig}
-              setSessionConfig={setSessionConfig}
-            />
-          )}
+        <TabsContent value="workspace" className="mt-6">
+          <AgentWorkspaceContent
+            selectedAgents={getSelectedAgentConfigs()}
+            sessionConfig={sessionConfig}
+            setSessionConfig={setSessionConfig}
+          />
         </TabsContent>
 
-        <TabsContent value="collaborative" className="space-y-4">
-          {selectedAgents.length > 1 && (
-            <CollaborativeSession
-              selectedAgents={getSelectedAgentConfigs()}
-              sessionConfig={sessionConfig}
-              setSessionConfig={setSessionConfig}
-            />
-          )}
+        <TabsContent value="collaborative" className="mt-6">
+          <CollaborativeSession
+            selectedAgents={getSelectedAgentConfigs()}
+            sessionConfig={sessionConfig}
+            setSessionConfig={setSessionConfig}
+          />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4">
+        <TabsContent value="settings" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Workspace Settings</CardTitle>
+              <CardTitle>Agent Workspace Settings</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Configure global settings for the unified agent workspace.
+                Configure your agent workspace preferences and collaboration settings.
               </p>
             </CardContent>
           </Card>

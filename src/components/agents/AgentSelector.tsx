@@ -27,7 +27,6 @@ export function AgentSelector({
     { type: 'chat' as const, label: 'AI Chat & Mentoring', description: 'Personal guidance and mentoring' },
     { type: 'competitive-intelligence' as const, label: 'Competitive Intelligence', description: 'Market analysis and competitor research' },
     { type: 'research' as const, label: 'Research & Analysis', description: 'Deep research and strategic insights' },
-    { type: 'content' as const, label: 'Content Creation', description: 'Content generation and optimization' },
     { type: 'learning' as const, label: 'Learning Management', description: 'Education and skill development' }
   ];
 
