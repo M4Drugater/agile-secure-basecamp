@@ -76,52 +76,40 @@ export function useAdvancedContextOrchestrator() {
   };
 
   const buildEnhancedUserProfile = async (userId: string): Promise<ContextProfile> => {
-    // Fetch comprehensive user data
+    // Fetch comprehensive user data from existing profiles table
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .maybeSingle();
 
-    const { data: preferences } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    const { data: activity } = await supabase
-      .from('user_activity_summary')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    // Build comprehensive profile
+    // Create profile with fallbacks using existing profile structure
     return {
       userId,
-      industryExpertise: profile?.industry_expertise || ['technology'],
+      industryExpertise: profile?.industry ? [profile.industry] : ['technology'],
       managementLevel: profile?.management_level || 'senior',
-      experienceYears: profile?.experience_years || 10,
-      functionalAreas: profile?.functional_areas || ['strategy'],
-      preferredAnalysisStyle: profile?.analysis_style || 'strategic',
+      experienceYears: profile?.years_of_experience || 10,
+      functionalAreas: profile?.current_skills || ['strategy'],
+      preferredAnalysisStyle: 'strategic',
       communicationPreferences: {
-        formality: preferences?.communication_formality || 'executive',
-        detail: preferences?.detail_level || 'comprehensive',
-        format: preferences?.output_format || 'structured'
+        formality: profile?.communication_style === 'formal' ? 'executive' : 'professional',
+        detail: 'comprehensive',
+        format: 'structured'
       }
     };
   };
 
   const integrateKnowledgeBase = async (userId: string, query: string) => {
-    // Search personal knowledge base
+    // Search personal knowledge base using existing user_knowledge_files table
     const { data: personalKnowledge } = await supabase
-      .from('knowledge_items')
+      .from('user_knowledge_files')
       .select('*')
       .eq('user_id', userId)
       .limit(10);
 
-    // Search system knowledge
+    // Search system knowledge using existing system_knowledge_base table
     const { data: systemKnowledge } = await supabase
-      .from('system_knowledge')
+      .from('system_knowledge_base')
       .select('*')
       .textSearch('content', query)
       .limit(5);
