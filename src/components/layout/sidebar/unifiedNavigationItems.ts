@@ -15,7 +15,15 @@ import {
   Search
 } from 'lucide-react';
 
-export const mainNavItems = [
+export interface UnifiedNavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  description: string;
+  badge?: string;
+}
+
+export const mainNavItems: UnifiedNavItem[] = [
   {
     title: 'Dashboard',
     href: '/dashboard',
@@ -36,7 +44,7 @@ export const mainNavItems = [
   }
 ];
 
-export const aiModulesItems = [
+export const aiModulesItems: UnifiedNavItem[] = [
   {
     title: 'Content Generator',
     href: '/content',
@@ -57,7 +65,7 @@ export const aiModulesItems = [
   }
 ];
 
-export const contentItems = [
+export const contentItems: UnifiedNavItem[] = [
   {
     title: 'Content Library',
     href: '/content-library',
@@ -72,7 +80,7 @@ export const contentItems = [
   }
 ];
 
-export const learningItems = [
+export const learningItems: UnifiedNavItem[] = [
   {
     title: 'Learning Paths',
     href: '/learning',
@@ -87,7 +95,7 @@ export const learningItems = [
   }
 ];
 
-export const accountItems = [
+export const accountItems: UnifiedNavItem[] = [
   {
     title: 'Profile',
     href: '/profile',
