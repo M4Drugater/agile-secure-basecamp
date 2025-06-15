@@ -10,7 +10,6 @@ import {
   Search,
   Sparkles,
   FileText,
-  BarChart3,
   Settings
 } from 'lucide-react';
 
@@ -26,8 +25,7 @@ export const navigationItems = [
   { 
     section: 'IA y Contenido',
     items: [
-      { title: 'Content Studio', href: '/content', icon: FileText, description: 'Creación y gestión unificada de contenido' },
-      { title: 'Analytics', href: '/content-analytics', icon: BarChart3, description: 'Métricas y análisis' }
+      { title: 'Content Studio', href: '/content', icon: FileText, description: 'Creación y gestión unificada de contenido' }
     ]
   },
   { 

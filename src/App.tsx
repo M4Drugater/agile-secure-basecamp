@@ -14,7 +14,6 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import OptimizedResearchWorkbench from "./pages/OptimizedResearchWorkbench";
 import LearningManagement from "./pages/LearningManagement";
 import Billing from "./pages/Billing";
-import ContentAnalytics from "./pages/ContentAnalytics";
 import Admin from "./pages/Admin";
 import ConsolidatedAgents from "./pages/ConsolidatedAgents";
 
@@ -35,7 +34,6 @@ function App() {
                 <Route path="/agents" element={<ConsolidatedAgents />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/content" element={<ContentGenerator />} />
-                <Route path="/content-analytics" element={<ContentAnalytics />} />
                 <Route path="/knowledge" element={<KnowledgeBase />} />
                 <Route path="/research" element={<OptimizedResearchWorkbench />} />
                 <Route path="/learning" element={<LearningManagement />} />
@@ -44,6 +42,7 @@ function App() {
                 {/* Redirect legacy routes to unified content studio */}
                 <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
                 <Route path="/content-generator" element={<Navigate to="/content?tab=generator" replace />} />
+                <Route path="/content-analytics" element={<Navigate to="/content?tab=library" replace />} />
               </Routes>
             </ConsolidatedAppLayout>
           </BrowserRouter>

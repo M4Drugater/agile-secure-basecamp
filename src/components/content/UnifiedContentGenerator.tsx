@@ -9,8 +9,7 @@ import {
   Sparkles, 
   Wand2, 
   FileText, 
-  Library, 
-  BarChart3,
+  Library,
   Crown,
   Bot,
   Brain,
@@ -20,7 +19,6 @@ import {
 import { UnifiedContentGeneratorTab } from './unified/UnifiedContentGeneratorTab';
 import { ContentStylistTab } from './premium/ContentStylistTab';
 import { ContentLibraryTab } from './premium/ContentLibraryTab';
-import { ContentAnalyticsTab } from './premium/ContentAnalyticsTab';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 import { ContentItem } from '@/hooks/useContentItems';
 
@@ -46,7 +44,7 @@ export function UnifiedContentGenerator() {
     'Real-time Web Research',
     'Context-Aware Generation',
     'Executive Content Library',
-    'Advanced Analytics & Insights'
+    'Style Transfer & Optimization'
   ];
 
   return (
@@ -148,7 +146,7 @@ export function UnifiedContentGenerator() {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="generator" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Generator
@@ -160,10 +158,6 @@ export function UnifiedContentGenerator() {
           <TabsTrigger value="library" className="flex items-center gap-2">
             <Library className="h-4 w-4" />
             Library
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -177,10 +171,6 @@ export function UnifiedContentGenerator() {
 
         <TabsContent value="library">
           <ContentLibraryTab onContentSelect={handleContentSelect} />
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <ContentAnalyticsTab />
         </TabsContent>
       </Tabs>
     </div>
