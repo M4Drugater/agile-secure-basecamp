@@ -1,6 +1,7 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UnifiedAppLayout } from '@/components/layout/UnifiedAppLayout';
+import { ConsolidatedAppLayout } from '@/components/layout/ConsolidatedAppLayout';
 import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAvailableModules } from '@/hooks/journey/useAvailableModules';
@@ -78,7 +79,7 @@ export default function ProgressiveDashboard() {
   // Show loading while journey is being initialized
   if (isLoading || !isInitialized) {
     return (
-      <UnifiedAppLayout>
+      <ConsolidatedAppLayout>
         <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -87,7 +88,7 @@ export default function ProgressiveDashboard() {
             </div>
           </div>
         </div>
-      </UnifiedAppLayout>
+      </ConsolidatedAppLayout>
     );
   }
 
@@ -121,7 +122,7 @@ export default function ProgressiveDashboard() {
 
   return (
     <TourProvider steps={DASHBOARD_TOUR_STEPS}>
-      <UnifiedAppLayout>
+      <ConsolidatedAppLayout>
         <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
           <div data-tour="welcome-header">
             <WelcomeHeader
@@ -182,7 +183,7 @@ export default function ProgressiveDashboard() {
 
         {/* Tour Overlay */}
         <TourOverlay />
-      </UnifiedAppLayout>
+      </ConsolidatedAppLayout>
     </TourProvider>
   );
 }
