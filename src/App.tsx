@@ -24,6 +24,7 @@ import Billing from '@/pages/Billing';
 import TrendsDiscovery from '@/pages/TrendsDiscovery';
 import ResearchWorkbench from '@/pages/ResearchWorkbench';
 import LearningManagement from '@/pages/LearningManagement';
+import OnboardingPage from '@/pages/OnboardingPage';
 
 function App() {
   return (
@@ -39,6 +40,13 @@ function App() {
                   <UniversalLayout>
                     <Home />
                   </UniversalLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Onboarding Route */}
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <OnboardingPage />
                 </ProtectedRoute>
               } />
               

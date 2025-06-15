@@ -1,13 +1,8 @@
 
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EnhancedCompetitiveHeader } from './EnhancedCompetitiveHeader';
-import { EnhancedIndustryConfiguration } from './EnhancedIndustryConfiguration';
-import { AgentChat } from './AgentChat';
-import { StrategicAnalysisPanel } from './StrategicAnalysisPanel';
-import { ExecutiveDashboard } from './ExecutiveDashboard';
-import { ContinuousMonitoringPanel } from './ContinuousMonitoringPanel';
-import { RealTimeIntelligencePanel } from './RealTimeIntelligencePanel';
+import { WorkspaceHeader } from './workspace/WorkspaceHeader';
+import { WorkspaceNavigation } from './workspace/WorkspaceNavigation';
+import { WorkspaceContent } from './workspace/WorkspaceContent';
 
 interface SessionConfig {
   companyName: string;
@@ -37,56 +32,23 @@ export function EnhancedAgentWorkspace({
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header */}
-      <EnhancedCompetitiveHeader
-        selectedAgent={selectedAgent}
+      <WorkspaceHeader 
         sessionConfig={sessionConfig}
+        selectedAgent={selectedAgent}
+      />
+
+      <WorkspaceNavigation 
         activeTab={activeTab}
         onTabChange={setActiveTab}
       />
 
-      {/* Enhanced Workspace Content */}
-      <div className="min-h-[600px]">
-        {activeTab === 'realtime' && (
-          <RealTimeIntelligencePanel 
-            companyName={sessionConfig.companyName}
-            industry={sessionConfig.industry}
-          />
-        )}
-
-        {activeTab === 'chat' && (
-          <div className="max-w-4xl mx-auto">
-            <AgentChat 
-              agentId={selectedAgent} 
-              sessionConfig={sessionConfig} 
-            />
-          </div>
-        )}
-
-        {activeTab === 'analysis' && (
-          <StrategicAnalysisPanel 
-            agentType={selectedAgent} 
-            analysisData={analysisData}
-          />
-        )}
-
-        {activeTab === 'dashboard' && (
-          <ExecutiveDashboard companyContext={sessionConfig} />
-        )}
-
-        {activeTab === 'monitoring' && (
-          <ContinuousMonitoringPanel companyContext={sessionConfig} />
-        )}
-
-        {activeTab === 'config' && (
-          <div className="max-w-4xl mx-auto">
-            <EnhancedIndustryConfiguration 
-              sessionConfig={sessionConfig} 
-              setSessionConfig={setSessionConfig} 
-            />
-          </div>
-        )}
-      </div>
+      <WorkspaceContent
+        activeTab={activeTab}
+        sessionConfig={sessionConfig}
+        setSessionConfig={setSessionConfig}
+        selectedAgent={selectedAgent}
+        analysisData={analysisData}
+      />
     </div>
   );
 }
