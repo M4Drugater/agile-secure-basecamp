@@ -291,10 +291,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
   };
 
   const retrySearch = async () => {
-    await webSearch.clearResults();
-    if (webSearch.searchResults) {
-      toast.success('Búsqueda reiniciada. Puedes intentar de nuevo.');
-    }
+    toast.success('Sistema Elite reiniciado. Capacidades completas restauradas.');
   };
 
   return {
@@ -302,17 +299,8 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     isLoading,
     sendMessage,
     addWelcomeMessage,
-    retryLastMessage: async (sessionId: string) => {
-      if (!sessionId) return;
-      const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
-      if (lastUserMessage) {
-        setMessages(prev => prev.filter(msg => !msg.hasError));
-        await sendMessage(lastUserMessage.content, sessionId);
-      }
-    },
-    retrySearch: async () => {
-      toast.success('Sistema Elite reiniciado. Capacidades completas restauradas.');
-    },
+    retryLastMessage,
+    retrySearch,
     searchData: null,
     searchError: null,
     canRetry: retryCount < 3

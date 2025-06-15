@@ -19,7 +19,6 @@ import { useElitePromptEngine } from '@/hooks/prompts/useElitePromptEngine';
 import { useConsolidatedContext } from '@/hooks/useConsolidatedContext';
 import { EliteModelSelector } from './EliteModelSelector';
 import { ChatMessage } from '@/components/competitive-intelligence/ChatMessage';
-import { ChatInput } from '@/components/competitive-intelligence/ChatInput';
 import { LoadingMessage } from '@/components/competitive-intelligence/LoadingMessage';
 
 interface Message {
@@ -35,6 +34,52 @@ interface Message {
     searchEnabled?: boolean;
     webSources?: string[];
   };
+}
+
+interface EliteChatInputProps {
+  inputMessage: string;
+  setInputMessage: (message: string) => void;
+  onSendMessage: () => void;
+  isLoading: boolean;
+}
+
+function EliteChatInput({ 
+  inputMessage, 
+  setInputMessage, 
+  onSendMessage, 
+  isLoading 
+}: EliteChatInputProps) {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSendMessage();
+    }
+  };
+
+  return (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="Ask CLIPOGINO Elite anything... (with real-time web intelligence)"
+        value={inputMessage}
+        onChange={(e) => setInputMessage(e.target.value)}
+        onKeyPress={handleKeyPress}
+        disabled={isLoading}
+        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <Button 
+        onClick={onSendMessage} 
+        disabled={!inputMessage.trim() || isLoading}
+        size="sm"
+      >
+        {isLoading ? (
+          <RefreshCw className="h-4 w-4 animate-spin" />
+        ) : (
+          'Send'
+        )}
+      </Button>
+    </div>
+  );
 }
 
 export function EnhancedClipoginoChat() {
@@ -270,12 +315,11 @@ Tengo acceso completo a tu perfil profesional, base de conocimiento, y capacidad
               </ScrollArea>
 
               {/* Input */}
-              <ChatInput
+              <EliteChatInput
                 inputMessage={inputMessage}
                 setInputMessage={setInputMessage}
                 onSendMessage={handleSendMessage}
                 isLoading={isProcessing}
-                placeholder="Ask CLIPOGINO Elite anything... (with real-time web intelligence)"
               />
 
               {/* Status Bar */}
