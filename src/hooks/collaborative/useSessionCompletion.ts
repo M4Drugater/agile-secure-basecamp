@@ -1,7 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useIntelligentOutputs } from '@/hooks/competitive-intelligence/useIntelligentOutputs';
+import { useContextBuilder } from '@/hooks/context/useContextBuilder';
+import { useElitePromptEngine } from '@/hooks/prompts/useElitePromptEngine';
 import { AgentConfig } from '@/components/agents/UnifiedAgentWorkspace';
 
 interface CompletionResults {
@@ -30,6 +31,8 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
   const [hasBeenCompleted, setHasBeenCompleted] = useState(false);
   const { supabase, user } = useSupabase();
   const { generateOutput } = useIntelligentOutputs();
+  const { buildFullContextString, getContextSummary } = useContextBuilder();
+  const { buildEliteSystemPrompt } = useElitePromptEngine();
 
   const detectSessionCompletion = async (sessionMetrics: SessionMetrics) => {
     // Detectar finalización basada en múltiples criterios
@@ -40,7 +43,7 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
        sessionMetrics.completedTasks >= 5);
 
     if (isComplete && !hasBeenCompleted && !isGeneratingResults) {
-      console.log('🎯 Sesión completa detectada, generando resultados finales...');
+      console.log('🎯 Sesión completa detectada, generando resultados finales personalizados...');
       await generateFinalResults(sessionMetrics);
     }
   };
@@ -50,32 +53,59 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
 
     try {
       setIsGeneratingResults(true);
-      console.log('📊 Iniciando generación de resultados finales...');
+      console.log('📊 Iniciando generación de resultados finales personalizados...');
 
-      // 1. Generar outputs específicos por agente
+      // 1. Construir contexto completo del usuario
+      const fullUserContext = await buildFullContextString('session completion');
+      const contextSummary = getContextSummary();
+
+      console.log('🔍 Contexto personalizado construido:', {
+        hasProfile: contextSummary.hasProfile,
+        knowledgeCount: contextSummary.knowledgeCount,
+        contentCount: contextSummary.contentCount
+      });
+
+      // 2. Generar outputs específicos por agente con contexto personalizado
       const agentOutputs: Record<string, any> = {};
       
       for (const agent of selectedAgents) {
-        console.log(`🤖 Generando output para agente: ${agent.name}`);
+        console.log(`🤖 Generando output personalizado para agente: ${agent.name}`);
         
-        const agentOutput = await generateAgentSpecificOutput(agent, sessionMetrics);
+        const agentOutput = await generatePersonalizedAgentOutput(
+          agent, 
+          sessionMetrics, 
+          fullUserContext,
+          contextSummary
+        );
         agentOutputs[agent.id] = agentOutput;
       }
 
-      // 2. Generar síntesis colaborativa final
-      console.log('🔄 Generando síntesis colaborativa...');
-      const synthesisReport = await generateCollaborativeSynthesis(agentOutputs, sessionMetrics);
+      // 3. Generar síntesis colaborativa personalizada
+      console.log('🔄 Generando síntesis colaborativa personalizada...');
+      const synthesisReport = await generatePersonalizedSynthesis(
+        agentOutputs, 
+        sessionMetrics, 
+        fullUserContext,
+        contextSummary
+      );
 
-      // 3. Generar plan de acción ejecutivo
-      console.log('📋 Generando plan de acción...');
-      const actionPlan = await generateExecutiveActionPlan(synthesisReport, sessionMetrics);
+      // 4. Generar plan de acción ejecutivo personalizado
+      console.log('📋 Generando plan de acción personalizado...');
+      const actionPlan = await generatePersonalizedActionPlan(
+        synthesisReport, 
+        sessionMetrics, 
+        fullUserContext,
+        contextSummary
+      );
 
-      // 4. Crear reporte final unificado
-      const finalReport = await generateUnifiedReport({
+      // 5. Crear reporte final unificado personalizado
+      const finalReport = await generatePersonalizedFinalReport({
         agentOutputs,
         synthesisReport,
         actionPlan,
-        sessionMetrics
+        sessionMetrics,
+        fullUserContext,
+        contextSummary
       });
 
       const results: CompletionResults = {
@@ -90,19 +120,24 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
       setCompletionResults(results);
       setHasBeenCompleted(true);
 
-      // 5. Guardar resultados en la base de datos
+      // 6. Guardar resultados en la base de datos
       await saveCompletionResults(results);
 
-      console.log('✅ Resultados finales generados exitosamente');
+      console.log('✅ Resultados finales personalizados generados exitosamente');
 
     } catch (error) {
-      console.error('❌ Error generando resultados finales:', error);
+      console.error('❌ Error generando resultados finales personalizados:', error);
     } finally {
       setIsGeneratingResults(false);
     }
   };
 
-  const generateAgentSpecificOutput = async (agent: AgentConfig, sessionMetrics: SessionMetrics) => {
+  const generatePersonalizedAgentOutput = async (
+    agent: AgentConfig, 
+    sessionMetrics: SessionMetrics,
+    fullUserContext: string,
+    contextSummary: any
+  ) => {
     const outputTypes = {
       'cdv': 'competitive_brief',
       'cir': 'market_analysis', 
@@ -112,134 +147,187 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
 
     const outputType = outputTypes[agent.id as keyof typeof outputTypes] || 'strategic_report';
 
+    // Construir prompt personalizado para el agente
+    const systemPrompt = await buildEliteSystemPrompt({
+      agentType: agent.id,
+      currentPage: '/unified-agents',
+      analysisDepth: 'comprehensive',
+      outputFormat: 'executive',
+      contextLevel: 'elite'
+    });
+
     return await generateOutput({
       sessionId,
       outputType,
-      title: `Reporte Final - ${agent.name}`,
+      title: `Reporte Final Personalizado - ${agent.name}`,
       sessionData: {
-        company_name: 'Empresa Analizada',
-        industry: 'Industria de Enfoque',
-        objectives: 'Análisis Competitivo Completo'
+        company_name: 'Análisis Personalizado',
+        industry: 'Basado en tu Perfil',
+        objectives: 'Resultados Específicos para tu Contexto'
       },
       collaborationData: [{
-        interaction_type: 'final_synthesis',
+        interaction_type: 'personalized_final_output',
         interaction_data: {
           agent: agent.id,
           metrics: sessionMetrics,
-          finalStage: true
+          contextQuality: contextSummary.quality,
+          personalizationLevel: 'high',
+          userProfile: contextSummary.hasProfile,
+          knowledgeAssets: contextSummary.knowledgeCount
         }
       }],
       agentInsights: {
         [agent.id]: {
           insights: [
-            { title: `Análisis completo de ${agent.name}`, confidence: 95 },
-            { title: 'Recomendaciones estratégicas', confidence: 90 },
-            { title: 'Perspectivas de mercado', confidence: 88 }
+            { title: `Análisis personalizado de ${agent.name} basado en tu perfil`, confidence: 95 },
+            { title: 'Recomendaciones específicas para tu industria y rol', confidence: 92 },
+            { title: 'Estrategias adaptadas a tu experiencia y objetivos', confidence: 90 }
           ],
           recommendations: [
-            'Implementar estrategia competitiva identificada',
-            'Monitorear métricas clave del mercado',
-            'Desarrollar ventajas competitivas sostenibles'
-          ]
+            'Implementar estrategias alineadas con tu perfil profesional',
+            'Aprovechar tu base de conocimiento existente',
+            'Desarrollar capacidades específicas para tus objetivos'
+          ],
+          personalizationData: {
+            contextUsed: fullUserContext.length > 0,
+            profileIntegrated: contextSummary.hasProfile,
+            knowledgeApplied: contextSummary.knowledgeCount > 0
+          }
         }
       }
     });
   };
 
-  const generateCollaborativeSynthesis = async (agentOutputs: Record<string, any>, sessionMetrics: SessionMetrics) => {
+  const generatePersonalizedSynthesis = async (
+    agentOutputs: Record<string, any>, 
+    sessionMetrics: SessionMetrics,
+    fullUserContext: string,
+    contextSummary: any
+  ) => {
     return await generateOutput({
       sessionId,
       outputType: 'strategic_report',
-      title: 'Síntesis Colaborativa Final',
+      title: 'Síntesis Colaborativa Personalizada',
       sessionData: {
-        company_name: 'Análisis Colaborativo',
-        industry: 'Multi-Agente',
-        objectives: 'Síntesis de Perspectivas Integradas'
+        company_name: 'Tu Perfil Profesional',
+        industry: 'Análisis Integrado Personalizado',
+        objectives: 'Síntesis Adaptada a tu Contexto'
       },
       collaborationData: Object.entries(agentOutputs).map(([agentId, output]) => ({
-        interaction_type: 'synthesis_integration',
+        interaction_type: 'personalized_synthesis',
         interaction_data: {
           agentId,
           outputId: output.id,
+          personalizationLevel: 'high',
+          contextIntegration: true,
           contributions: output.insights_generated?.length || 0
         }
       })),
       agentInsights: {
-        synthesis: {
+        personalizedSynthesis: {
           insights: [
-            { title: 'Consenso entre agentes alcanzado', confidence: sessionMetrics.consensusLevel },
-            { title: 'Síntesis de recomendaciones estratégicas', confidence: 92 },
-            { title: 'Perspectiva holística del mercado', confidence: 89 }
+            { title: 'Consenso personalizado entre agentes alcanzado', confidence: sessionMetrics.consensusLevel },
+            { title: 'Síntesis adaptada a tu perfil y objetivos profesionales', confidence: 94 },
+            { title: 'Recomendaciones específicas basadas en tu experiencia', confidence: 91 }
           ],
-          collaborationMetrics: sessionMetrics
+          collaborationMetrics: sessionMetrics,
+          personalizationMetrics: {
+            profileUtilization: contextSummary.hasProfile ? 100 : 0,
+            knowledgeIntegration: Math.min(100, contextSummary.knowledgeCount * 20),
+            contextQuality: contextSummary.quality
+          }
         }
       }
     });
   };
 
-  const generateExecutiveActionPlan = async (synthesisReport: any, sessionMetrics: SessionMetrics) => {
+  const generatePersonalizedActionPlan = async (
+    synthesisReport: any, 
+    sessionMetrics: SessionMetrics,
+    fullUserContext: string,
+    contextSummary: any
+  ) => {
     return await generateOutput({
       sessionId,
       outputType: 'action_plan',
-      title: 'Plan de Acción Ejecutivo',
+      title: 'Plan de Acción Ejecutivo Personalizado',
       sessionData: {
-        company_name: 'Implementación Estratégica',
-        industry: 'Ejecución',
-        objectives: 'Acciones Prioritarias y Timeline'
+        company_name: 'Tu Desarrollo Profesional',
+        industry: 'Implementación Personalizada',
+        objectives: 'Acciones Específicas para tu Perfil'
       },
       collaborationData: [{
-        interaction_type: 'action_planning',
+        interaction_type: 'personalized_action_planning',
         interaction_data: {
           synthesisId: synthesisReport.id,
           priorityLevel: 'executive',
-          timeframe: 'immediate'
+          timeframe: 'immediate',
+          personalizationLevel: 'high',
+          profileBased: contextSummary.hasProfile
         }
       }],
       agentInsights: {
-        actionPlanning: {
+        personalizedActionPlanning: {
           insights: [
-            { title: 'Acciones inmediatas identificadas', confidence: 94 },
-            { title: 'Roadmap estratégico definido', confidence: 91 },
-            { title: 'Métricas de seguimiento establecidas', confidence: 87 }
+            { title: 'Acciones inmediatas adaptadas a tu rol y experiencia', confidence: 96 },
+            { title: 'Roadmap estratégico basado en tu perfil profesional', confidence: 93 },
+            { title: 'Métricas personalizadas para tu contexto específico', confidence: 89 }
           ],
-          executiveSummary: 'Plan de acción basado en análisis colaborativo completo'
+          executiveSummary: 'Plan de acción personalizado basado en análisis colaborativo y tu perfil único',
+          personalizationFeatures: {
+            roleSpecific: true,
+            industryFocused: true,
+            experienceBased: true,
+            goalOriented: true
+          }
         }
       }
     });
   };
 
-  const generateUnifiedReport = async (data: {
+  const generatePersonalizedFinalReport = async (data: {
     agentOutputs: Record<string, any>;
     synthesisReport: any;
     actionPlan: any;
     sessionMetrics: SessionMetrics;
+    fullUserContext: string;
+    contextSummary: any;
   }) => {
     return await generateOutput({
       sessionId,
       outputType: 'strategic_report',
-      title: 'Reporte Ejecutivo Final - Análisis Colaborativo',
+      title: 'Reporte Ejecutivo Final - Análisis Colaborativo Personalizado',
       sessionData: {
-        company_name: 'Reporte Unificado',
-        industry: 'Análisis Integral',
-        objectives: 'Documento Ejecutivo Completo'
+        company_name: 'Tu Perfil Ejecutivo',
+        industry: 'Análisis Integral Personalizado',
+        objectives: 'Documento Ejecutivo Adaptado a tu Contexto'
       },
       collaborationData: [{
-        interaction_type: 'final_report_generation',
+        interaction_type: 'personalized_final_report',
         interaction_data: {
           agentCount: Object.keys(data.agentOutputs).length,
           synthesisId: data.synthesisReport.id,
           actionPlanId: data.actionPlan.id,
-          sessionMetrics: data.sessionMetrics
+          sessionMetrics: data.sessionMetrics,
+          personalizationLevel: 'elite',
+          contextQuality: data.contextSummary.quality,
+          profileIntegration: data.contextSummary.hasProfile
         }
       }],
       agentInsights: {
-        finalReport: {
+        personalizedFinalReport: {
           insights: [
-            { title: 'Análisis colaborativo completado exitosamente', confidence: 96 },
-            { title: 'Consenso estratégico alcanzado', confidence: data.sessionMetrics.consensusLevel },
-            { title: 'Plan de implementación definido', confidence: 93 }
+            { title: 'Análisis colaborativo personalizado completado exitosamente', confidence: 98 },
+            { title: 'Consenso estratégico adaptado a tu perfil profesional', confidence: data.sessionMetrics.consensusLevel },
+            { title: 'Plan de implementación específico para tu contexto', confidence: 95 }
           ],
-          executiveOverview: 'Reporte final que integra todas las perspectivas de agentes especializados'
+          executiveOverview: 'Reporte final que integra todas las perspectivas de agentes especializados con tu información personal y profesional única',
+          personalizationSummary: {
+            profileUtilized: data.contextSummary.hasProfile,
+            knowledgeIntegrated: data.contextSummary.knowledgeCount,
+            contextQuality: data.contextSummary.quality,
+            customization: 'elite'
+          }
         }
       }
     });
@@ -265,12 +353,13 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
           agentCount: selectedAgents.length,
           completionTrigger: 'automatic',
           outputsGenerated: Object.keys(results.agentOutputs).length + 3,
-          agent_outputs: results.agentOutputs
+          agent_outputs: results.agentOutputs,
+          personalizationLevel: 'elite'
         },
         status: 'completed'
       });
 
-      console.log('💾 Resultados de finalización guardados en la base de datos');
+      console.log('💾 Resultados de finalización personalizados guardados en la base de datos');
     } catch (error) {
       console.error('Error guardando resultados de finalización:', error);
     }

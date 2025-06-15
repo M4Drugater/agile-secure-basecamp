@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AgentConfig } from './UnifiedAgentWorkspace';
@@ -10,6 +9,8 @@ import { EnhancedCollaborativeSettings } from './EnhancedCollaborativeSettings';
 import { RealTimeCollaborativeAnalysis } from './RealTimeCollaborativeAnalysis';
 import { ClipoginoOrchestrator } from './ClipoginoOrchestrator';
 import { useRealTimeSessionData } from '@/hooks/collaborative/useRealTimeSessionData';
+
+import { PersonalizationIndicator } from './collaborative/PersonalizationIndicator';
 
 interface CollaborativeSessionProps {
   selectedAgents: AgentConfig[];
@@ -51,6 +52,9 @@ export function CollaborativeSession({
 
   return (
     <div className="space-y-6">
+      {/* Indicador de Personalización */}
+      <PersonalizationIndicator />
+
       <SessionHeader
         selectedAgents={selectedAgents}
         sessionStartTime={sessionStartTime}
