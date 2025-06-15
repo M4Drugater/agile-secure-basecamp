@@ -1,14 +1,10 @@
 
 import { useSessionManager } from './useSessionManager';
-import { useSessionCreator } from './useSessionCreator';
-import { useSessionUpdater } from './useSessionUpdater';
-import { useAgentManager } from './useAgentManager';
+import { useSessionOperations } from './useSessionOperations';
 
 export function useUnifiedSessionManager() {
   const { currentSession, sessions, isLoading, setCurrentSession, loadSessions } = useSessionManager();
-  const { createSession } = useSessionCreator();
-  const { updateSessionState, completeSession } = useSessionUpdater();
-  const { addAgentToSession, updateAgentProgress } = useAgentManager();
+  const { createSession, updateSessionState, completeSession, addAgentToSession, updateAgentProgress } = useSessionOperations();
 
   return {
     currentSession,
