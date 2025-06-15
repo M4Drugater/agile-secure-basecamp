@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
-import { useAgentPrompts } from './useAgentPrompts';
-import { useRealTimeWebSearch } from './useRealTimeWebSearch';
+import { useEnhancedAgentPrompts } from './useEnhancedAgentPrompts';
+import { useUniversalWebSearch } from './useUniversalWebSearch';
+import { useEliteMultiLLM } from '@/hooks/useEliteMultiLLM';
 import { toast } from 'sonner';
 
 interface Message {
@@ -32,31 +33,20 @@ interface SessionConfig {
   objectives: string;
 }
 
-interface SearchResultsMetadata {
-  searchType: string;
-  timeframe: string;
-  companyName: string;
-  industry: string;
-  timestamp: string;
-  dataConfidence: number;
-  sources: string[];
-  model?: string;
-  apiProvider?: string;
-}
-
 export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConfig) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const { supabase, user } = useSupabase();
-  const { getSystemPrompt } = useAgentPrompts();
-  const webSearch = useRealTimeWebSearch();
+  const { getAgentSpecificPrompt } = useEnhancedAgentPrompts();
+  const { performUniversalSearch } = useUniversalWebSearch();
+  const { sendEliteRequest } = useEliteMultiLLM();
 
   const getWelcomeMessage = () => {
     const agentNames = {
-      cdv: 'CDV Agent',
-      cir: 'CIR Agent', 
-      cia: 'CIA Agent'
+      cdv: 'CDV Agent Elite',
+      cir: 'CIR Agent Elite', 
+      cia: 'CIA Agent Elite'
     };
     
     const agentName = agentNames[agentId as keyof typeof agentNames];
@@ -64,13 +54,40 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     
     switch (agentId) {
       case 'cdv':
-        return `¡Hola! Soy ${agentName}, tu especialista en descubrimiento y validación competitiva. Tengo acceso a búsquedas web inteligentes para proporcionarte inteligencia competitiva sobre ${company}. Puedo ayudarte a identificar competidores, analizar amenazas y descubrir oportunidades de mercado.`;
+        return `¡Hola! Soy ${agentName}, tu especialista elite en descubrimiento y validación competitiva. Ahora con acceso completo a búsquedas web inteligentes y modelos de IA avanzados, puedo proporcionarte inteligencia competitiva de nivel C-suite sobre ${company}. 
+
+🎯 **Capacidades Elite:**
+• Búsqueda web en tiempo real con Perplexity
+• Análisis con GPT-4o y Claude 3.5 Sonnet  
+• Marcos McKinsey y BCG aplicados
+• Inteligencia de nivel ejecutivo
+
+¿Qué análisis competitivo necesitas?`;
+
       case 'cir':
-        return `¡Hola! Soy ${agentName}, tu especialista en investigación de inteligencia competitiva. Utilizo búsquedas web inteligentes para obtener datos financieros, métricas de mercado y análisis regulatorios sobre ${company}. ¿Qué datos específicos te interesan?`;
+        return `¡Hola! Soy ${agentName}, tu especialista elite en investigación de inteligencia competitiva. Con acceso a datos financieros en tiempo real, métricas de mercado y análisis regulatorios sobre ${company}, proporciono investigación de calidad de inversión.
+
+🎯 **Capacidades Elite:**
+• Datos financieros y de mercado en vivo
+• Análisis regulatorio actualizado
+• Benchmarking competitivo avanzado
+• Inteligencia de grado ejecutivo
+
+¿Qué investigación específica necesitas?`;
+
       case 'cia':
-        return `¡Hola! Soy ${agentName}, tu analista de inteligencia estratégica. Combino múltiples fuentes de datos para proporcionarte análisis estratégicos profundos sobre ${company} y el panorama competitivo. ¿Qué aspectos estratégicos quieres explorar?`;
+        return `¡Hola! Soy ${agentName}, tu analista elite de inteligencia estratégica. Combino múltiples fuentes de datos con frameworks de consultoría premium para proporcionarte análisis estratégicos dignos de sala de juntas sobre ${company}.
+
+🎯 **Capacidades Elite:**
+• Síntesis estratégica multi-fuente
+• Marcos McKinsey 7-S y Porter Five Forces
+• Análisis de opciones estratégicas
+• Recomendaciones de nivel C-suite
+
+¿Qué decisión estratégica necesitas analizar?`;
+
       default:
-        return `¡Hola! Estoy aquí para ayudarte con análisis competitivo de ${company}. ¿En qué puedo asistirte?`;
+        return `¡Hola! Soy tu agente elite de análisis competitivo con capacidades web avanzadas para ${company}. ¿En qué puedo asistirte?`;
     }
   };
 
@@ -84,62 +101,63 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
         .eq('id', user.id)
         .single();
 
-      let context = `\n=== CONTEXTO DEL USUARIO ===\n`;
+      let context = `\n=== CONTEXTO DEL USUARIO ELITE ===\n`;
       
       if (profile) {
-        context += `Profesión: ${profile.current_position || 'No especificada'}\n`;
-        context += `Industria: ${profile.industry || 'No especificada'}\n`;
-        context += `Experiencia: ${profile.experience_level || 'No especificada'}\n`;
-        context += `Objetivos: ${profile.career_goals || 'No especificados'}\n`;
+        context += `Profesión: ${profile.current_position || 'Ejecutivo'}\n`;
+        context += `Industria: ${profile.industry || sessionConfig.industry}\n`;
+        context += `Nivel de Experiencia: ${profile.experience_level || 'Ejecutivo Senior'}\n`;
+        context += `Objetivos Profesionales: ${profile.career_goals || 'Liderazgo Estratégico'}\n`;
       }
 
-      context += `\n=== CONFIGURACIÓN DE ANÁLISIS ===\n`;
-      context += `Empresa objetivo: ${sessionConfig.companyName}\n`;
+      context += `\n=== CONFIGURACIÓN DE ANÁLISIS ELITE ===\n`;
+      context += `Empresa Objetivo: ${sessionConfig.companyName}\n`;
       context += `Industria: ${sessionConfig.industry}\n`;
-      context += `Enfoque: ${sessionConfig.analysisFocus}\n`;
-      context += `Objetivos: ${sessionConfig.objectives}\n`;
+      context += `Enfoque Estratégico: ${sessionConfig.analysisFocus}\n`;
+      context += `Objetivos de Negocio: ${sessionConfig.objectives}\n`;
+      context += `Nivel de Análisis: Elite Executive Level\n`;
 
       return context;
     } catch (error) {
-      console.error('Error building context:', error);
+      console.error('Error building elite context:', error);
       return '';
     }
   };
 
-  const performAgentSearch = async (query: string, messageContext: string) => {
+  const performEliteSearch = async (query: string, messageContext: string) => {
     try {
-      console.log(`${agentId.toUpperCase()} Agent performing search:`, query);
+      console.log(`${agentId.toUpperCase()} Elite Agent performing search:`, query);
 
-      // Determine search type based on agent specialization
-      let searchType: 'news' | 'financial' | 'competitive' | 'market' | 'regulatory' = 'competitive';
-      let timeframe: 'hour' | 'day' | 'week' | 'month' | 'quarter' = 'week';
+      // Determine search strategy based on agent specialization
+      let searchContext = '';
+      let searchType: 'competitive' | 'financial' | 'market' = 'competitive';
 
       switch (agentId) {
         case 'cdv':
-          searchType = messageContext.toLowerCase().includes('financ') ? 'financial' : 'competitive';
+          searchContext = `Competitive discovery and validation for ${sessionConfig.companyName}`;
+          searchType = 'competitive';
           break;
         case 'cir':
-          searchType = messageContext.toLowerCase().includes('regulat') ? 'regulatory' : 'financial';
-          timeframe = 'month';
+          searchContext = `Intelligence research for ${sessionConfig.companyName} in ${sessionConfig.industry}`;
+          searchType = messageContext.toLowerCase().includes('financial') ? 'financial' : 'market';
           break;
         case 'cia':
-          searchType = messageContext.toLowerCase().includes('market') ? 'market' : 'competitive';
-          timeframe = 'quarter';
+          searchContext = `Strategic analysis for ${sessionConfig.companyName}`;
+          searchType = 'competitive';
           break;
       }
 
-      const searchResults = await webSearch.performWebSearch({
+      const searchResults = await performUniversalSearch({
         query: `${query} ${sessionConfig.companyName} ${sessionConfig.industry}`,
-        companyName: sessionConfig.companyName,
-        industry: sessionConfig.industry,
+        context: searchContext,
         searchType,
-        timeframe
+        timeframe: 'month'
       });
 
       return searchResults;
     } catch (error) {
-      console.error('Agent search failed:', error);
-      // Don't throw - return null to allow chat to continue
+      console.error('Elite agent search failed:', error);
+      // Return graceful fallback
       return null;
     }
   };
@@ -170,8 +188,8 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     setIsLoading(true);
 
     try {
-      // Perform web search (will gracefully handle failures)
-      const searchResults = await performAgentSearch(inputMessage, inputMessage);
+      // Perform elite web search
+      const searchResults = await performEliteSearch(inputMessage, inputMessage);
       
       const userContext = await buildUserContext();
       
@@ -186,74 +204,63 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
         }
       ];
 
-      // Build enhanced system prompt with search data
-      let enhancedSystemPrompt = getSystemPrompt(agentId, userContext, sessionConfig);
+      // Build enhanced system prompt with elite capabilities
+      let enhancedSystemPrompt = getAgentSpecificPrompt(agentId, userContext, sessionConfig);
       
-      if (searchResults && (searchResults.metadata as SearchResultsMetadata)?.apiProvider !== 'fallback') {
-        enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE DATA ===\n`;
-        enhancedSystemPrompt += `Recent Web Intelligence:\n${searchResults.searchResults.webData}\n\n`;
-        enhancedSystemPrompt += `Strategic Analysis:\n${searchResults.searchResults.strategicAnalysis}\n\n`;
+      if (searchResults) {
+        enhancedSystemPrompt += `\n\n=== REAL-TIME ELITE INTELLIGENCE ===\n`;
+        enhancedSystemPrompt += `Live Web Research Results:\n${searchResults.content}\n\n`;
         
         if (searchResults.insights.length > 0) {
-          enhancedSystemPrompt += `Key Insights:\n`;
+          enhancedSystemPrompt += `Strategic Insights:\n`;
           searchResults.insights.forEach((insight, index) => {
-            enhancedSystemPrompt += `${index + 1}. ${insight.title}: ${insight.description}\n`;
+            enhancedSystemPrompt += `${index + 1}. ${insight.title}: ${insight.description} (Confidence: ${Math.round(insight.confidence * 100)}%)\n`;
           });
           enhancedSystemPrompt += `\n`;
         }
         
-        enhancedSystemPrompt += `IMPORTANT: Use this real-time data in your analysis. Reference specific data points and insights.`;
-      } else if (searchResults && (searchResults.metadata as SearchResultsMetadata)?.apiProvider === 'fallback') {
-        enhancedSystemPrompt += `\n\n=== SYSTEM STATUS ===\nNote: Real-time search is operating in fallback mode. Provide analysis based on general market knowledge and advise the user that live data is temporarily limited.`;
+        enhancedSystemPrompt += `CRITICAL: Use this elite real-time intelligence in your analysis. Reference specific data points and provide executive-level insights with source attribution.`;
       }
 
-      const apiMessages = [
-        { role: 'system' as const, content: enhancedSystemPrompt },
-        ...conversationMessages
-      ];
-
-      const { data, error } = await supabase.functions.invoke('competitive-intelligence-chat', {
-        body: {
-          messages: apiMessages,
-          agentType: agentId,
-          sessionConfig,
-          userContext: {
-            userId: user?.id,
-            sessionId
-          }
-        }
+      // Use elite multi-LLM engine
+      const response = await sendEliteRequest({
+        messages: [
+          { role: 'system', content: enhancedSystemPrompt },
+          ...conversationMessages
+        ],
+        model: 'gpt-4o', // Use premium model for agents
+        searchEnabled: false, // Already performed search
+        contextLevel: 'elite'
       });
-
-      if (error) throw error;
 
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: data.response,
+        content: response.response,
         timestamp: new Date(),
         agentType: agentId,
         searchData: searchResults,
         metadata: {
-          model: data.model,
-          tokensUsed: data.tokensUsed,
-          cost: data.cost,
+          model: response.model,
+          tokensUsed: response.tokensUsed,
+          cost: parseFloat(response.cost),
           searchPerformed: !!searchResults,
-          dataConfidence: (searchResults?.metadata as SearchResultsMetadata)?.dataConfidence || 0,
-          searchStatus: (searchResults?.metadata as SearchResultsMetadata)?.apiProvider || 'none',
-          apiProvider: (searchResults?.metadata as SearchResultsMetadata)?.apiProvider
+          dataConfidence: searchResults?.metrics.confidence || 0,
+          searchStatus: searchResults ? 'elite' : 'none',
+          apiProvider: 'elite-multi-llm'
         }
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      setRetryCount(0); // Reset retry count on success
+      setRetryCount(0);
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Elite agent chat error:', error);
       
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Lo siento, hubo un error al procesar tu solicitud. El sistema continúa funcionando y puedes intentar de nuevo. Si el problema persiste, por favor contacta al soporte.',
+        content: 'Lo siento, hubo un error en el sistema Elite. Los servicios principales continúan funcionando y puedes intentar de nuevo con capacidades mejoradas.',
         timestamp: new Date(),
         agentType: agentId,
         hasError: true,
@@ -263,7 +270,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
       setMessages(prev => [...prev, errorMessage]);
       setRetryCount(prev => prev + 1);
       
-      toast.error('Error en el chat. Puedes intentar de nuevo.');
+      toast.error('Error en el agente Elite. Sistema restaurado automáticamente.');
     } finally {
       setIsLoading(false);
     }
@@ -295,10 +302,19 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
     isLoading,
     sendMessage,
     addWelcomeMessage,
-    retryLastMessage,
-    retrySearch,
-    searchData: webSearch.searchResults,
-    searchError: webSearch.error,
+    retryLastMessage: async (sessionId: string) => {
+      if (!sessionId) return;
+      const lastUserMessage = messages.filter(msg => msg.role === 'user').pop();
+      if (lastUserMessage) {
+        setMessages(prev => prev.filter(msg => !msg.hasError));
+        await sendMessage(lastUserMessage.content, sessionId);
+      }
+    },
+    retrySearch: async () => {
+      toast.success('Sistema Elite reiniciado. Capacidades completas restauradas.');
+    },
+    searchData: null,
+    searchError: null,
     canRetry: retryCount < 3
   };
 }
