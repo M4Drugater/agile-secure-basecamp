@@ -13,7 +13,9 @@ import {
   MessageSquare,
   Settings,
   Play,
-  Users
+  Users,
+  Sparkles,
+  FileText
 } from 'lucide-react';
 import { AgentSelector } from './AgentSelector';
 import { AgentWorkspaceContent } from './AgentWorkspaceContent';
@@ -26,11 +28,27 @@ export interface AgentConfig {
   icon: React.ComponentType<any>;
   color: string;
   capabilities: string[];
-  type: 'competitive-intelligence' | 'research' | 'chat' | 'content' | 'learning';
+  type: 'competitive-intelligence' | 'research' | 'chat' | 'content' | 'learning' | 'enhanced-content';
   status: 'active' | 'idle' | 'processing';
 }
 
 const availableAgents: AgentConfig[] = [
+  {
+    id: 'enhanced-content-generator',
+    name: 'Enhanced Content Generator',
+    description: 'Multi-agent AI system for creating executive-level content with strategic intelligence',
+    icon: Sparkles,
+    color: 'bg-purple-500',
+    capabilities: [
+      'Executive content creation',
+      'Multi-agent collaboration',
+      'Strategic intelligence integration',
+      'Knowledge base enhancement',
+      'C-suite ready outputs'
+    ],
+    type: 'enhanced-content',
+    status: 'active'
+  },
   {
     id: 'clipogino',
     name: 'CLIPOGINO',

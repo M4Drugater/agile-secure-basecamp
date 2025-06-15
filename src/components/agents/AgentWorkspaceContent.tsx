@@ -4,6 +4,7 @@ import { AgentConfig } from './UnifiedAgentWorkspace';
 import { ClipoginoChat } from '@/components/chat/ClipoginoChat';
 import { EnhancedAgentWorkspace } from '@/components/competitive-intelligence/EnhancedAgentWorkspace';
 import { OptimizedResearchWorkbench } from '@/components/research/OptimizedResearchWorkbench';
+import { EnhancedContentGenerator } from '@/components/content/EnhancedContentGenerator';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -28,6 +29,9 @@ export function AgentWorkspaceContent({
 
   // Route to the appropriate agent interface based on type and ID
   switch (primaryAgent.id) {
+    case 'enhanced-content-generator':
+      return <EnhancedContentGenerator />;
+      
     case 'clipogino':
       return <ClipoginoChat />;
     
