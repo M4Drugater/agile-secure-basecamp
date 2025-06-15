@@ -3,6 +3,8 @@ import React from 'react';
 import { AgentConfig } from './UnifiedAgentWorkspace';
 import { ConsolidatedAgentChat } from './ConsolidatedAgentChat';
 import { EnhancedContentGenerator } from '@/components/content/EnhancedContentGenerator';
+import { AgentSelectionGrid } from './components/AgentSelectionGrid';
+import { useConsolidatedAgentsHub } from './hooks/useConsolidatedAgentsHub';
 
 interface AgentWorkspaceContentProps {
   selectedAgents: AgentConfig[];
@@ -15,12 +17,17 @@ export function AgentWorkspaceContent({
   sessionConfig, 
   setSessionConfig 
 }: AgentWorkspaceContentProps) {
+  const { handleAgentSelect } = useConsolidatedAgentsHub();
   const primaryAgent = selectedAgents[0];
 
+  // Show agent selection grid when no agent is selected
   if (!primaryAgent) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No agent selected</p>
+      <div className="py-8">
+        <AgentSelectionGrid 
+          onAgentSelect={handleAgentSelect}
+          selectedAgentId={undefined}
+        />
       </div>
     );
   }
