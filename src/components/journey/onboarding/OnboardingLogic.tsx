@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useProgressiveJourney } from '@/hooks/useProgressiveJourney';
+import { useOnboardingState } from '@/hooks/journey/useOnboardingState';
 import { useStepActions } from '@/hooks/journey/useStepActions';
 import { useJourneyNavigation } from '@/hooks/journey/useJourneyNavigation';
 
@@ -20,31 +20,14 @@ interface OnboardingLogicProps {
 }
 
 export function OnboardingLogic({ children }: OnboardingLogicProps) {
-  const { 
-    getJourneySteps, 
-    getNextStep, 
-    getCompletedStepsCount,
-    getTotalStepsCount,
-    getEarnedAchievements
-  } = useProgressiveJourney();
-
+  const onboardingState = useOnboardingState();
   const { handleStepClick, handleSkipStep, handleCompleteAll } = useStepActions();
   const { navigateToNext, navigateToDashboard } = useJourneyNavigation();
-
-  const steps = getJourneySteps();
-  const nextStep = getNextStep();
-  const completedSteps = getCompletedStepsCount();
-  const totalSteps = getTotalStepsCount();
-  const earnedAchievements = getEarnedAchievements();
 
   return (
     <>
       {children({
-        steps,
-        nextStep,
-        completedSteps,
-        totalSteps,
-        earnedAchievements,
+        ...onboardingState,
         onStepClick: handleStepClick,
         onSkipStep: handleSkipStep,
         onSkipToNext: navigateToNext,
