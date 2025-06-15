@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdvancedContextOrchestrator } from './useAdvancedContextOrchestrator';
@@ -145,6 +144,13 @@ export function useLaigentMasterOrchestrator() {
 
       const processingTime = Date.now() - startTime;
 
+      // Calculate total metrics with fallbacks
+      const researchTokens = researchResults.metadata?.metrics?.totalTokens || 0;
+      const researchCost = parseFloat(researchResults.metadata?.metrics?.totalCost || '0');
+      
+      totalTokens += researchTokens;
+      totalCost += researchCost;
+
       // Build comprehensive response
       const laigentResponse: LaigentResponse = {
         finalContent: stylingResults.content,
@@ -160,8 +166,8 @@ export function useLaigentMasterOrchestrator() {
           contextBuildTime,
           researchTime,
           stylingTime,
-          totalTokens: totalTokens + (researchResults.metadata?.metrics?.totalTokens || 0),
-          totalCost: (totalCost + parseFloat(researchResults.metadata?.metrics?.totalCost || '0')).toFixed(6)
+          totalTokens,
+          totalCost: totalCost.toFixed(6)
         },
         qualityAssurance: finalQualityAssurance
       };
