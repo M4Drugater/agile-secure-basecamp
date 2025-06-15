@@ -10,6 +10,7 @@ interface ChatInputProps {
   onSendMessage: () => void;
   isLoading: boolean;
   disabled?: boolean;
+  placeholder?: string;
 }
 
 export function ChatInput({ 
@@ -17,7 +18,8 @@ export function ChatInput({
   setInputMessage, 
   onSendMessage, 
   isLoading, 
-  disabled = false 
+  disabled = false,
+  placeholder = "Escribe tu mensaje..."
 }: ChatInputProps) {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -29,7 +31,7 @@ export function ChatInput({
   return (
     <div className="flex gap-2">
       <Input
-        placeholder="Escribe tu mensaje..."
+        placeholder={placeholder}
         value={inputMessage}
         onChange={(e) => setInputMessage(e.target.value)}
         onKeyPress={handleKeyPress}
