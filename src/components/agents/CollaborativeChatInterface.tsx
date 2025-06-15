@@ -1,34 +1,12 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Send, 
-  Users, 
-  Brain, 
-  Bot,
-  Sparkles,
-  Eye,
-  Activity,
-  Search,
-  Loader2
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Brain, Sparkles } from 'lucide-react';
 import { AgentConfig } from './UnifiedAgentWorkspace';
-
-interface CollaborativeMessage {
-  id: string;
-  type: 'user' | 'orchestrator' | 'agent-response' | 'synthesis';
-  content: string;
-  timestamp: Date;
-  agentId?: string;
-  agentName?: string;
-  agentIcon?: React.ComponentType<any>;
-  agentColor?: string;
-}
+import { ChatHeader } from './collaborative/ChatHeader';
+import { MessageList } from './collaborative/MessageList';
+import { ChatInput } from './collaborative/ChatInput';
+import { CollaborativeMessage } from './collaborative/types';
 
 interface CollaborativeChatInterfaceProps {
   selectedAgents: AgentConfig[];
@@ -45,14 +23,6 @@ export function CollaborativeChatInterface({
   const [inputMessage, setInputMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>('');
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   // Welcome message when agents are loaded
   useEffect(() => {
@@ -246,111 +216,23 @@ Basado en las perspectivas de todos los agentes, aquí está mi análisis integr
     }
   };
 
-  const getAgentIcon = (message: CollaborativeMessage) => {
-    if (message.agentIcon) {
-      const Icon = message.agentIcon;
-      return <Icon className="h-4 w-4 text-white" />;
-    }
-    return <Bot className="h-4 w-4 text-white" />;
-  };
-
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Chat Colaborativo Multi-Agente
-        </CardTitle>
-        <div className="flex flex-wrap gap-2">
-          {selectedAgents.map(agent => (
-            <Badge key={agent.id} variant="secondary" className="flex items-center gap-2">
-              <div className={`w-3 h-3 ${agent.color} rounded-full flex items-center justify-center`}>
-                {React.createElement(agent.icon, { className: 'h-2 w-2 text-white' })}
-              </div>
-              {agent.name}
-            </Badge>
-          ))}
-        </div>
-      </CardHeader>
+      <ChatHeader selectedAgents={selectedAgents} />
 
       <CardContent className="flex-1 flex flex-col space-y-4">
-        {/* Messages */}
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id} className="space-y-2">
-                {message.type === 'user' ? (
-                  <div className="flex justify-end">
-                    <div className="bg-blue-600 text-white rounded-lg p-3 max-w-3xl">
-                      <p className="text-sm">{message.content}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-3">
-                    <div className={`w-8 h-8 ${message.agentColor || 'bg-gray-500'} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      {getAgentIcon(message)}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{message.agentName}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {message.type === 'orchestrator' ? 'Orquestador' : 
-                           message.type === 'synthesis' ? 'Síntesis' : 'Especialista'}
-                        </Badge>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <Separator className="my-2" />
-              </div>
-            ))}
+        <MessageList 
+          messages={messages} 
+          isProcessing={isProcessing} 
+          currentStep={currentStep} 
+        />
 
-            {isProcessing && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 text-white animate-spin" />
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-sm text-muted-foreground">
-                    {currentStep || 'Procesando con los agentes...'}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        {/* Input */}
-        <div className="space-y-2">
-          <Textarea
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Haz una pregunta para que todos los agentes colaboren en la respuesta..."
-            className="min-h-[80px]"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">
-              Presiona Enter para enviar, Shift+Enter para nueva línea
-            </p>
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={!inputMessage.trim() || isProcessing}
-              className="flex items-center gap-2"
-            >
-              <Send className="h-4 w-4" />
-              Enviar
-            </Button>
-          </div>
-        </div>
+        <ChatInput
+          inputMessage={inputMessage}
+          setInputMessage={setInputMessage}
+          onSendMessage={handleSendMessage}
+          isProcessing={isProcessing}
+        />
       </CardContent>
     </Card>
   );
