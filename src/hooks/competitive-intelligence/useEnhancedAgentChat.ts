@@ -12,7 +12,15 @@ interface Message {
   timestamp: Date;
   agentType?: string;
   searchData?: any;
-  metadata?: any;
+  metadata?: {
+    model?: string;
+    tokensUsed?: number;
+    cost?: number;
+    searchPerformed?: boolean;
+    dataConfidence?: number;
+    searchStatus?: string;
+    apiProvider?: string;
+  };
   hasError?: boolean;
   canRetry?: boolean;
 }
@@ -22,6 +30,18 @@ interface SessionConfig {
   industry: string;
   analysisFocus: string;
   objectives: string;
+}
+
+interface SearchResultsMetadata {
+  searchType: string;
+  timeframe: string;
+  companyName: string;
+  industry: string;
+  timestamp: string;
+  dataConfidence: number;
+  sources: string[];
+  model?: string;
+  apiProvider?: string;
 }
 
 export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConfig) {
@@ -169,7 +189,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
       // Build enhanced system prompt with search data
       let enhancedSystemPrompt = getSystemPrompt(agentId, userContext, sessionConfig);
       
-      if (searchResults && searchResults.metadata?.apiProvider !== 'fallback') {
+      if (searchResults && (searchResults.metadata as SearchResultsMetadata)?.apiProvider !== 'fallback') {
         enhancedSystemPrompt += `\n\n=== REAL-TIME INTELLIGENCE DATA ===\n`;
         enhancedSystemPrompt += `Recent Web Intelligence:\n${searchResults.searchResults.webData}\n\n`;
         enhancedSystemPrompt += `Strategic Analysis:\n${searchResults.searchResults.strategicAnalysis}\n\n`;
@@ -183,7 +203,7 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
         }
         
         enhancedSystemPrompt += `IMPORTANT: Use this real-time data in your analysis. Reference specific data points and insights.`;
-      } else if (searchResults?.metadata?.apiProvider === 'fallback') {
+      } else if (searchResults && (searchResults.metadata as SearchResultsMetadata)?.apiProvider === 'fallback') {
         enhancedSystemPrompt += `\n\n=== SYSTEM STATUS ===\nNote: Real-time search is operating in fallback mode. Provide analysis based on general market knowledge and advise the user that live data is temporarily limited.`;
       }
 
@@ -218,8 +238,9 @@ export function useEnhancedAgentChat(agentId: string, sessionConfig: SessionConf
           tokensUsed: data.tokensUsed,
           cost: data.cost,
           searchPerformed: !!searchResults,
-          dataConfidence: searchResults?.metadata?.dataConfidence || 0,
-          searchStatus: searchResults?.metadata?.apiProvider || 'none'
+          dataConfidence: (searchResults?.metadata as SearchResultsMetadata)?.dataConfidence || 0,
+          searchStatus: (searchResults?.metadata as SearchResultsMetadata)?.apiProvider || 'none',
+          apiProvider: (searchResults?.metadata as SearchResultsMetadata)?.apiProvider
         }
       };
 

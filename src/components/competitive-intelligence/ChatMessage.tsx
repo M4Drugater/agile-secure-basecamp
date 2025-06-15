@@ -8,13 +8,18 @@ interface Message {
   content: string;
   timestamp: Date;
   agentType?: string;
+  searchData?: any;
+  metadata?: any;
+  hasError?: boolean;
+  canRetry?: boolean;
 }
 
 interface ChatMessageProps {
   message: Message;
+  showMetadata?: boolean;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, showMetadata }: ChatMessageProps) {
   return (
     <div className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
       {message.role === 'assistant' && (
@@ -34,6 +39,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
         }`}>
           {message.timestamp.toLocaleTimeString()}
         </div>
+        
+        {showMetadata && message.metadata && (
+          <div className={`text-xs mt-2 pt-2 border-t ${
+            message.role === 'user' ? 'border-blue-400 text-blue-200' : 'border-gray-300 text-gray-400'
+          }`}>
+            {message.metadata.model && <div>Model: {message.metadata.model}</div>}
+            {message.metadata.tokensUsed && <div>Tokens: {message.metadata.tokensUsed}</div>}
+            {message.metadata.cost && <div>Cost: ${message.metadata.cost}</div>}
+            {message.metadata.searchStatus && <div>Search: {message.metadata.searchStatus}</div>}
+          </div>
+        )}
       </div>
 
       {message.role === 'user' && (
