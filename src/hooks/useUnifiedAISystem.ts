@@ -1,9 +1,10 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useElitePromptEngine } from '@/hooks/prompts/useElitePromptEngine';
 import { useWebDataValidator } from '@/hooks/web-search/useWebDataValidator';
+import { useTripartiteAIFlow } from '@/hooks/ai-systems/useTripartiteAIFlow';
+import { useAdvancedTripartiteFlow } from '@/hooks/ai-systems/useAdvancedTripartiteFlow';
 import { toast } from 'sonner';
 
 interface UnifiedRequest {
@@ -13,6 +14,7 @@ interface UnifiedRequest {
   sessionConfig?: any;
   searchEnabled?: boolean;
   model?: string;
+  useTripartiteFlow?: boolean; // NEW: Enable tripartite flow
 }
 
 interface UnifiedResponse {
@@ -24,7 +26,8 @@ interface UnifiedResponse {
   webSources: string[];
   validationScore: number;
   searchEngine: string;
-  contextQuality?: string; // Add missing contextQuality property
+  contextQuality?: string;
+  tripartiteMetrics?: any; // NEW: Tripartite flow metrics
 }
 
 interface ContextSummary {
@@ -39,6 +42,8 @@ export function useUnifiedAISystem() {
   const { user } = useAuth();
   const { buildEliteSystemPrompt } = useElitePromptEngine();
   const { validateResponse } = useWebDataValidator();
+  const { executeTripartiteFlow } = useTripartiteAIFlow();
+  const { executeAdvancedFlow } = useAdvancedTripartiteFlow();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const sendUnifiedRequest = async (request: UnifiedRequest): Promise<UnifiedResponse> => {
@@ -49,15 +54,59 @@ export function useUnifiedAISystem() {
     setIsProcessing(true);
 
     try {
-      console.log('🔧 Sistema Reparado - Iniciando búsqueda unificada:', {
+      console.log('🔧 SISTEMA UNIFICADO - Analizando solicitud:', {
         query: request.message,
-        context: `Análisis ${request.agentType} para ${request.sessionConfig?.companyName || 'empresa objetivo'}`,
-        searchType: 'competitive',
-        timeframe: 'month',
-        companyName: request.sessionConfig?.companyName || 'empresa objetivo',
-        industry: request.sessionConfig?.industry || 'tecnología'
+        agent: request.agentType,
+        useTripartiteFlow: request.useTripartiteFlow,
+        searchEnabled: request.searchEnabled
       });
 
+      // NUEVO: Decidir si usar flujo tripartito
+      const shouldUseTripartite = request.useTripartiteFlow || 
+                                 request.agentType === 'research-engine' ||
+                                 request.agentType === 'enhanced-content-generator' ||
+                                 (request.searchEnabled && ['cdv', 'cir', 'cia'].includes(request.agentType));
+
+      if (shouldUseTripartite) {
+        console.log('🚀 ACTIVANDO FLUJO TRIPARTITO para', request.agentType.toUpperCase());
+        
+        // Usar flujo tripartito avanzado
+        const tripartiteResult = await executeAdvancedFlow({
+          userQuery: request.message,
+          agentType: request.agentType,
+          sessionConfig: request.sessionConfig,
+          config: {
+            enableOpenAIInterpretation: true,
+            enablePerplexitySearch: true,
+            enableClaudeStyled: true,
+            fallbackMode: 'graceful',
+            qualityThreshold: 0.6
+          }
+        });
+
+        console.log('✅ FLUJO TRIPARTITO COMPLETADO:', {
+          status: tripartiteResult.status,
+          qualityScore: tripartiteResult.qualityScore,
+          sources: tripartiteResult.metadata.webSources.length
+        });
+
+        return {
+          response: tripartiteResult.finalResponse,
+          model: 'tripartite-flow-openai-perplexity-claude',
+          tokensUsed: tripartiteResult.metadata.totalTokens,
+          cost: tripartiteResult.metadata.totalCost,
+          hasWebData: tripartiteResult.metadata.webSources.length > 0,
+          webSources: tripartiteResult.metadata.webSources,
+          validationScore: Math.round(tripartiteResult.qualityScore * 100),
+          searchEngine: 'tripartite-system',
+          contextQuality: 'elite',
+          tripartiteMetrics: tripartiteResult.advancedMetrics
+        };
+      }
+
+      // FLUJO ESTÁNDAR: Mantener funcionalidad existente para compatibilidad
+      console.log('🔧 Usando flujo estándar unificado');
+      
       // Step 1: ALWAYS perform web search first with Perplexity
       const { data: searchData, error: searchError } = await supabase.functions.invoke('unified-web-search', {
         body: {

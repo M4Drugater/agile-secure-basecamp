@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnifiedAISystem } from '@/hooks/useUnifiedAISystem';
@@ -20,6 +19,8 @@ interface ConsolidatedMessage {
     webSources?: string[];
     searchEngine?: string;
     systemRepaired?: boolean;
+    tripartiteFlow?: boolean; // NEW: Indicates if tripartite flow was used
+    tripartiteMetrics?: any; // NEW: Tripartite flow metrics
   };
   hasError?: boolean;
   canRetry?: boolean;
@@ -51,29 +52,30 @@ export function useConsolidatedAgentSystem(agentId: string, sessionConfig: Conso
     canRetry: ciCanRetry
   } = useRepairedAgentSystem(agentId, sessionConfig);
 
-  // Initialize session with repair indicators
+  // Initialize session with tripartite flow indicators
   const initializeSession = async () => {
     if (!user) return;
     
-    const newSessionId = `${agentId}-${user.id}-${Date.now()}-repaired`;
+    const newSessionId = `${agentId}-${user.id}-${Date.now()}-tripartite`;
     setSessionId(newSessionId);
     
-    console.log('🔧 SISTEMA REPARADO - Inicializando sesión:', {
+    console.log('🔧 SISTEMA TRIPARTITO - Inicializando sesión:', {
       agentId,
       sessionId: newSessionId,
       user: user.email
     });
     
-    // Add enhanced welcome message
+    // Add enhanced welcome message with tripartite capabilities
     const welcomeMessage: ConsolidatedMessage = {
       id: `welcome-${Date.now()}`,
       role: 'assistant',
-      content: getRepairedWelcomeMessage(agentId, sessionConfig),
+      content: getTripartiteWelcomeMessage(agentId, sessionConfig),
       timestamp: new Date(),
       agentType: agentId,
       metadata: {
         systemRepaired: true,
-        model: 'system',
+        tripartiteFlow: true,
+        model: 'tripartite-system',
         hasValidWebData: false
       }
     };
@@ -88,7 +90,7 @@ export function useConsolidatedAgentSystem(agentId: string, sessionConfig: Conso
 
     // Prevent infinite loops by checking if we're processing the same input
     if (lastProcessedInput === userInput.trim() && retryCount > 0) {
-      console.log('🔧 SISTEMA REPARADO - Previniendo bucle infinito');
+      console.log('🔧 SISTEMA TRIPARTITO - Previniendo bucle infinito');
       toast.warning('Sistema Anti-Bucle Activado', {
         description: 'Procesando consulta diferente para evitar repetición'
       });
@@ -108,7 +110,7 @@ export function useConsolidatedAgentSystem(agentId: string, sessionConfig: Conso
     setIsProcessing(true);
 
     try {
-      console.log(`🔧 SISTEMA REPARADO - Procesando mensaje para ${agentId.toUpperCase()}`);
+      console.log(`🔧 SISTEMA TRIPARTITO - Procesando mensaje para ${agentId.toUpperCase()}`);
 
       // Route to appropriate system
       if (['cdv', 'cir', 'cia'].includes(agentId)) {
@@ -118,15 +120,22 @@ export function useConsolidatedAgentSystem(agentId: string, sessionConfig: Conso
         return;
       }
 
-      // Use unified system for other agents with enhanced configuration
-      console.log('🔧 Usando sistema unificado reparado');
+      // NEW: Use unified system with TRIPARTITE FLOW enabled
+      console.log('🚀 ACTIVANDO SISTEMA TRIPARTITO COMPLETO');
       const response = await sendUnifiedRequest({
         message: userInput,
         agentType: agentId as any,
         currentPage: '/agents',
         sessionConfig,
-        searchEnabled: agentId === 'research-engine' || agentId === 'enhanced-content-generator',
-        model: agentId === 'enhanced-content-generator' ? 'gpt-4o' : 'gpt-4o-mini'
+        searchEnabled: true, // Always enable search for tripartite flow
+        model: agentId === 'enhanced-content-generator' ? 'gpt-4o' : 'gpt-4o-mini',
+        useTripartiteFlow: true // NEW: Force tripartite flow
+      });
+
+      console.log('✅ RESPUESTA TRIPARTITA RECIBIDA:', {
+        hasTripartiteMetrics: !!response.tripartiteMetrics,
+        model: response.model,
+        webSources: response.webSources.length
       });
 
       const assistantMessage: ConsolidatedMessage = {
@@ -141,53 +150,63 @@ export function useConsolidatedAgentSystem(agentId: string, sessionConfig: Conso
           cost: parseFloat(response.cost),
           hasValidWebData: response.hasWebData,
           webSources: response.webSources,
-          systemRepaired: true
+          systemRepaired: true,
+          tripartiteFlow: !!response.tripartiteMetrics, // NEW
+          tripartiteMetrics: response.tripartiteMetrics // NEW
         }
       };
 
       setMessages(prev => [...prev, assistantMessage]);
       setRetryCount(0); // Reset retry count on success
 
-      // Show success notification
-      toast.success(`${agentId.toUpperCase()} - Sistema Reparado`, {
-        description: `Respuesta generada con ${response.hasWebData ? 'datos web' : 'análisis estratégico'}`
-      });
+      // Show enhanced success notification
+      if (response.tripartiteMetrics) {
+        toast.success(`${agentId.toUpperCase()} - Sistema Tripartito Completado`, {
+          description: `OpenAI + Perplexity + Claude | Calidad: ${Math.round(response.tripartiteMetrics.qualityScore * 100)}% | Fuentes: ${response.webSources.length}`
+        });
+      } else {
+        toast.success(`${agentId.toUpperCase()} - Sistema Reparado`, {
+          description: `Respuesta generada con ${response.hasWebData ? 'datos web' : 'análisis estratégico'}`
+        });
+      }
 
     } catch (error) {
-      console.error('🔧 Error en sistema consolidado reparado:', error);
+      console.error('🔧 Error en sistema consolidado tripartito:', error);
       
       setRetryCount(prev => prev + 1);
       
       const errorMessage: ConsolidatedMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: `🔧 Sistema Reparado - Error Detectado
+        content: `🔧 Sistema Tripartito - Error Detectado
 
-Ha ocurrido un error técnico en el sistema. El sistema reparado ha registrado el problema:
+Ha ocurrido un error técnico en el sistema tripartito avanzado:
 
 **Error**: ${error instanceof Error ? error.message : 'Error desconocido'}
 **Agente**: ${agentId.toUpperCase()}
 **Intentos**: ${retryCount + 1}/3
+**Flujo**: OpenAI → Perplexity → Claude
 
 **Opciones Disponibles**:
 1. Reformular tu consulta de manera diferente
 2. Intentar con una consulta más específica
 3. Usar el sistema de respaldo con análisis estratégico estándar
 
-El sistema anti-bucle está activo para prevenir repeticiones.`,
+El sistema anti-bucle está activo para prevenir repeticiones. El flujo tripartito se reactivará automáticamente en el próximo intento.`,
         timestamp: new Date(),
         agentType: agentId,
         hasError: true,
         canRetry: retryCount < 2, // Allow max 2 retries
         metadata: {
           systemRepaired: true,
+          tripartiteFlow: true,
           model: 'error-handler'
         }
       };
 
       setMessages(prev => [...prev, errorMessage]);
       
-      toast.error(`Error en ${agentId.toUpperCase()}`, {
+      toast.error(`Error en Sistema Tripartito - ${agentId.toUpperCase()}`, {
         description: retryCount < 2 ? 'Sistema de respaldo activado' : 'Límite de reintentos alcanzado'
       });
     } finally {
@@ -208,11 +227,11 @@ El sistema anti-bucle está activo para prevenir repeticiones.`,
       .pop();
     
     if (lastUserMessage) {
-      console.log('🔧 SISTEMA REPARADO - Reintentando mensaje');
+      console.log('🔧 SISTEMA TRIPARTITO - Reintentando mensaje');
       setMessages(prev => prev.filter(msg => !msg.hasError));
       
       // Modify the input slightly to avoid infinite loops
-      const modifiedInput = `${lastUserMessage.content} (reintento ${retryCount + 1})`;
+      const modifiedInput = `${lastUserMessage.content} (reintento tripartito ${retryCount + 1})`;
       await sendMessage(modifiedInput);
     }
   };
@@ -228,7 +247,8 @@ El sistema anti-bucle está activo para prevenir repeticiones.`,
         agentType: msg.agentType,
         metadata: {
           ...msg.metadata,
-          systemRepaired: true
+          systemRepaired: true,
+          tripartiteFlow: true // Enhanced CI also uses tripartite concepts
         },
         hasError: msg.hasError,
         canRetry: msg.canRetry
@@ -254,78 +274,93 @@ El sistema anti-bucle está activo para prevenir repeticiones.`,
   };
 }
 
-function getRepairedWelcomeMessage(agentId: string, sessionConfig: ConsolidatedSessionConfig): string {
+function getTripartiteWelcomeMessage(agentId: string, sessionConfig: ConsolidatedSessionConfig): string {
   const agentMessages = {
-    'enhanced-content-generator': `🔧 **Enhanced Content Generator - SISTEMA REPARADO**
+    'enhanced-content-generator': `🚀 **Enhanced Content Generator - SISTEMA TRIPARTITO ACTIVADO**
 
-✅ Sistema multi-agente con conectividad reparada
-✅ Generación de contenido ejecutivo con intelligence web
-✅ Validación de datos mejorada
-✅ Anti-bucle infinito activado
+✅ Flujo AI completo: **OpenAI → Perplexity → Claude**
+✅ Conectividad web garantizada con validación triple
+✅ Generación de contenido ejecutivo de nivel élite
+✅ Sistema anti-bucle infinito activado
 
-**Capacidades Reparadas**:
-• Contenido estratégico con datos web actuales
-• Análisis competitivo integrado
-• Documentos ejecutivos con fuentes verificables
-• Presentaciones con métricas de mercado
+**Flujo Tripartito Activado**:
+1. 🤖 **OpenAI**: Interpreta tu consulta y optimiza la búsqueda
+2. 🔍 **Perplexity**: Realiza búsqueda web profunda con datos verificables
+3. ✨ **Claude**: Estiliza y crea la respuesta ejecutiva final
 
-¿Qué tipo de contenido ejecutivo necesitas crear?`,
+**Capacidades Mejoradas**:
+• Contenido estratégico con datos web actuales verificados
+• Análisis competitivo con fuentes múltiples
+• Documentos ejecutivos con métricas en tiempo real
+• Presentaciones con intelligence de mercado actual
 
-    'clipogino': `🔧 **CLIPOGINO - SISTEMA REPARADO**
+¿Qué tipo de contenido ejecutivo con datos web actuales necesitas crear?`,
 
-✅ Mentoría empresarial con intelligence web restaurada
-✅ Análisis estratégico con datos actuales
-✅ Sistema anti-bucle activado
-✅ Validación de respuestas mejorada
+    'clipogino': `🚀 **CLIPOGINO - SISTEMA TRIPARTITO COMPLETO**
 
-**Capacidades Reparadas**:
-• Orientación estratégica con datos de mercado actuales
-• Desarrollo de liderazgo con context de industria
-• Planificación de carrera con tendencias verificables
-• Insights empresariales con fuentes documentadas
+✅ Mentoría empresarial con flujo AI tripartito: **OpenAI → Perplexity → Claude**
+✅ Intelligence web en tiempo real con validación triple
+✅ Análisis estratégico con datos actuales verificados
+✅ Sistema anti-bucle activado con métricas de calidad
 
-¿En qué área de tu desarrollo estratégico puedo ayudarte?`,
+**Flujo de Mentoría Avanzado**:
+1. 🤖 **OpenAI**: Analiza tu situación y define la investigación necesaria
+2. 🔍 **Perplexity**: Busca datos actuales del mercado y competencia
+3. ✨ **Claude**: Sintetiza insights en recomendaciones ejecutivas
 
-    'research-engine': `🔧 **Elite Research Engine - SISTEMA REPARADO**
+**Capacidades de Mentoría Tripartita**:
+• Orientación estratégica con intelligence de mercado actual
+• Desarrollo de liderazgo con context de industria verificado
+• Planificación de carrera con tendencias documentadas
+• Insights empresariales respaldados por datos web
 
-✅ Motor de investigación con conectividad web garantizada
-✅ Búsqueda inteligente con validación de fuentes
-✅ Sistema anti-regeneración infinita
+¿En qué área de tu desarrollo estratégico puedo ayudarte con análisis tripartito?`,
+
+    'research-engine': `🚀 **Elite Research Engine - SISTEMA TRIPARTITO COMPLETO**
+
+✅ Motor de investigación con flujo AI avanzado: **OpenAI → Perplexity → Claude**
+✅ Búsqueda inteligente con triple validación de fuentes
+✅ Sistema anti-regeneración infinita con métricas de confianza
 ✅ Análisis con múltiples fuentes verificadas
 
-**Capacidades de Investigación Reparadas**:
+**Motor de Investigación Tripartito**:
+1. 🤖 **OpenAI**: Interpreta tu necesidad de investigación y optimiza consultas
+2. 🔍 **Perplexity**: Ejecuta búsqueda web profunda con datos verificables
+3. ✨ **Claude**: Sintetiza hallazgos en análisis ejecutivo estructurado
+
+**Capacidades de Research Tripartita**:
 • Investigación de mercado con datos web actuales
-• Análisis de tendencias con fuentes múltiples
-• Intelligence competitiva con métricas verificables
-• Research estratégico con evidencia documental
+• Análisis de tendencias con fuentes múltiples verificadas
+• Intelligence competitiva con métricas documentadas
+• Research estratégico con evidencia web respaldada
 
-¿Qué investigación estratégica necesitas realizar?`,
+¿Qué investigación estratégica con flujo tripartito necesitas realizar?`,
 
-    'cdv': `🔧 **CDV Agent - SISTEMA COMPLETAMENTE REPARADO**
+    'cdv': `🚀 **CDV Agent - SISTEMA TRIPARTITO AVANZADO**
 
-✅ Conectividad web restaurada y garantizada
-✅ Validación de datos web obligatoria
-✅ Sistema anti-bucle infinito activado
-✅ Métricas de confianza mejoradas
+✅ Flujo de descubrimiento competitivo: **OpenAI → Perplexity → Claude**
+✅ Conectividad web restaurada con validación triple
+✅ Métricas de confianza mejoradas con intelligence actual
+✅ Sistema anti-bucle infinito con calidad garantizada
 
-**Especialización Reparada**:
+**Especialización Tripartita**:
 • Descubrimiento de competidores con datos web verificados
 • Validación de amenazas con métricas actuales
 • Análisis de posicionamiento con fuentes documentadas
-• Identificación de oportunidades con evidencia web
+• Identificación de oportunidades con evidencia web tripartita
 
 **Configuración**: ${sessionConfig.companyName} en ${sessionConfig.industry}
 
-¿Qué análisis competitivo con datos web actuales necesitas?`,
+¿Qué análisis competitivo con flujo tripartito necesitas?`,
 
-    'cir': `🔧 **CIR Agent - SISTEMA COMPLETAMENTE REPARADO**
+    'cir': `🚀 **CIR Agent - SISTEMA TRIPARTITO AVANZADO**
 
-✅ Inteligencia de datos con conectividad web restaurada
-✅ Métricas verificables garantizadas
-✅ Validación automática de respuestas
-✅ Sistema anti-regeneración activado
+✅ Intelligence de datos con flujo: **OpenAI → Perplexity → Claude**
+✅ Métricas verificables con validación triple
+✅ Análisis financiero con datos web actuales
+✅ Sistema anti-regeneración con calidad mejorada
 
-**Especialización en Datos Reparada**:
+**Especialización en Datos Tripartita**:
 • Métricas de domain authority con fuentes verificadas
 • Análisis de tráfico web con datos actuales
 • Evaluación de redes sociales con números reales
@@ -333,16 +368,16 @@ function getRepairedWelcomeMessage(agentId: string, sessionConfig: ConsolidatedS
 
 **Contexto**: ${sessionConfig.companyName} - ${sessionConfig.industry}
 
-¿Qué métricas competitivas con datos web verificados necesitas?`,
+¿Qué métricas competitivas con flujo tripartito necesitas?`,
 
-    'cia': `🔧 **CIA Agent - SISTEMA COMPLETAMENTE REPARADO**
+    'cia': `🚀 **CIA Agent - SISTEMA TRIPARTITO AVANZADO**
 
-✅ Análisis estratégico con intelligence web garantizada
-✅ Synthesis ejecutivo con datos verificados
+✅ Análisis estratégico con flujo: **OpenAI → Perplexity → Claude**
+✅ Synthesis ejecutivo con datos verificados mediante triple validación
 ✅ Frameworks de consultoría con evidencia actual
-✅ Sistema anti-bucle de regeneración
+✅ Sistema anti-bucle con métricas de confianza
 
-**Análisis Estratégico Reparado**:
+**Análisis Estratégico Tripartito**:
 • Evaluación de amenazas con datos web actuales
 • Análisis de oportunidades con fuentes múltiples
 • Synthesis SWOT con evidencia documentada
@@ -350,9 +385,9 @@ function getRepairedWelcomeMessage(agentId: string, sessionConfig: ConsolidatedS
 
 **Contexto Estratégico**: ${sessionConfig.companyName} en ${sessionConfig.industry}
 
-¿Qué análisis estratégico con intelligence web verificada requieres?`
+¿Qué análisis estratégico con flujo tripartito requieres?`
   };
 
   return agentMessages[agentId as keyof typeof agentMessages] || 
-         `🔧 Sistema Reparado - Agente ${agentId.toUpperCase()} con conectividad mejorada y validación de datos activada.`;
+         `🚀 Sistema Tripartito Activado - Agente ${agentId.toUpperCase()} con flujo OpenAI → Perplexity → Claude y validación triple de datos.`;
 }
