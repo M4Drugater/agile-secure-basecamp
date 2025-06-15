@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Sparkles, 
   Wand2, 
@@ -17,11 +18,24 @@ import { ContentStylistTab } from './premium/ContentStylistTab';
 import { ContentLibraryTab } from './premium/ContentLibraryTab';
 import { ContentAnalyticsTab } from './premium/ContentAnalyticsTab';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
+import { ContentItem } from '@/hooks/useContentItems';
 
 export function PremiumContentGenerator() {
-  const [activeTab, setActiveTab] = useState('generator');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'generator';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { getContextSummary } = useContextBuilder();
   const contextSummary = getContextSummary();
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
+  const handleContentSelect = (content: ContentItem) => {
+    // Could implement content preview or editing here
+    console.log('Selected content:', content);
+  };
 
   const premiumFeatures = [
     'AI-Powered Content Generation',
@@ -81,7 +95,7 @@ export function PremiumContentGenerator() {
       </Card>
 
       {/* Main Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="generator" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
@@ -110,7 +124,7 @@ export function PremiumContentGenerator() {
         </TabsContent>
 
         <TabsContent value="library">
-          <ContentLibraryTab />
+          <ContentLibraryTab onContentSelect={handleContentSelect} />
         </TabsContent>
 
         <TabsContent value="analytics">

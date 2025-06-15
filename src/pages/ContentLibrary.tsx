@@ -1,11 +1,8 @@
 
 import React from 'react';
-import { ContentLibrary } from '@/components/content/ContentLibrary';
+import { Navigate } from 'react-router-dom';
 
+// Redirect to unified content studio
 export default function ContentLibraryPage() {
-  return (
-    <div className="container mx-auto p-6 lg:p-8 max-w-7xl">
-      <ContentLibrary />
-    </div>
-  );
+  return <Navigate to="/content?tab=library" replace />;
 }

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
+import { useContentItems } from '@/hooks/useContentItems';
 import { toast } from 'sonner';
 import { ContentFormData } from '@/components/content/ContentGeneratorTypes';
 
@@ -19,6 +20,7 @@ export function usePremiumContentGeneration() {
   
   const { supabase, user } = useSupabase();
   const { buildFullContextString, getContextSummary } = useContextBuilder();
+  const { createContentItem } = useContentItems();
 
   const handleGenerate = async (formData: ContentFormData) => {
     if (!user || !supabase) {
@@ -76,7 +78,31 @@ export function usePremiumContentGeneration() {
         personalizedElements: countPersonalizedElements(data.content, contextSummary)
       });
 
-      toast.success('Premium content generated successfully!');
+      // Auto-save to content library
+      try {
+        await createContentItem.mutateAsync({
+          title: generateContentTitle(formData),
+          content: data.content,
+          content_type: mapContentType(formData.type),
+          status: 'draft',
+          tags: generateTags(formData),
+          metadata: {
+            generatedBy: 'premium-studio',
+            formData: formData,
+            metrics: {
+              tokensUsed: data.usage?.totalTokens || 0,
+              generationTime,
+              qualityScore: calculateQualityScore(data)
+            }
+          }
+        });
+        
+        toast.success('Content generated and saved to library!');
+      } catch (saveError) {
+        console.error('Failed to save content:', saveError);
+        toast.success('Content generated successfully!');
+        toast.error('Failed to save to library, but content is available above');
+      }
 
     } catch (error) {
       console.error('Content generation error:', error);
@@ -123,6 +149,45 @@ export function usePremiumContentGeneration() {
 Please create premium, executive-level content that integrates the personalization context naturally and demonstrates sophisticated business thinking.`;
 
     return prompt;
+  };
+
+  const generateContentTitle = (formData: ContentFormData): string => {
+    const typeMap: { [key: string]: string } = {
+      'executive-memo': 'Executive Memo',
+      'strategic-plan': 'Strategic Plan',
+      'board-presentation': 'Board Presentation',
+      'market-analysis': 'Market Analysis',
+      'competitive-brief': 'Competitive Brief',
+      'financial-report': 'Financial Report'
+    };
+    
+    const contentType = typeMap[formData.type] || formData.type.replace('-', ' ');
+    const topic = formData.topic.slice(0, 50);
+    
+    return `${contentType}: ${topic}${topic.length >= 50 ? '...' : ''}`;
+  };
+
+  const mapContentType = (type: string): string => {
+    const typeMap: { [key: string]: string } = {
+      'executive-memo': 'email',
+      'strategic-plan': 'article',
+      'board-presentation': 'presentation',
+      'market-analysis': 'article',
+      'competitive-brief': 'article',
+      'financial-report': 'article'
+    };
+    
+    return typeMap[type] || 'article';
+  };
+
+  const generateTags = (formData: ContentFormData): string[] => {
+    const tags = ['ai-generated', 'premium-studio'];
+    
+    if (formData.industry) tags.push(formData.industry);
+    if (formData.targetAudience) tags.push(formData.targetAudience);
+    if (formData.purpose) tags.push(formData.purpose);
+    
+    return tags;
   };
 
   const calculateQualityScore = (data: any): number => {

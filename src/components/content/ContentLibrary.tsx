@@ -6,7 +6,19 @@ import { ContentLibraryHeader } from './ContentLibraryHeader';
 import { ContentLibraryFilters } from './ContentLibraryFilters';
 import { ContentLibraryGrid } from './ContentLibraryGrid';
 
-export function ContentLibrary() {
+interface ContentLibraryProps {
+  onEdit?: (item: ContentItem) => void;
+  onCreateContent?: () => void;
+  onContentSelect?: (item: ContentItem) => void;
+  embedded?: boolean;
+}
+
+export function ContentLibrary({ 
+  onEdit, 
+  onCreateContent, 
+  onContentSelect,
+  embedded = false 
+}: ContentLibraryProps) {
   const { contentItems, isLoading, deleteContentItem, duplicateContentItem, updateContentItem } = useContentItems();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -24,8 +36,12 @@ export function ContentLibrary() {
   }) || [];
 
   const handleEdit = (item: ContentItem) => {
-    setEditingItem(item);
-    setShowEditor(true);
+    if (onEdit) {
+      onEdit(item);
+    } else {
+      setEditingItem(item);
+      setShowEditor(true);
+    }
   };
 
   const handleDelete = (item: ContentItem) => {
@@ -42,8 +58,12 @@ export function ContentLibrary() {
   };
 
   const handleCreateContent = () => {
-    setEditingItem(null);
-    setShowEditor(true);
+    if (onCreateContent) {
+      onCreateContent();
+    } else {
+      setEditingItem(null);
+      setShowEditor(true);
+    }
   };
 
   const handleCloseEditor = () => {
@@ -51,7 +71,8 @@ export function ContentLibrary() {
     setEditingItem(null);
   };
 
-  if (showEditor) {
+  // If not embedded and showing editor, render editor
+  if (!embedded && showEditor) {
     return (
       <ContentEditor
         item={editingItem}
@@ -62,7 +83,10 @@ export function ContentLibrary() {
 
   return (
     <div className="space-y-6">
-      <ContentLibraryHeader onCreateContent={handleCreateContent} />
+      <ContentLibraryHeader 
+        onCreateContent={handleCreateContent}
+        embedded={embedded}
+      />
       
       <ContentLibraryFilters
         searchTerm={searchTerm}
@@ -82,6 +106,8 @@ export function ContentLibrary() {
         onDuplicate={(item) => duplicateContentItem.mutate(item.id)}
         onToggleFavorite={handleToggleFavorite}
         onCreateContent={handleCreateContent}
+        onContentSelect={onContentSelect}
+        embedded={embedded}
       />
     </div>
   );

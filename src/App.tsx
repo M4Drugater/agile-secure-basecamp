@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ConsolidatedAppLayout } from "@/components/layout/ConsolidatedAppLayout";
 import Index from "./pages/Index";
@@ -14,7 +14,6 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import OptimizedResearchWorkbench from "./pages/OptimizedResearchWorkbench";
 import LearningManagement from "./pages/LearningManagement";
 import Billing from "./pages/Billing";
-import ContentLibrary from "./pages/ContentLibrary";
 import ContentAnalytics from "./pages/ContentAnalytics";
 import Admin from "./pages/Admin";
 import ConsolidatedAgents from "./pages/ConsolidatedAgents";
@@ -36,7 +35,8 @@ function App() {
                 <Route path="/agents" element={<ConsolidatedAgents />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/content" element={<ContentGenerator />} />
-                <Route path="/content-library" element={<ContentLibrary />} />
+                {/* Redirect content-library to unified content studio */}
+                <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
                 <Route path="/content-analytics" element={<ContentAnalytics />} />
                 <Route path="/knowledge" element={<KnowledgeBase />} />
                 <Route path="/research" element={<OptimizedResearchWorkbench />} />
