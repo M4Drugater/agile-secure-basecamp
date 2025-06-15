@@ -8,15 +8,13 @@ import {
   Sparkles, 
   Wand2, 
   FileText, 
-  Library, 
-  BarChart3,
+  Library,
   Crown,
   Bot
 } from 'lucide-react';
 import { ContentGeneratorTab } from './premium/ContentGeneratorTab';
 import { ContentStylistTab } from './premium/ContentStylistTab';
 import { ContentLibraryTab } from './premium/ContentLibraryTab';
-import { ContentAnalyticsTab } from './premium/ContentAnalyticsTab';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
 import { ContentItem } from '@/hooks/useContentItems';
 
@@ -96,7 +94,7 @@ export function PremiumContentGenerator() {
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="generator" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Generator
@@ -108,10 +106,6 @@ export function PremiumContentGenerator() {
           <TabsTrigger value="library" className="flex items-center gap-2">
             <Library className="h-4 w-4" />
             Library
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -125,10 +119,6 @@ export function PremiumContentGenerator() {
 
         <TabsContent value="library">
           <ContentLibraryTab onContentSelect={handleContentSelect} />
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <ContentAnalyticsTab />
         </TabsContent>
       </Tabs>
     </div>
