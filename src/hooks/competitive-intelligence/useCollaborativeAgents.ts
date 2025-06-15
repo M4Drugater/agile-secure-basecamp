@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +38,14 @@ export function useCollaborativeAgents() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCollaborations(data || []);
+      
+      // Type assertion to ensure compatibility with our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        interaction_type: item.interaction_type as AgentCollaboration['interaction_type']
+      })) as AgentCollaboration[];
+      
+      setCollaborations(typedData);
     } catch (error) {
       console.error('Error loading collaborations:', error);
     }
@@ -67,8 +73,14 @@ export function useCollaborativeAgents() {
 
       if (error) throw error;
 
-      setCollaborations(prev => [data, ...prev]);
-      return data;
+      // Type assertion for the returned data
+      const typedData = {
+        ...data,
+        interaction_type: data.interaction_type as AgentCollaboration['interaction_type']
+      } as AgentCollaboration;
+
+      setCollaborations(prev => [typedData, ...prev]);
+      return typedData;
     } catch (error) {
       console.error('Error creating collaboration:', error);
       throw error;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,7 +51,15 @@ export function useIntelligentOutputs() {
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOutputs(data || []);
+      
+      // Type assertion to ensure compatibility with our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        output_type: item.output_type as IntelligentOutput['output_type'],
+        status: item.status as IntelligentOutput['status']
+      })) as IntelligentOutput[];
+      
+      setOutputs(typedData);
     } catch (error) {
       console.error('Error loading outputs:', error);
     }
@@ -93,14 +100,21 @@ export function useIntelligentOutputs() {
 
       if (error) throw error;
 
-      setOutputs(prev => [data, ...prev]);
+      // Type assertion for the returned data
+      const typedData = {
+        ...data,
+        output_type: data.output_type as IntelligentOutput['output_type'],
+        status: data.status as IntelligentOutput['status']
+      } as IntelligentOutput;
+
+      setOutputs(prev => [typedData, ...prev]);
       
       // Auto-apply to knowledge base if configured
       if (synthesizedContent.knowledgeUpdates.length > 0) {
-        await applyKnowledgeUpdates(data.id, synthesizedContent.knowledgeUpdates);
+        await applyKnowledgeUpdates(typedData.id, synthesizedContent.knowledgeUpdates);
       }
 
-      return data;
+      return typedData;
     } catch (error) {
       console.error('Error generating output:', error);
       throw error;

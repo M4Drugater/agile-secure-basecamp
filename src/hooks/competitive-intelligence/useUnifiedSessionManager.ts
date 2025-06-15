@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,7 +47,14 @@ export function useUnifiedSessionManager() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      // Type assertion to ensure compatibility with our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        status: item.status as UnifiedSession['status']
+      })) as UnifiedSession[];
+      
+      setSessions(typedData);
     } catch (error) {
       console.error('Error loading sessions:', error);
     } finally {
@@ -94,10 +100,16 @@ export function useUnifiedSessionManager() {
 
       if (error) throw error;
 
-      setCurrentSession(data);
+      // Type assertion for the returned data
+      const typedData = {
+        ...data,
+        status: data.status as UnifiedSession['status']
+      } as UnifiedSession;
+
+      setCurrentSession(typedData);
       await loadSessions();
       
-      return data;
+      return typedData;
     } catch (error) {
       console.error('Error creating session:', error);
       throw error;
@@ -119,12 +131,18 @@ export function useUnifiedSessionManager() {
 
       if (error) throw error;
 
+      // Type assertion for the returned data
+      const typedData = {
+        ...data,
+        status: data.status as UnifiedSession['status']
+      } as UnifiedSession;
+
       if (currentSession?.id === sessionId) {
-        setCurrentSession(data);
+        setCurrentSession(typedData);
       }
       await loadSessions();
       
-      return data;
+      return typedData;
     } catch (error) {
       console.error('Error updating session:', error);
       throw error;
