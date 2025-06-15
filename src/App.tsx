@@ -12,9 +12,14 @@ import KnowledgeBase from '@/pages/KnowledgeBase';
 import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
 import UnifiedAgents from '@/pages/UnifiedAgents';
 import Chat from '@/pages/Chat';
+import Content from '@/pages/Content';
+import ContentGenerator from '@/pages/ContentGenerator';
+import ContentLibrary from '@/pages/ContentLibrary';
+import ContentAnalytics from '@/pages/ContentAnalytics';
 import Profile from '@/pages/Profile';
 import Admin from '@/pages/Admin';
 import Billing from '@/pages/Billing';
+import TrendsDiscovery from '@/pages/TrendsDiscovery';
 import ResearchWorkbench from '@/pages/ResearchWorkbench';
 import LearningManagement from '@/pages/LearningManagement';
 import OnboardingPage from '@/pages/OnboardingPage';
@@ -77,9 +82,40 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="/trends" element={
+                <ProtectedRoute>
+                  <TrendsDiscovery />
+                </ProtectedRoute>
+              } />
+              
               <Route path="/research" element={
                 <ProtectedRoute>
                   <ResearchWorkbench />
+                </ProtectedRoute>
+              } />
+              
+              {/* Content Management */}
+              <Route path="/content" element={
+                <ProtectedRoute>
+                  <Content />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/content/generator" element={
+                <ProtectedRoute>
+                  <ContentGenerator />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/content/library" element={
+                <ProtectedRoute>
+                  <ContentLibrary />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/content/analytics" element={
+                <ProtectedRoute>
+                  <ContentAnalytics />
                 </ProtectedRoute>
               } />
               

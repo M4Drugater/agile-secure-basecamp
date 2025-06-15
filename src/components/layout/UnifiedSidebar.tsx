@@ -7,6 +7,7 @@ import { UnifiedNavSection } from './sidebar/UnifiedNavSection';
 import {
   mainNavItems,
   aiModulesItems,
+  contentItems,
   learningItems,
   accountItems
 } from './sidebar/unifiedNavigationItems';
@@ -35,6 +36,12 @@ export function UnifiedSidebar() {
           <UnifiedNavSection 
             title="Módulos IA" 
             items={aiModulesItems} 
+            isCollapsed={isCollapsed}
+          />
+          
+          <UnifiedNavSection 
+            title="Contenido" 
+            items={contentItems} 
             isCollapsed={isCollapsed}
           />
           
