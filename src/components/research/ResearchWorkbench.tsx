@@ -21,9 +21,26 @@ import {
   Zap
 } from 'lucide-react';
 import { useEliteResearchEngine, ResearchRequest } from '@/hooks/research/useEliteResearchEngine';
-import { ResearchSessionCard } from './ResearchSessionCard';
 import { ResearchResults } from './ResearchResults';
 import { ResearchFilters } from './ResearchFilters';
+
+// Simple Research Session Card component for this workbench
+function ResearchSessionCard({ session, onSelect }: { 
+  session: any; 
+  onSelect: (session: any) => void; 
+}) {
+  return (
+    <Card className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onSelect(session)}>
+      <CardContent className="p-4">
+        <h4 className="font-medium text-sm mb-2">{session.query}</h4>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{session.researchType}</span>
+          <span>{new Date(session.createdAt).toLocaleDateString()}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function ResearchWorkbench() {
   const { 
