@@ -149,7 +149,7 @@ export function useSessionCompletion(sessionId: string, selectedAgents: AgentCon
 
     // Construir prompt personalizado para el agente
     const systemPrompt = await buildEliteSystemPrompt({
-      agentType: agent.id,
+      agentType: agent.id as 'clipogino' | 'cdv' | 'cir' | 'cia',
       currentPage: '/unified-agents',
       analysisDepth: 'comprehensive',
       outputFormat: 'executive',

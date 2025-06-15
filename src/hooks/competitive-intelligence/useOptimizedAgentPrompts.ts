@@ -1,11 +1,10 @@
-
 import { useElitePromptEngine } from '@/hooks/prompts/useElitePromptEngine';
 
 export function useOptimizedAgentPrompts() {
   const { buildEliteSystemPrompt } = useElitePromptEngine();
 
   const getEnhancedAgentPrompt = async (
-    agentType: string, 
+    agentType: 'clipogino' | 'cdv' | 'cir' | 'cia', 
     sessionConfig: any, 
     currentPage: string = '/competitive-intelligence'
   ) => {
@@ -31,7 +30,7 @@ ${industryIntelligence}
 ${outputOptimization}`;
   };
 
-  const getAgentSpecificEnhancements = (agentType: string, sessionConfig: any): string => {
+  const getAgentSpecificEnhancements = (agentType: 'clipogino' | 'cdv' | 'cir' | 'cia', sessionConfig: any): string => {
     const companyContext = `
 **Target Analysis Context**:
 - **Company**: ${sessionConfig.companyName || 'Target Organization'}
@@ -213,7 +212,7 @@ ${selected.threats.map(threat => `- ${threat}`).join('\n')}
 - **Innovation Patterns**: Track industry-specific innovation cycles and disruption patterns`;
   };
 
-  const getOutputOptimization = (agentType: string): string => {
+  const getOutputOptimization = (agentType: 'clipogino' | 'cdv' | 'cir' | 'cia'): string => {
     const baseOptimization = `## OUTPUT OPTIMIZATION FRAMEWORK
 
 ### Structured Excellence Standards:
@@ -270,7 +269,14 @@ ${selected.threats.map(threat => `- ${threat}`).join('\n')}
 - **Strategic Options Analysis**: Multiple pathways with ROI projections
 - **Implementation Roadmap**: Phased execution with milestone planning
 - **Scenario Planning**: Future-state analysis with probability weighting
-- **Board Presentation Summary**: C-suite ready strategic synthesis`
+- **Board Presentation Summary**: C-suite ready strategic synthesis`,
+
+      clipogino: `
+### CLIPOGINO-Specific Output Requirements:
+- **Strategic Mentoring Brief**: Personalized guidance with career impact
+- **Leadership Development Plan**: Skills and competency roadmap
+- **Business Strategy Overview**: Market positioning and growth strategies
+- **Executive Coaching Summary**: Actionable development recommendations`
     };
 
     return `${baseOptimization}

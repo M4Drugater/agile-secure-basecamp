@@ -72,7 +72,7 @@ export function useEnhancedCollaborativeChat({
 
         // Construir prompt especializado para el agente
         const systemPrompt = await buildEliteSystemPrompt({
-          agentType: agent.id,
+          agentType: agent.id as 'clipogino' | 'cdv' | 'cir' | 'cia',
           currentPage: '/unified-agents',
           sessionConfig,
           analysisDepth: 'comprehensive',
@@ -97,7 +97,7 @@ export function useEnhancedCollaborativeChat({
           const { data, error } = await supabase.functions.invoke('competitive-intelligence-chat', {
             body: {
               messages: apiMessages,
-              agentType: agent.id,
+              agentType: agent.id as 'clipogino' | 'cdv' | 'cir' | 'cia',
               sessionConfig: {
                 ...sessionConfig,
                 contextQuality: 'elite',
