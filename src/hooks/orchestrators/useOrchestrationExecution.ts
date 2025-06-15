@@ -108,9 +108,12 @@ export function useOrchestrationExecution() {
 
     const processingTime = Date.now() - startTime;
 
-    // For now, we'll use estimated values for tokens and cost since they're not available in the research results
-    // This can be enhanced later when the research engine provides these metrics
-    totalTokens = Math.floor(stylingResults.content.length / 4); // Rough token estimate
+    // Calculate tokens and costs from available data
+    // Research results may not have token/cost data, so we estimate
+    const estimatedResearchTokens = Math.floor(researchResults.content.length / 4);
+    const estimatedStylingTokens = Math.floor(stylingResults.content.length / 4);
+    
+    totalTokens = estimatedResearchTokens + estimatedStylingTokens;
     totalCost = totalTokens * 0.00002; // Rough cost estimate
 
     // Build comprehensive response
