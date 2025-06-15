@@ -20,7 +20,7 @@ import {
   Target,
   Zap
 } from 'lucide-react';
-import { usePerplexityResearch, ResearchRequest } from '@/hooks/usePerplexityResearch';
+import { useEliteResearchEngine, ResearchRequest } from '@/hooks/research/useEliteResearchEngine';
 import { ResearchSessionCard } from './ResearchSessionCard';
 import { ResearchResults } from './ResearchResults';
 import { ResearchFilters } from './ResearchFilters';
@@ -34,10 +34,10 @@ export function ResearchWorkbench() {
     estimateCredits,
     error,
     setCurrentSession
-  } = usePerplexityResearch();
+  } = useEliteResearchEngine();
 
   const [query, setQuery] = useState('');
-  const [researchType, setResearchType] = useState<'quick' | 'comprehensive' | 'industry-specific'>('comprehensive');
+  const [researchType, setResearchType] = useState<'quick-scan' | 'comprehensive' | 'industry-deep-dive' | 'competitive-analysis'>('comprehensive');
   const [industry, setIndustry] = useState('');
   const [model, setModel] = useState<'llama-3.1-sonar-small-128k-online' | 'llama-3.1-sonar-large-128k-online'>('llama-3.1-sonar-large-128k-online');
 
@@ -49,34 +49,48 @@ export function ResearchWorkbench() {
       researchType,
       model,
       industry: industry || undefined,
+      contextLevel: 'elite',
+      outputFormat: 'detailed-analysis'
     };
 
     conductResearch(request);
   };
 
-  const creditsEstimate = estimateCredits(researchType, model);
+  const creditsEstimate = estimateCredits({
+    query,
+    researchType,
+    model,
+    contextLevel: 'elite'
+  });
 
   const researchTypeOptions = [
     {
-      value: 'quick' as const,
-      label: 'Quick Overview',
-      description: 'Fast insights and key facts (3-5 credits)',
+      value: 'quick-scan' as const,
+      label: 'Quick Scan',
+      description: 'Fast insights and key facts (2-3 credits)',
       icon: Zap,
-      credits: 3
+      credits: 2
     },
     {
       value: 'comprehensive' as const,
       label: 'Comprehensive Analysis',
-      description: 'In-depth research with full context (6-8 credits)',
+      description: 'In-depth research with full context (5-7 credits)',
       icon: Brain,
-      credits: 6
+      credits: 5
     },
     {
-      value: 'industry-specific' as const,
-      label: 'Industry-Specific',
-      description: 'Sector-focused deep dive (8-10 credits)',
+      value: 'industry-deep-dive' as const,
+      label: 'Industry Deep Dive',
+      description: 'Sector-focused comprehensive analysis (8-10 credits)',
       icon: Target,
       credits: 8
+    },
+    {
+      value: 'competitive-analysis' as const,
+      label: 'Competitive Analysis',
+      description: 'Detailed competitive intelligence (10-13 credits)',
+      icon: TrendingUp,
+      credits: 10
     }
   ];
 
@@ -87,17 +101,17 @@ export function ResearchWorkbench() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Brain className="h-8 w-8 text-blue-500" />
-            Research Workbench
+            Elite Research Workbench
           </h1>
           <p className="text-muted-foreground mt-2">
-            Intelligent research powered by Perplexity AI with verified sources
+            AI-powered research with advanced context and strategic insights
           </p>
         </div>
         
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="flex items-center gap-1">
             <BookOpen className="h-3 w-3" />
-            Enhanced Research v2.0
+            Elite Research Engine v3.0
           </Badge>
         </div>
       </div>
@@ -136,7 +150,7 @@ export function ResearchWorkbench() {
                   <Target className="h-4 w-4" />
                   Research Type
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {researchTypeOptions.map((option) => (
                     <Card 
                       key={option.value}
