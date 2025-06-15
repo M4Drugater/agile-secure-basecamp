@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Dashboard from '@/pages/Dashboard';
 import KnowledgeBase from '@/pages/KnowledgeBase';
 import CompetitiveIntelligence from '@/pages/CompetitiveIntelligence';
+import UnifiedAgents from '@/pages/UnifiedAgents';
 import Chat from '@/pages/Chat';
 import Content from '@/pages/Content';
 import ContentGenerator from '@/pages/ContentGenerator';
@@ -69,6 +70,12 @@ function App() {
               } />
               
               {/* AI Modules */}
+              <Route path="/agents" element={
+                <ProtectedRoute>
+                  <UnifiedAgents />
+                </ProtectedRoute>
+              } />
+              
               <Route path="/competitive-intelligence" element={
                 <ProtectedRoute>
                   <CompetitiveIntelligence />

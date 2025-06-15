@@ -12,7 +12,8 @@ import {
   CreditCard,
   BarChart3,
   Brain,
-  Sparkles
+  Sparkles,
+  Bot
 } from 'lucide-react';
 
 export const navigationItems = [
@@ -26,6 +27,7 @@ export const navigationItems = [
   { 
     section: 'Módulos IA',
     items: [
+      { title: 'Agentes Unificados', href: '/agents', icon: Bot, badge: 'NEW', description: 'Interfaz centralizada para todos los agentes' },
       { title: 'Inteligencia Competitiva', href: '/competitive-intelligence', icon: Shield, badge: 'AI', description: 'Agentes CDV, CIA y CIR' },
       { title: 'Descubrimiento de Tendencias', href: '/trends', icon: TrendingUp, badge: 'LIVE', description: 'Tendencias de Reddit en tiempo real' },
       { title: 'Research Workbench', href: '/research', icon: Search, description: 'Investigación con Perplexity AI' }
