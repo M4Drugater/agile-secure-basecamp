@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AgentSelectionView } from './AgentSelectionView';
 import { AgentWorkspace } from './AgentWorkspace';
 import { useAgentInterface } from '@/hooks/competitive-intelligence/useAgentInterface';
@@ -11,9 +11,22 @@ interface AgentInterfaceProps {
 
 export function AgentInterface({ selectedAgent, onAgentSelect }: AgentInterfaceProps) {
   const { sessionConfig, setSessionConfig } = useAgentInterface();
+  const [localSelectedAgent, setLocalSelectedAgent] = useState<string>(selectedAgent || '');
+
+  const handleAgentSelected = () => {
+    if (localSelectedAgent) {
+      onAgentSelect(localSelectedAgent);
+    }
+  };
 
   if (!selectedAgent) {
-    return <AgentSelectionView onAgentSelect={onAgentSelect} />;
+    return (
+      <AgentSelectionView 
+        selectedAgent={localSelectedAgent}
+        setSelectedAgent={setLocalSelectedAgent}
+        onAgentSelected={handleAgentSelected}
+      />
+    );
   }
 
   return (

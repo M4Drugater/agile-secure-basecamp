@@ -10,12 +10,23 @@ interface AgentCardProps {
   icon: LucideIcon;
   color: string;
   onSelect: (agentId: string) => void;
+  isSelected?: boolean;
 }
 
-export function AgentCard({ id, name, description, icon: Icon, color, onSelect }: AgentCardProps) {
+export function AgentCard({ 
+  id, 
+  name, 
+  description, 
+  icon: Icon, 
+  color, 
+  onSelect, 
+  isSelected = false 
+}: AgentCardProps) {
   return (
     <Card 
-      className="cursor-pointer hover:shadow-lg transition-shadow"
+      className={`cursor-pointer hover:shadow-lg transition-shadow ${
+        isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+      }`}
       onClick={() => onSelect(id)}
     >
       <CardContent className="p-6 text-center">
