@@ -187,7 +187,7 @@ export function RealTimeCollaborativeAnalysis({
             <CardContent>
               <div className="space-y-4">
                 {agentActivities.map((activity) => {
-                  const agent = selectedAgents.find(a => a.agentId === activity.agentId);
+                  const agent = selectedAgents.find(a => a.id === activity.agentId);
                   if (!agent) return null;
                   
                   const Icon = agent.icon;
