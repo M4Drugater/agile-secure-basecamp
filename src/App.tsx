@@ -1,18 +1,19 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryProvider } from '@/contexts/QueryContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import DashboardPage from '@/pages/DashboardPage';
-import ProfilePage from '@/pages/ProfilePage';
-import KnowledgePage from '@/pages/KnowledgePage';
-import ContentPage from '@/pages/ContentPage';
-import LearningPage from '@/pages/LearningPage';
-import ChatPage from '@/pages/ChatPage';
-import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligencePage';
+import HomePage from '@/pages/Home';
+import LoginPage from '@/pages/Login';
+import RegisterPage from '@/pages/Signup';
+import DashboardPage from '@/pages/Dashboard';
+import ProfilePage from '@/pages/Profile';
+import KnowledgePage from '@/pages/KnowledgeBase';
+import ContentPage from '@/pages/Content';
+import LearningPage from '@/pages/LearningManagement';
+import ChatPage from '@/pages/Chat';
+import CompetitiveIntelligencePage from '@/pages/CompetitiveIntelligence';
 import EnhancedChatPage from '@/pages/EnhancedChat';
 import UnifiedChatPage from '@/pages/UnifiedChatPage';
 
