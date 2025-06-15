@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Target, Network, FileText, Lightbulb, Settings } from 'lucide-react';
 import { useUnifiedSessionManager } from '@/hooks/competitive-intelligence/useUnifiedSessionManager';
 import { useCollaborativeAgents } from '@/hooks/competitive-intelligence/useCollaborativeAgents';
