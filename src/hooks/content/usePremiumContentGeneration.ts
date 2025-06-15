@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useContextBuilder } from '@/hooks/context/useContextBuilder';
@@ -78,8 +77,24 @@ export function usePremiumContentGeneration() {
         personalizedElements: countPersonalizedElements(data.content, contextSummary)
       });
 
-      // Auto-save to content library
+      // Auto-save to content library with properly typed metadata
       try {
+        // Convert ContentFormData to a plain object compatible with Json type
+        const formDataPlain = {
+          type: formData.type,
+          topic: formData.topic,
+          style: formData.style,
+          length: formData.length,
+          model: formData.model,
+          customPrompt: formData.customPrompt || '',
+          targetAudience: formData.targetAudience || '',
+          businessContext: formData.businessContext || '',
+          useKnowledge: formData.useKnowledge || false,
+          tone: formData.tone || '',
+          industry: formData.industry || '',
+          purpose: formData.purpose || ''
+        };
+
         await createContentItem.mutateAsync({
           title: generateContentTitle(formData),
           content: data.content,
@@ -88,7 +103,7 @@ export function usePremiumContentGeneration() {
           tags: generateTags(formData),
           metadata: {
             generatedBy: 'premium-studio',
-            formData: formData,
+            formData: formDataPlain,
             metrics: {
               tokensUsed: data.usage?.totalTokens || 0,
               generationTime,
