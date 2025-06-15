@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -243,7 +244,7 @@ export function ConsolidatedAgentsHub() {
         <TabsContent value="workspace" className="mt-6">
           {collaborativeMode ? (
             <CollaborativeSession
-              selectedAgents={selectedAgents.map(id => availableAgents.find(a => a.id === id)!)}
+              selectedAgents={getSelectedAgentConfigs()}
               sessionConfig={sessionConfig}
               onUpdateConfig={setSessionConfig}
               onBack={() => {
@@ -253,13 +254,9 @@ export function ConsolidatedAgentsHub() {
             />
           ) : (
             <AgentWorkspaceContent
-              availableAgents={availableAgents}
-              selectedAgents={selectedAgents}
-              collaborativeMode={collaborativeMode}
+              selectedAgents={getSelectedAgentConfigs()}
               sessionConfig={sessionConfig}
-              onAgentSelect={handleAgentSelect}
-              onToggleCollaborative={() => setCollaborativeMode(!collaborativeMode)}
-              onUpdateConfig={setSessionConfig}
+              setSessionConfig={setSessionConfig}
             />
           )}
         </TabsContent>

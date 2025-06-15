@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { AgentConfig } from './UnifiedAgentWorkspace';
@@ -15,13 +16,15 @@ import { PersonalizationIndicator } from './collaborative/PersonalizationIndicat
 interface CollaborativeSessionProps {
   selectedAgents: AgentConfig[];
   sessionConfig: any;
-  setSessionConfig: React.Dispatch<React.SetStateAction<any>>;
+  onUpdateConfig: React.Dispatch<React.SetStateAction<any>>;
+  onBack: () => void;
 }
 
 export function CollaborativeSession({ 
   selectedAgents, 
   sessionConfig, 
-  setSessionConfig 
+  onUpdateConfig,
+  onBack
 }: CollaborativeSessionProps) {
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState('orchestrator');
@@ -81,7 +84,7 @@ export function CollaborativeSession({
           <CollaborativeChatInterface
             selectedAgents={selectedAgents}
             sessionConfig={sessionConfig}
-            setSessionConfig={setSessionConfig}
+            setSessionConfig={onUpdateConfig}
           />
         </TabsContent>
 
@@ -106,7 +109,7 @@ export function CollaborativeSession({
           <EnhancedCollaborativeSettings
             selectedAgents={selectedAgents}
             sessionConfig={sessionConfig}
-            setSessionConfig={setSessionConfig}
+            setSessionConfig={onUpdateConfig}
           />
         </TabsContent>
       </Tabs>
