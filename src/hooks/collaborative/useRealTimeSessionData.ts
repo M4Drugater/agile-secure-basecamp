@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { AgentConfig } from '@/components/agents/UnifiedAgentWorkspace';
+import { useSessionCompletion } from './useSessionCompletion';
 
 interface SessionMetrics {
   sessionProgress: number;
@@ -49,6 +50,16 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
   const [insights, setInsights] = useState<CollaborativeInsight[]>([]);
   const [isSessionActive, setIsSessionActive] = useState(false);
 
+  // Hook de finalización de sesión
+  const {
+    isGeneratingResults,
+    completionResults,
+    hasBeenCompleted,
+    detectSessionCompletion,
+    generateFinalResults,
+    resetCompletion
+  } = useSessionCompletion(sessionId, selectedAgents);
+
   // Initialize session data
   useEffect(() => {
     if (selectedAgents.length > 0) {
@@ -65,19 +76,31 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
 
   // Simulate real-time updates
   useEffect(() => {
-    if (!isSessionActive) return;
+    if (!isSessionActive || hasBeenCompleted) return;
 
     const interval = setInterval(() => {
-      // Update session metrics
-      setSessionMetrics(prev => ({
-        ...prev,
-        sessionProgress: Math.min(prev.sessionProgress + Math.random() * 2, 100),
-        totalInteractions: prev.totalInteractions + Math.floor(Math.random() * 3),
-        consensusLevel: Math.max(50, Math.min(100, prev.consensusLevel + (Math.random() - 0.5) * 10)),
-        activeAgents: selectedAgents.length,
-        averageResponseTime: Math.floor(Math.random() * 5) + 2,
-        collaborationScore: Math.floor(Math.random() * 20) + 80
-      }));
+      // Update session metrics with completion detection
+      setSessionMetrics(prev => {
+        const newProgress = Math.min(prev.sessionProgress + Math.random() * 3, 100);
+        const newConsensus = Math.max(50, Math.min(100, prev.consensusLevel + (Math.random() - 0.4) * 8));
+        const newCollaborationScore = Math.max(60, Math.min(100, prev.collaborationScore + (Math.random() - 0.3) * 5));
+
+        const updatedMetrics = {
+          ...prev,
+          sessionProgress: newProgress,
+          totalInteractions: prev.totalInteractions + Math.floor(Math.random() * 3),
+          consensusLevel: newConsensus,
+          activeAgents: selectedAgents.length,
+          completedTasks: prev.completedTasks + (Math.random() > 0.8 ? 1 : 0),
+          averageResponseTime: Math.floor(Math.random() * 5) + 2,
+          collaborationScore: newCollaborationScore
+        };
+
+        // Detectar finalización automáticamente
+        detectSessionCompletion(updatedMetrics);
+
+        return updatedMetrics;
+      });
 
       // Update agent activities
       setAgentActivities(prev => prev.map(agent => ({
@@ -86,13 +109,21 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
         status: Math.random() > 0.7 ? 'active' : agent.status,
         lastActivity: Math.random() > 0.8 ? new Date() : agent.lastActivity
       })));
-    }, 3000);
+
+      // Generate insights based on progress
+      if (Math.random() > 0.85) {
+        const insightTypes = ['consensus', 'synthesis', 'breakthrough'] as const;
+        const randomType = insightTypes[Math.floor(Math.random() * insightTypes.length)];
+        simulateCollaborativeEvent(randomType);
+      }
+    }, 4000);
 
     return () => clearInterval(interval);
-  }, [isSessionActive, selectedAgents.length]);
+  }, [isSessionActive, hasBeenCompleted, selectedAgents.length]);
 
   const startSession = () => {
     setIsSessionActive(true);
+    resetCompletion(); // Reset any previous completion state
     addInsight({
       type: 'synthesis',
       title: 'Sesión colaborativa iniciada',
@@ -107,13 +138,17 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
     setIsSessionActive(false);
   };
 
+  const triggerManualCompletion = () => {
+    generateFinalResults(sessionMetrics);
+  };
+
   const addInsight = (insight: Omit<CollaborativeInsight, 'id' | 'timestamp'>) => {
     const newInsight: CollaborativeInsight = {
       ...insight,
       id: Date.now().toString(),
       timestamp: new Date()
     };
-    setInsights(prev => [newInsight, ...prev].slice(0, 10)); // Keep only last 10 insights
+    setInsights(prev => [newInsight, ...prev].slice(0, 15)); // Keep more insights for completion tracking
   };
 
   const simulateCollaborativeEvent = (eventType: 'consensus' | 'divergence' | 'breakthrough') => {
@@ -148,9 +183,13 @@ export function useRealTimeSessionData(sessionId: string, selectedAgents: AgentC
     agentActivities,
     insights,
     isSessionActive,
+    isGeneratingResults,
+    completionResults,
+    hasBeenCompleted,
     startSession,
     pauseSession,
     addInsight,
-    simulateCollaborativeEvent
+    simulateCollaborativeEvent,
+    triggerManualCompletion
   };
 }

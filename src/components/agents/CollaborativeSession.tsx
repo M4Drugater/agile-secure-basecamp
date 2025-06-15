@@ -30,9 +30,13 @@ export function CollaborativeSession({
     agentActivities,
     insights,
     isSessionActive,
+    isGeneratingResults,
+    completionResults,
+    hasBeenCompleted,
     startSession,
     pauseSession,
-    simulateCollaborativeEvent
+    simulateCollaborativeEvent,
+    triggerManualCompletion
   } = useRealTimeSessionData('session-1', selectedAgents);
 
   const handleStartSession = () => {
@@ -84,6 +88,9 @@ export function CollaborativeSession({
             agentActivities={agentActivities}
             insights={insights}
             isSessionActive={isSessionActive}
+            isGeneratingResults={isGeneratingResults}
+            completionResults={completionResults}
+            triggerManualCompletion={triggerManualCompletion}
           />
         </TabsContent>
 
