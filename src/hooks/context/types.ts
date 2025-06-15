@@ -15,4 +15,5 @@ export interface ContextSummary {
   learningCount: number;
   activityCount: number;
   conversationCount: number;
+  quality: 'basic' | 'good' | 'excellent';
 }

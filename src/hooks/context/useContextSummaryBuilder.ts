@@ -18,6 +18,12 @@ export function useContextSummaryBuilder({
   activityCount,
   conversationCount,
 }: ContextSummaryBuilderProps): ContextSummary {
+  const totalItems = knowledgeCount + contentCount + learningCount + activityCount + conversationCount;
+  let quality: 'basic' | 'good' | 'excellent' = 'basic';
+  
+  if (totalItems >= 10) quality = 'excellent';
+  else if (totalItems >= 5) quality = 'good';
+
   return {
     hasProfile,
     knowledgeCount,
@@ -25,5 +31,6 @@ export function useContextSummaryBuilder({
     learningCount,
     activityCount,
     conversationCount,
+    quality,
   };
 }
