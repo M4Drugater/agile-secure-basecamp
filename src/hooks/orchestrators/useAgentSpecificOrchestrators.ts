@@ -57,9 +57,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: 'comprehensive',
-        stylingFormality: 'executive',
-        outputFormat: 'comprehensive'
+        researchDepth: 'comprehensive' as const,
+        stylingFormality: 'executive' as const,
+        outputFormat: 'comprehensive' as const
       }
     };
 
@@ -106,9 +106,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: config.discoveryDepth === 'deep' ? 'comprehensive' : 'deep',
-        stylingFormality: 'executive',
-        outputFormat: 'detailed'
+        researchDepth: config.discoveryDepth === 'deep' ? 'comprehensive' as const : 'deep' as const,
+        stylingFormality: 'executive' as const,
+        outputFormat: 'detailed' as const
       }
     };
 
@@ -155,9 +155,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: 'comprehensive',
-        stylingFormality: 'professional',
-        outputFormat: 'detailed'
+        researchDepth: 'comprehensive' as const,
+        stylingFormality: 'professional' as const,
+        outputFormat: 'detailed' as const
       }
     };
 
@@ -204,9 +204,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: 'comprehensive',
-        stylingFormality: 'c-suite',
-        outputFormat: 'comprehensive'
+        researchDepth: 'comprehensive' as const,
+        stylingFormality: 'c-suite' as const,
+        outputFormat: 'comprehensive' as const
       }
     };
 
@@ -249,9 +249,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: 'comprehensive',
-        stylingFormality: 'executive',
-        outputFormat: 'comprehensive'
+        researchDepth: 'comprehensive' as const,
+        stylingFormality: 'executive' as const,
+        outputFormat: 'comprehensive' as const
       }
     };
 
@@ -294,9 +294,9 @@ export function useAgentSpecificOrchestrators() {
       sessionConfig,
       orchestrationLevel: 'elite' as const,
       customParameters: {
-        researchDepth: 'comprehensive',
-        stylingFormality: 'c-suite',
-        outputFormat: 'comprehensive'
+        researchDepth: 'comprehensive' as const,
+        stylingFormality: 'c-suite' as const,
+        outputFormat: 'comprehensive' as const
       }
     };
 

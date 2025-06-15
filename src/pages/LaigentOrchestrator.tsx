@@ -179,7 +179,6 @@ export default function LaigentOrchestrator() {
                   onChange={() => {}}
                   placeholder="Orchestrated content will appear here..."
                   className="min-h-[600px]"
-                  readOnly
                 />
               ) : (
                 <div className="flex items-center justify-center h-[600px] border-2 border-dashed border-muted-foreground/25 rounded-lg">

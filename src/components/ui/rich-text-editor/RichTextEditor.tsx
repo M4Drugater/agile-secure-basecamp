@@ -1,10 +1,8 @@
 
 import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import { RichTextToolbar } from './RichTextToolbar';
-import { createEditorExtensions, editorProps } from './editorConfig';
+import { cn } from '@/lib/utils';
 
-interface RichTextEditorProps {
+export interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
@@ -12,27 +10,15 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder, className }: RichTextEditorProps) {
-  const editor = useEditor({
-    extensions: createEditorExtensions(),
-    content,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-    editorProps,
-  });
-
-  if (!editor) {
-    return null;
-  }
-
   return (
-    <div className={`border rounded-lg ${className}`}>
-      <RichTextToolbar editor={editor} />
-      <EditorContent 
-        editor={editor} 
-        className="min-h-[200px]" 
-        placeholder={placeholder}
-      />
+    <div className={cn("border rounded-lg", className)}>
+      <div className="p-4 prose prose-sm max-w-none">
+        {content ? (
+          <div dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br />') }} />
+        ) : (
+          <p className="text-muted-foreground">{placeholder}</p>
+        )}
+      </div>
     </div>
   );
 }
