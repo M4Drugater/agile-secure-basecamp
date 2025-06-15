@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { toast } from 'sonner';
@@ -14,17 +13,43 @@ interface OutputRequest {
 
 interface IntelligentOutput {
   id: string;
+  session_id: string;
+  output_type: 'strategic_report' | 'market_analysis' | 'competitive_brief' | 'action_plan';
+  title: string;
   content: string;
   insights_generated: string[];
   action_items: any[];
   knowledge_updates: any[];
   content_suggestions: any[];
   metadata: any;
+  status: 'draft' | 'completed' | 'finalized' | 'archived';
+  created_at: string;
+  updated_at: string;
 }
 
 export function useIntelligentOutputs() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [outputs, setOutputs] = useState<IntelligentOutput[]>([]);
   const { supabase, user } = useSupabase();
+
+  const loadOutputs = async (sessionId: string) => {
+    if (!user || !supabase) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('intelligent_outputs')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOutputs(data || []);
+    } catch (error) {
+      console.error('Error loading outputs:', error);
+      toast.error('Failed to load outputs');
+    }
+  };
 
   const generateOutput = async (request: OutputRequest): Promise<IntelligentOutput> => {
     if (!user || !supabase) {
@@ -70,14 +95,13 @@ export function useIntelligentOutputs() {
 
       if (error) throw error;
 
+      const newOutput = data as IntelligentOutput;
+      setOutputs(prev => [newOutput, ...prev]);
+
       console.log('✅ Intelligent output generated successfully');
       toast.success('Intelligent output generated successfully!');
 
-      return {
-        ...data,
-        output_type: data.output_type as IntelligentOutput['output_type'],
-        status: data.status as 'draft' | 'finalized' | 'archived'
-      } as IntelligentOutput;
+      return newOutput;
 
     } catch (error) {
       console.error('❌ Error generating intelligent output:', error);
@@ -397,6 +421,8 @@ Strategic recommendations based on analytical findings and competitive intellige
 
   return {
     generateOutput,
-    isGenerating
+    isGenerating,
+    outputs,
+    loadOutputs
   };
 }

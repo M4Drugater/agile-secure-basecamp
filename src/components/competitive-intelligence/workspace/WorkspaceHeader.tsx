@@ -8,21 +8,36 @@ import {
   Globe, 
   Settings,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Target,
+  BarChart3,
+  Brain
 } from 'lucide-react';
 
 interface WorkspaceHeaderProps {
   sessionConfig: any;
-  onConfigurationClick: () => void;
+  selectedAgent?: string;
+  onConfigurationClick?: () => void;
 }
 
-export function WorkspaceHeader({ sessionConfig, onConfigurationClick }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ sessionConfig, selectedAgent, onConfigurationClick }: WorkspaceHeaderProps) {
   const systemStatus = {
     realTimeActive: true,
     dataQuality: 96,
     agentsOnline: 3,
     lastUpdate: new Date()
   };
+
+  const getAgentInfo = (agentId: string) => {
+    const agents = {
+      cdv: { name: 'CDV Agent', icon: Target, description: 'Competitive Discovery & Validation' },
+      cir: { name: 'CIR Agent', icon: BarChart3, description: 'Competitive Intelligence Research' },
+      cia: { name: 'CIA Agent', icon: Brain, description: 'Competitive Intelligence Analysis' }
+    };
+    return agents[agentId as keyof typeof agents] || agents.cia;
+  };
+
+  const currentAgent = selectedAgent ? getAgentInfo(selectedAgent) : null;
 
   return (
     <div className="border-b border-gray-200 pb-4 mb-6">
@@ -31,12 +46,24 @@ export function WorkspaceHeader({ sessionConfig, onConfigurationClick }: Workspa
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Shield className="h-8 w-8 text-blue-600" />
             Elite Competitive Intelligence Platform
+            {currentAgent && (
+              <>
+                <span className="text-gray-400">•</span>
+                <currentAgent.icon className="h-6 w-6 text-purple-600" />
+                <span className="text-purple-600">{currentAgent.name}</span>
+              </>
+            )}
           </h1>
           <p className="text-muted-foreground mt-2">
             {sessionConfig.companyName ? 
               `Real-time intelligence for ${sessionConfig.companyName} in ${sessionConfig.industry}` :
               'Configure your competitive intelligence session to get started'
             }
+            {currentAgent && (
+              <span className="block text-sm text-purple-600 mt-1">
+                {currentAgent.description}
+              </span>
+            )}
           </p>
         </div>
 
@@ -58,15 +85,17 @@ export function WorkspaceHeader({ sessionConfig, onConfigurationClick }: Workspa
           </Badge>
 
           {/* Quick Actions */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onConfigurationClick}
-            className="flex items-center gap-1"
-          >
-            <Settings className="h-3 w-3" />
-            Configure
-          </Button>
+          {onConfigurationClick && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onConfigurationClick}
+              className="flex items-center gap-1"
+            >
+              <Settings className="h-3 w-3" />
+              Configure
+            </Button>
+          )}
         </div>
       </div>
 
