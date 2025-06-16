@@ -15,6 +15,7 @@ interface UnifiedRequest {
   searchEnabled?: boolean;
   model?: string;
   useTripartiteFlow?: boolean; // NEW: Enable tripartite flow
+  systemPrompt?: string; // NEW: Custom system prompt
 }
 
 interface UnifiedResponse {
@@ -58,7 +59,8 @@ export function useUnifiedAISystem() {
         query: request.message,
         agent: request.agentType,
         useTripartiteFlow: request.useTripartiteFlow,
-        searchEnabled: request.searchEnabled
+        searchEnabled: request.searchEnabled,
+        hasSystemPrompt: !!request.systemPrompt
       });
 
       // NUEVO: Decidir si usar flujo tripartito
@@ -148,14 +150,22 @@ export function useUnifiedAISystem() {
       });
 
       // Step 2: Build enhanced system prompt with web data
-      const systemPrompt = await buildEliteSystemPrompt({
-        agentType: request.agentType,
-        currentPage: request.currentPage,
-        sessionConfig: request.sessionConfig,
-        analysisDepth: 'comprehensive',
-        outputFormat: 'executive',
-        contextLevel: 'elite'
-      });
+      let systemPrompt;
+      if (request.systemPrompt) {
+        // Use custom system prompt if provided
+        systemPrompt = request.systemPrompt;
+        console.log('✅ Usando prompt personalizado del agente');
+      } else {
+        // Build default elite system prompt
+        systemPrompt = await buildEliteSystemPrompt({
+          agentType: request.agentType,
+          currentPage: request.currentPage,
+          sessionConfig: request.sessionConfig,
+          analysisDepth: 'comprehensive',
+          outputFormat: 'executive',
+          contextLevel: 'elite'
+        });
+      }
 
       let enhancedPrompt = systemPrompt;
       
