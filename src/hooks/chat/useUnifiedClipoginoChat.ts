@@ -21,6 +21,9 @@ interface ChatMessage {
   };
 }
 
+// Define the valid agent types
+type ValidAgentType = 'clipogino' | 'cdv' | 'cir' | 'cia' | 'research-engine' | 'enhanced-content-generator';
+
 export function useUnifiedClipoginoChat() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -103,6 +106,21 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada con cap
     return agentPrompts[agentName] || '';
   };
 
+  // Convert agent name to valid agent type
+  const getValidAgentType = (agentName: string | null): ValidAgentType => {
+    if (!agentName) return 'clipogino';
+    
+    const agentTypeMap: Record<string, ValidAgentType> = {
+      'Enhanced Content Generator': 'enhanced-content-generator',
+      'Elite Research Engine': 'research-engine',
+      'CDV': 'cdv',
+      'CIA': 'cia',
+      'CIR': 'cir'
+    };
+
+    return agentTypeMap[agentName] || 'clipogino';
+  };
+
   const sendMessage = async (input: string, currentPage?: string) => {
     if (!input.trim() || isProcessing || !user) return;
 
@@ -128,10 +146,13 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada con cap
         systemPrompt = buildAgentSystemPrompt(activeAgent);
       }
 
+      // Convert agent name to valid type
+      const validAgentType = getValidAgentType(activeAgent);
+
       // Send to unified AI system
       const response = await sendUnifiedRequest({
         message: input.trim(),
-        agentType: activeAgent ? activeAgent.toLowerCase().replace(/ /g, '-') : 'clipogino',
+        agentType: validAgentType,
         currentPage: currentPage || '/chat',
         searchEnabled: webSearchEnabled,
         model: selectedModel,
