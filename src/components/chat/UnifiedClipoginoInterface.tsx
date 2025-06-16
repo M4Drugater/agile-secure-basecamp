@@ -17,7 +17,11 @@ import {
   Award,
   Zap,
   RefreshCw,
-  Send
+  Send,
+  Bot,
+  Search,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { useUnifiedClipoginoChat } from '@/hooks/chat/useUnifiedClipoginoChat';
 import { useLocation } from 'react-router-dom';
@@ -48,7 +52,7 @@ function UnifiedChatInput({
     <div className="flex gap-2">
       <input
         type="text"
-        placeholder="Pregunta lo que necesites... (sistema unificado con tu contexto completo)"
+        placeholder="Pregunta cualquier cosa... (Sistema unificado con todos los agentes IA especializados)"
         value={inputMessage}
         onChange={(e) => setInputMessage(e.target.value)}
         onKeyPress={handleKeyPress}
@@ -71,10 +75,37 @@ function UnifiedChatInput({
   );
 }
 
+interface AgentCapabilityProps {
+  agent: {
+    name: string;
+    icon: any;
+    description: string;
+    color: string;
+  };
+  onActivate: (agentName: string) => void;
+}
+
+function AgentCapability({ agent, onActivate }: AgentCapabilityProps) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => onActivate(agent.name)}
+      className="flex items-center gap-2 h-auto p-3 text-left justify-start"
+    >
+      <agent.icon className={`h-4 w-4 ${agent.color}`} />
+      <div className="flex-1">
+        <div className="font-medium text-sm">{agent.name}</div>
+        <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+      </div>
+    </Button>
+  );
+}
+
 export function UnifiedClipoginoInterface() {
   const location = useLocation();
   const [inputMessage, setInputMessage] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAgentPanel, setShowAgentPanel] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const { 
@@ -90,6 +121,40 @@ export function UnifiedClipoginoInterface() {
     hasProfileContext
   } = useUnifiedClipoginoChat();
 
+  // Specialized agent capabilities
+  const specializedAgents = [
+    {
+      name: 'Enhanced Content Generator',
+      icon: FileText,
+      description: 'Generación de contenido ejecutivo tripartite',
+      color: 'text-purple-600'
+    },
+    {
+      name: 'Elite Research Engine', 
+      icon: Search,
+      description: 'Investigación Fortune 500 con fuentes verificadas',
+      color: 'text-blue-600'
+    },
+    {
+      name: 'CDV - Competitor Discovery',
+      icon: Target,
+      description: 'Descubrimiento competitivo con validación',
+      color: 'text-green-600'
+    },
+    {
+      name: 'CIA - Competitive Intelligence',
+      icon: BarChart3,
+      description: 'Análisis estratégico de competencia',
+      color: 'text-orange-600'
+    },
+    {
+      name: 'CIR - Intelligence Retriever',
+      icon: TrendingUp,
+      description: 'Métricas competitivas y domain authority',
+      color: 'text-red-600'
+    }
+  ];
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -102,6 +167,12 @@ export function UnifiedClipoginoInterface() {
     
     await sendMessage(inputMessage, location.pathname);
     setInputMessage('');
+  };
+
+  const handleAgentActivation = (agentName: string) => {
+    const activationMessage = `Activa el modo "${agentName}" para esta conversación. Usa tu metodología tripartite especializada en ${agentName.toLowerCase()}.`;
+    setInputMessage(activationMessage);
+    setShowAgentPanel(false);
   };
 
   const getContextQualityColor = () => {
@@ -134,7 +205,7 @@ export function UnifiedClipoginoInterface() {
             </Badge>
           </div>
           <p className="text-muted-foreground text-lg">
-            IA estratégica con acceso completo a tu perfil, conocimiento y web en tiempo real
+            IA estratégica unificada con todos los agentes especializados y sistema tripartite
           </p>
         </div>
         
@@ -146,6 +217,10 @@ export function UnifiedClipoginoInterface() {
           <Badge variant="secondary" className="flex items-center gap-1">
             <Globe className="h-3 w-3" />
             Web Activa
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Bot className="h-3 w-3" />
+            Todos los Agentes
           </Badge>
         </div>
       </div>
@@ -183,14 +258,40 @@ export function UnifiedClipoginoInterface() {
           <Sparkles className="h-4 w-4 text-purple-600" />
           <AlertDescription>
             <div>
-              <strong>IA Unificada: Activa</strong>
+              <strong>Agentes IA: 5 Especializados</strong>
               <p className="text-sm text-muted-foreground mt-1">
-                Modelo {selectedModel} con búsqueda web {webSearchEnabled ? 'activa' : 'inactiva'}
+                Sistema tripartite con capacidades especializadas unificadas
               </p>
             </div>
           </AlertDescription>
         </Alert>
       </div>
+
+      {/* Specialized Agents Panel */}
+      {showAgentPanel && (
+        <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+          <CardHeader className="pb-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Bot className="h-5 w-5 text-purple-600" />
+              Agentes IA Especializados
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Activa un agente especializado para obtener capacidades específicas con metodología tripartite
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {specializedAgents.map((agent) => (
+                <AgentCapability
+                  key={agent.name}
+                  agent={agent}
+                  onActivate={handleAgentActivation}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Chat Interface */}
       <Card className="h-[600px] flex flex-col border-2 border-gradient-to-r from-purple-200 to-blue-200">
@@ -214,11 +315,19 @@ export function UnifiedClipoginoInterface() {
               
               <Badge variant="outline" className="ml-2 border-yellow-500 text-yellow-700">
                 <Zap className="h-3 w-3 mr-1" />
-                v3.0 Unificado
+                Tripartite v3.0
               </Badge>
             </div>
             
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAgentPanel(!showAgentPanel)}
+              >
+                <Bot className="h-4 w-4 mr-1" />
+                {showAgentPanel ? 'Ocultar' : 'Agentes'}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -240,14 +349,15 @@ export function UnifiedClipoginoInterface() {
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold">Sistema Unificado Activo</h3>
                     <p className="text-muted-foreground max-w-md mx-auto">
-                      Tu asesor estratégico con acceso completo a tu perfil, conocimiento personal 
-                      y búsqueda web en tiempo real. Todo conectado para decisiones informadas.
+                      Tu asesor estratégico con acceso completo a tu perfil, conocimiento personal,
+                      búsqueda web en tiempo real y todos los agentes especializados unificados.
                     </p>
                     <div className="flex flex-wrap justify-center gap-2 mt-4">
                       <Badge variant="secondary">Perfil Integrado</Badge>
                       <Badge variant="secondary">Conocimiento Personal</Badge>
                       <Badge variant="secondary">Web en Tiempo Real</Badge>
-                      <Badge variant="secondary">IA Elite</Badge>
+                      <Badge variant="secondary">5 Agentes Especializados</Badge>
+                      <Badge variant="secondary">Sistema Tripartite</Badge>
                     </div>
                   </div>
                 </div>
@@ -265,7 +375,7 @@ export function UnifiedClipoginoInterface() {
                 <div className="flex items-center gap-2">
                   <LoadingMessage />
                   <div className="text-xs text-muted-foreground">
-                    Procesando con sistema unificado ({selectedModel})...
+                    Procesando con sistema unificado tripartite ({selectedModel})...
                   </div>
                 </div>
               )}
@@ -290,6 +400,10 @@ export function UnifiedClipoginoInterface() {
               <span className="flex items-center gap-1">
                 <Brain className="h-3 w-3" />
                 Contexto: {contextSummary?.quality || 'Estándar'}
+              </span>
+              <span className="flex items-center gap-1">
+                <Bot className="h-3 w-3" />
+                Agentes: Unificados
               </span>
             </div>
           </div>

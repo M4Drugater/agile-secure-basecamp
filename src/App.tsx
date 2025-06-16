@@ -59,6 +59,7 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              {/* Agents page now shows unification message before redirecting */}
               <Route path="/agents" element={
                 <ProtectedRoute>
                   <ConsolidatedAppLayout>
@@ -127,6 +128,11 @@ function App() {
               <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
               <Route path="/content-generator" element={<Navigate to="/content?tab=generator" replace />} />
               <Route path="/content-analytics" element={<Navigate to="/content?tab=library" replace />} />
+              
+              {/* Redirect legacy agent routes to unified chat */}
+              <Route path="/clipogino" element={<Navigate to="/chat" replace />} />
+              <Route path="/enhanced-chat" element={<Navigate to="/chat" replace />} />
+              <Route path="/unified-chat" element={<Navigate to="/chat" replace />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>

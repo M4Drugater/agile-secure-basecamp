@@ -6,8 +6,7 @@ import {
   User,
   CreditCard,
   Brain,
-  Bot,
-  Sparkles,
+  Search,
   FileText,
   Settings
 } from 'lucide-react';
@@ -17,8 +16,8 @@ export const navigationItems = [
     section: 'Principal',
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: Home, description: 'Vista general del sistema' },
-      { title: 'Chat con CLIPOGINO', href: '/chat', icon: MessageSquare, badge: 'AI', description: 'Asistente inteligente personalizado' },
-      { title: 'Agentes IA', href: '/agents', icon: Bot, badge: 'ELITE', description: 'Centro unificado de agentes IA con metodología tripartite' }
+      { title: 'CLIPOGINO IA', href: '/chat', icon: MessageSquare, badge: 'UNIFICADO', description: 'Asistente IA con sistema tripartite y agentes especializados' },
+      { title: 'Investigación Elite', href: '/research', icon: Search, badge: 'TRIPARTITE', description: 'Investigación Fortune 500 con metodología unificada' }
     ]
   },
   { 
@@ -31,7 +30,7 @@ export const navigationItems = [
     section: 'Gestión',
     items: [
       { title: 'Base de Conocimiento', href: '/knowledge', icon: Brain, description: 'Documentos y recursos' },
-      { title: 'Aprendizaje', href: '/learning', icon: Sparkles, description: 'Rutas y módulos de aprendizaje' }
+      { title: 'Aprendizaje', href: '/learning', icon: BookOpen, description: 'Rutas y módulos de aprendizaje' }
     ]
   },
   { 

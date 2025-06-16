@@ -16,6 +16,8 @@ interface ChatMessage {
     hasWebData?: boolean;
     webSources?: string[];
     contextQuality?: string;
+    activeAgent?: string;
+    tripartiteFlow?: boolean;
   };
 }
 
@@ -25,6 +27,7 @@ export function useUnifiedClipoginoChat() {
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [activeAgent, setActiveAgent] = useState<string | null>(null);
 
   const { isProcessing, sendUnifiedRequest, getContextSummary } = useUnifiedAISystem();
 
@@ -33,23 +36,81 @@ export function useUnifiedClipoginoChat() {
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       role: 'assistant',
-      content: `¡Bienvenido al CLIPOGINO Unificado! 🎯
+      content: `¡Bienvenido al CLIPOGINO Sistema Unificado! 🎯
 
-Ahora tengo acceso completo y en tiempo real a:
+Ahora tienes acceso completo a:
 
 ✨ **Tu Perfil Profesional**: Posición, experiencia, objetivos de carrera
 📚 **Tu Base de Conocimiento**: Todos tus documentos y recursos personales
 🌐 **Inteligencia Web en Vivo**: Datos actualizados del mercado y competencia
 🧠 **Contexto Completo**: Historial de conversaciones y actividad
+🤖 **5 Agentes Especializados**: Integrados con metodología tripartite
 
-Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basada en datos reales. ¿En qué decisión profesional puedo ayudarte hoy?`,
+**Agentes disponibles:**
+• **Enhanced Content Generator** - Contenido ejecutivo tripartite
+• **Elite Research Engine** - Investigación Fortune 500
+• **CDV** - Descubrimiento competitivo
+• **CIA** - Análisis de inteligencia competitiva  
+• **CIR** - Métricas y domain authority
+
+Puedo proporcionarte asesoría estratégica verdaderamente personalizada con capacidades especializadas. ¿En qué decisión profesional puedo ayudarte hoy?`,
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
   }, []);
 
+  const detectAgentActivation = (message: string): string | null => {
+    const agentTriggers = {
+      'Enhanced Content Generator': ['contenido', 'content', 'generar', 'escritura', 'artículo', 'blog'],
+      'Elite Research Engine': ['investigación', 'research', 'buscar', 'analizar', 'datos', 'fuentes'],
+      'CDV': ['competidor', 'competitor', 'descubrir', 'validar', 'mercado'],
+      'CIA': ['inteligencia', 'intelligence', 'análisis', 'estrategia', 'amenaza'],
+      'CIR': ['métricas', 'metrics', 'domain', 'authority', 'tráfico', 'seo']
+    };
+
+    // Direct activation
+    for (const [agentName, triggers] of Object.entries(agentTriggers)) {
+      if (message.toLowerCase().includes(`activa el modo "${agentName.toLowerCase()}"`)) {
+        return agentName;
+      }
+    }
+
+    // Implicit activation based on content
+    const messageLower = message.toLowerCase();
+    for (const [agentName, triggers] of Object.entries(agentTriggers)) {
+      const matchCount = triggers.filter(trigger => messageLower.includes(trigger)).length;
+      if (matchCount >= 2) { // Require at least 2 trigger words
+        return agentName;
+      }
+    }
+
+    return null;
+  };
+
+  const buildAgentSystemPrompt = (agentName: string): string => {
+    const agentPrompts = {
+      'Enhanced Content Generator': `Actúa como el Enhanced Content Generator del sistema CLIPOGINO. Usa metodología tripartite para crear contenido ejecutivo de alta calidad. Enfócate en generar contenido estratégico, bien investigado y optimizado para audiencias profesionales.`,
+      
+      'Elite Research Engine': `Actúa como el Elite Research Engine del sistema CLIPOGINO. Usa metodología tripartite para realizar investigación de nivel Fortune 500. Proporciona análisis profundos con fuentes verificables y insights estratégicos.`,
+      
+      'CDV': `Actúa como el Competitor Discovery & Validator del sistema CLIPOGINO. Usa metodología tripartite para descubrir y validar información competitiva. Enfócate en identificar oportunidades y amenazas en el mercado.`,
+      
+      'CIA': `Actúa como el Competitive Intelligence Analysis del sistema CLIPOGINO. Usa metodología tripartite para análisis estratégico de inteligencia competitiva. Proporciona evaluaciones ejecutivas y recomendaciones C-suite.`,
+      
+      'CIR': `Actúa como el Competitive Intelligence Retriever del sistema CLIPOGINO. Usa metodología tripartite para obtener métricas competitivas, domain authority y análisis de tráfico con datos verificables.`
+    };
+
+    return agentPrompts[agentName] || '';
+  };
+
   const sendMessage = async (input: string, currentPage?: string) => {
     if (!input.trim() || isProcessing || !user) return;
+
+    // Detect agent activation
+    const detectedAgent = detectAgentActivation(input);
+    if (detectedAgent) {
+      setActiveAgent(detectedAgent);
+    }
 
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
@@ -61,13 +122,20 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basad
     setMessages(prev => [...prev, userMessage]);
 
     try {
+      // Build system prompt with agent specialization
+      let systemPrompt = '';
+      if (activeAgent) {
+        systemPrompt = buildAgentSystemPrompt(activeAgent);
+      }
+
       // Send to unified AI system
       const response = await sendUnifiedRequest({
         message: input.trim(),
-        agentType: 'clipogino',
+        agentType: activeAgent ? activeAgent.toLowerCase().replace(/ /g, '-') : 'clipogino',
         currentPage: currentPage || '/chat',
         searchEnabled: webSearchEnabled,
-        model: selectedModel
+        model: selectedModel,
+        systemPrompt
       });
 
       const assistantMessage: ChatMessage = {
@@ -81,7 +149,9 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basad
           cost: response.cost,
           hasWebData: response.hasWebData,
           webSources: response.webSources,
-          contextQuality: response.contextQuality
+          contextQuality: response.contextQuality,
+          activeAgent: activeAgent || undefined,
+          tripartiteFlow: true
         }
       };
 
@@ -92,7 +162,7 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basad
       await saveMessageToHistory(assistantMessage);
 
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('Unified chat error:', error);
       
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
@@ -142,12 +212,13 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basad
 
   const startNewConversation = () => {
     setCurrentConversationId(null);
+    setActiveAgent(null);
     setMessages([]);
     // Re-add welcome message
     const welcomeMessage: ChatMessage = {
       id: 'welcome-new',
       role: 'assistant',
-      content: '¡Nueva conversación iniciada! El sistema unificado está listo con acceso completo a tu contexto. ¿En qué puedo ayudarte?',
+      content: '¡Nueva conversación iniciada! El sistema unificado está listo con acceso completo a tu contexto y todos los agentes especializados. ¿En qué puedo ayudarte?',
       timestamp: new Date()
     };
     setMessages([welcomeMessage]);
@@ -166,6 +237,7 @@ Puedo proporcionarte asesoría estratégica verdaderamente personalizada y basad
     startNewConversation,
     contextSummary,
     hasProfileContext: contextSummary.hasProfile,
-    knowledgeRecommendations: []
+    knowledgeRecommendations: [],
+    activeAgent
   };
 }
