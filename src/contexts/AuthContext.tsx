@@ -1,15 +1,12 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
+import { ExtendedProfile } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: Profile | null;
+  profile: ExtendedProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
@@ -22,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -34,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
       
       if (error) throw error;
-      setProfile(data);
+      setProfile(data as ExtendedProfile);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
