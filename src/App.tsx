@@ -21,6 +21,15 @@ import Admin from "./pages/Admin";
 import ConsolidatedAgents from "./pages/ConsolidatedAgents";
 import OnboardingFlow from "@/components/journey/OnboardingFlow";
 
+// NEW: Independent Agents imports
+import IndependentAgents from "./pages/IndependentAgents";
+import ClipoginoAgent from "./pages/agents/ClipoginoAgent";
+import ContentGeneratorAgent from "./pages/agents/ContentGeneratorAgent";
+import ResearchEngineAgent from "./pages/agents/ResearchEngineAgent";
+import CDVAgent from "./pages/agents/CDVAgent";
+import CIAAgent from "./pages/agents/CIAAgent";
+import CIRAgent from "./pages/agents/CIRAgent";
+
 const queryClient = new QueryClient();
 
 function App() {

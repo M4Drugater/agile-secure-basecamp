@@ -8,7 +8,9 @@ import {
   Brain,
   Search,
   FileText,
-  Settings
+  Settings,
+  Users,
+  Crown
 } from 'lucide-react';
 
 export const navigationItems = [
@@ -17,6 +19,7 @@ export const navigationItems = [
     items: [
       { title: 'Dashboard', href: '/dashboard', icon: Home, description: 'Vista general del sistema' },
       { title: 'CLIPOGINO IA', href: '/chat', icon: MessageSquare, badge: 'UNIFICADO', description: 'Asistente IA con sistema tripartite y agentes especializados' },
+      { title: 'Agentes Independientes', href: '/agents', icon: Crown, badge: 'ELITE', description: 'Acceso directo a agentes especializados con autonomía completa' },
       { title: 'Investigación Elite', href: '/research', icon: Search, badge: 'TRIPARTITE', description: 'Investigación Fortune 500 con metodología unificada' }
     ]
   },
