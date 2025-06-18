@@ -6,7 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConsolidatedNavSection } from './ConsolidatedNavSection';
-import { navigationItems } from './navigationConfig';
+import { getNavigationItems } from './navigationConfig';
+import { useTranslation } from 'react-i18next';
 
 interface ConsolidatedSidebarProps {
   isCollapsed: boolean;
@@ -14,6 +15,9 @@ interface ConsolidatedSidebarProps {
 }
 
 export function ConsolidatedSidebar({ isCollapsed, onToggleCollapse }: ConsolidatedSidebarProps) {
+  const { t } = useTranslation();
+  const navigationItems = getNavigationItems(t);
+
   return (
     <div className={cn(
       "transition-all duration-200 border-r bg-white",

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MessageSquare, Zap, Search, Eye, Brain, Activity, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { IndividualAgentChat } from './IndividualAgentChat';
 import { AgentConfigurationPanel } from './AgentConfigurationPanel';
 
@@ -40,6 +41,7 @@ const agentColors = {
 
 export function IndividualAgentInterface({ agentConfig }: IndividualAgentInterfaceProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [showConfig, setShowConfig] = useState(false);
   const [sessionConfig, setSessionConfig] = useState({
     companyName: '',
@@ -63,7 +65,7 @@ export function IndividualAgentInterface({ agentConfig }: IndividualAgentInterfa
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver a Agentes
+            {t('agents.backToAgents')}
           </Button>
           
           <div className="flex items-center gap-3">
@@ -79,10 +81,10 @@ export function IndividualAgentInterface({ agentConfig }: IndividualAgentInterfa
 
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-green-100 text-green-700">
-            ✅ Sistema Tripartite
+            ✅ {t('agents.tripartiteSystem')}
           </Badge>
           <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-            🚀 Modo Independiente
+            🚀 {t('agents.independentMode')}
           </Badge>
           <Button
             variant="outline"
@@ -91,7 +93,7 @@ export function IndividualAgentInterface({ agentConfig }: IndividualAgentInterfa
             className="flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            {showConfig ? 'Ocultar Config' : 'Configuración'}
+            {showConfig ? t('agents.hideConfig') : t('agents.configuration')}
           </Button>
         </div>
       </div>
@@ -101,11 +103,10 @@ export function IndividualAgentInterface({ agentConfig }: IndividualAgentInterfa
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-blue-600" />
-            Agente Independiente Activo
+            {t('agents.independentActive')}
           </CardTitle>
           <CardDescription>
-            Este agente opera con autonomía completa y acceso directo al sistema tripartite (OpenAI → Perplexity → Claude) 
-            para proporcionar el máximo nivel de especialización y capacidades.
+            {t('agents.independentDescription')}
           </CardDescription>
         </CardHeader>
       </Card>

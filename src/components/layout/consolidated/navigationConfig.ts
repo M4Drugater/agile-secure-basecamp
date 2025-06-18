@@ -13,35 +13,35 @@ import {
   Crown
 } from 'lucide-react';
 
-export const navigationItems = [
+export const getNavigationItems = (t: (key: string) => string) => [
   { 
-    section: 'Principal',
+    section: t('nav.main'),
     items: [
-      { title: 'Dashboard', href: '/dashboard', icon: Home, description: 'Vista general del sistema' },
-      { title: 'CLIPOGINO IA', href: '/chat', icon: MessageSquare, badge: 'UNIFICADO', description: 'Asistente IA con sistema tripartite y agentes especializados' },
-      { title: 'Agentes Independientes', href: '/agents', icon: Crown, badge: 'ELITE', description: 'Acceso directo a agentes especializados con autonomía completa' },
-      { title: 'Investigación Elite', href: '/research', icon: Search, badge: 'TRIPARTITE', description: 'Investigación Fortune 500 con metodología unificada' }
+      { title: t('nav.dashboard'), href: '/dashboard', icon: Home, description: t('nav.dashboardDesc') },
+      { title: t('nav.chat'), href: '/chat', icon: MessageSquare, badge: 'UNIFICADO', description: t('nav.chatDesc') },
+      { title: t('nav.agents'), href: '/agents', icon: Crown, badge: 'ELITE', description: t('nav.agentsDesc') },
+      { title: t('nav.research'), href: '/research', icon: Search, badge: 'TRIPARTITE', description: t('nav.researchDesc') }
     ]
   },
   { 
-    section: 'IA y Contenido',
+    section: t('nav.aiContent'),
     items: [
-      { title: 'Content Studio', href: '/content', icon: FileText, description: 'Creación y gestión unificada de contenido' }
+      { title: t('nav.content'), href: '/content', icon: FileText, description: t('nav.contentDesc') }
     ]
   },
   { 
-    section: 'Gestión',
+    section: t('nav.management'),
     items: [
-      { title: 'Base de Conocimiento', href: '/knowledge', icon: Brain, description: 'Documentos y recursos' },
-      { title: 'Aprendizaje', href: '/learning', icon: BookOpen, description: 'Rutas y módulos de aprendizaje' }
+      { title: t('nav.knowledge'), href: '/knowledge', icon: Brain, description: t('nav.knowledgeDesc') },
+      { title: t('nav.learning'), href: '/learning', icon: BookOpen, description: t('nav.learningDesc') }
     ]
   },
   { 
-    section: 'Cuenta',
+    section: t('nav.account'),
     items: [
-      { title: 'Perfil', href: '/profile', icon: User, description: 'Configuración personal' },
-      { title: 'Facturación', href: '/billing', icon: CreditCard, description: 'Suscripciones y pagos' },
-      { title: 'Configuración', href: '/admin', icon: Settings, description: 'Panel administrativo' }
+      { title: t('nav.profile'), href: '/profile', icon: User, description: t('nav.profileDesc') },
+      { title: t('nav.billing'), href: '/billing', icon: CreditCard, description: t('nav.billingDesc') },
+      { title: t('nav.settings'), href: '/admin', icon: Settings, description: t('nav.settingsDesc') }
     ]
   }
 ];

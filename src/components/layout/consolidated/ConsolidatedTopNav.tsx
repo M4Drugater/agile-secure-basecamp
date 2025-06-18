@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Bell, Menu, LogOut, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +23,7 @@ interface ConsolidatedTopNavProps {
 export function ConsolidatedTopNav({ onToggleSidebar }: ConsolidatedTopNavProps) {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,7 +49,7 @@ export function ConsolidatedTopNav({ onToggleSidebar }: ConsolidatedTopNavProps)
             <Search className="h-4 w-4 text-muted-foreground mr-2" />
             <input
               type="text"
-              placeholder="Search across platform..."
+              placeholder={t('common.search')}
               className="bg-transparent border-none outline-none text-sm flex-1"
             />
           </div>
@@ -58,6 +61,9 @@ export function ConsolidatedTopNav({ onToggleSidebar }: ConsolidatedTopNavProps)
           <Button variant="ghost" size="sm" className="md:hidden">
             <Search className="h-4 w-4" />
           </Button>
+
+          {/* Language Selector */}
+          <LanguageSelector variant="minimal" showText={false} />
 
           {/* Notifications */}
           <Button variant="ghost" size="sm" className="relative">
@@ -90,12 +96,12 @@ export function ConsolidatedTopNav({ onToggleSidebar }: ConsolidatedTopNavProps)
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/profile')}>
                 <UserIcon className="mr-2 h-4 w-4" />
-                <span>Profile Settings</span>
+                <span>{t('nav.profile')}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
+                <span>{t('auth.logout')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

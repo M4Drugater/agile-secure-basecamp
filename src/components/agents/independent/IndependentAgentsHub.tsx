@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Zap, 
   Search, 
@@ -15,107 +16,113 @@ import {
   Crown
 } from 'lucide-react';
 
-const independentAgents = [
-  {
-    id: 'clipogino',
-    name: 'CLIPOGINO',
-    description: 'Mentor profesional con metodología tripartite completa. Tu guía estratégico personal con contexto profundo.',
-    icon: MessageSquare,
-    color: 'bg-blue-500',
-    route: '/agents/clipogino',
-    capabilities: [
-      'Mentoría ejecutiva personalizada',
-      'Planificación estratégica de carrera',
-      'Insights con datos web actuales',
-      'Recomendaciones contextualizadas',
-      'Desarrollo profesional integral'
-    ],
-    status: 'elite'
-  },
-  {
-    id: 'enhanced-content-generator',
-    name: 'Enhanced Content Generator',
-    description: 'Generador de contenido ejecutivo con sistema tripartite. Creación de contenido de nivel Fortune 500.',
-    icon: Zap,
-    color: 'bg-purple-500',
-    route: '/agents/content-generator',
-    capabilities: [
-      'Contenido ejecutivo tripartite',
-      'Artículos con investigación web',
-      'Copywriting persuasivo avanzado',
-      'Optimización SEO inteligente',
-      'Adaptación de tono y estilo'
-    ],
-    status: 'elite'
-  },
-  {
-    id: 'research-engine',
-    name: 'Elite Research Engine',
-    description: 'Motor de investigación Fortune 500 con metodología tripartite. Análisis profundo y verificado.',
-    icon: Search,
-    color: 'bg-indigo-500',
-    route: '/agents/research-engine',
-    capabilities: [
-      'Investigación tripartite verificada',
-      'Análisis competitivo profundo',
-      'Fuentes múltiples validadas',
-      'Insights estratégicos ejecutivos',
-      'Reportes de nivel C-suite'
-    ],
-    status: 'elite'
-  },
-  {
-    id: 'cdv',
-    name: 'CDV - Competitor Discovery & Validator',
-    description: 'Especialista en descubrimiento y validación competitiva con sistema tripartite avanzado.',
-    icon: Eye,
-    color: 'bg-green-500',
-    route: '/agents/cdv',
-    capabilities: [
-      'Descubrimiento competitivo tripartite',
-      'Validación de amenazas en tiempo real',
-      'Análisis de posicionamiento',
-      'Identificación de oportunidades',
-      'Evaluación de brechas competitivas'
-    ],
-    status: 'elite'
-  },
-  {
-    id: 'cia',
-    name: 'CIA - Competitive Intelligence Analysis',
-    description: 'Analista estratégico de inteligencia competitiva con metodología tripartite empresarial.',
-    icon: Brain,
-    color: 'bg-red-500',
-    route: '/agents/cia',
-    capabilities: [
-      'Análisis estratégico tripartite',
-      'Evaluación de amenazas ejecutivas',
-      'Intelligence competitiva avanzada',
-      'Recomendaciones C-level',
-      'Perfilado competitivo profundo'
-    ],
-    status: 'elite'
-  },
-  {
-    id: 'cir',
-    name: 'CIR - Competitive Intelligence Retriever',
-    description: 'Especialista en métricas competitivas con sistema tripartite para datos verificables.',
-    icon: Activity,
-    color: 'bg-orange-500',
-    route: '/agents/cir',
-    capabilities: [
-      'Métricas tripartite verificadas',
-      'Domain authority y SEO metrics',
-      'Análisis de tráfico competitivo',
-      'Evaluación de equipos y recursos',
-      'Benchmarking cuantitativo'
-    ],
-    status: 'elite'
-  }
-];
+const useIndependentAgents = () => {
+  const { t } = useTranslation();
+  
+  return [
+    {
+      id: 'clipogino',
+      name: 'CLIPOGINO',
+      description: t('agents.clipoginoDesc'),
+      icon: MessageSquare,
+      color: 'bg-blue-500',
+      route: '/agents/clipogino',
+      capabilities: [
+        t('agents.clipoginoCapabilities.mentoring'),
+        t('agents.clipoginoCapabilities.planning'),
+        t('agents.clipoginoCapabilities.insights'),
+        t('agents.clipoginoCapabilities.recommendations'),
+        t('agents.clipoginoCapabilities.development')
+      ],
+      status: 'elite'
+    },
+    {
+      id: 'enhanced-content-generator',
+      name: 'Enhanced Content Generator',
+      description: t('agents.contentGeneratorDesc'),
+      icon: Zap,
+      color: 'bg-purple-500',
+      route: '/agents/content-generator',
+      capabilities: [
+        t('agents.contentCapabilities.executive'),
+        t('agents.contentCapabilities.articles'),
+        t('agents.contentCapabilities.copywriting'),
+        t('agents.contentCapabilities.seo'),
+        t('agents.contentCapabilities.adaptation')
+      ],
+      status: 'elite'
+    },
+    {
+      id: 'research-engine',
+      name: 'Elite Research Engine',
+      description: t('agents.researchEngineDesc'),
+      icon: Search,
+      color: 'bg-indigo-500',
+      route: '/agents/research-engine',
+      capabilities: [
+        t('agents.researchCapabilities.tripartite'),
+        t('agents.researchCapabilities.competitive'),
+        t('agents.researchCapabilities.sources'),
+        t('agents.researchCapabilities.insights'),
+        t('agents.researchCapabilities.reports')
+      ],
+      status: 'elite'
+    },
+    {
+      id: 'cdv',
+      name: 'CDV - Competitor Discovery & Validator',
+      description: t('agents.cdvDesc'),
+      icon: Eye,
+      color: 'bg-green-500',
+      route: '/agents/cdv',
+      capabilities: [
+        t('agents.cdvCapabilities.discovery'),
+        t('agents.cdvCapabilities.validation'),
+        t('agents.cdvCapabilities.positioning'),
+        t('agents.cdvCapabilities.opportunities'),
+        t('agents.cdvCapabilities.gaps')
+      ],
+      status: 'elite'
+    },
+    {
+      id: 'cia',
+      name: 'CIA - Competitive Intelligence Analysis',
+      description: t('agents.ciaDesc'),
+      icon: Brain,
+      color: 'bg-red-500',
+      route: '/agents/cia',
+      capabilities: [
+        t('agents.ciaCapabilities.strategic'),
+        t('agents.ciaCapabilities.threats'),
+        t('agents.ciaCapabilities.intelligence'),
+        t('agents.ciaCapabilities.recommendations'),
+        t('agents.ciaCapabilities.profiling')
+      ],
+      status: 'elite'
+    },
+    {
+      id: 'cir',
+      name: 'CIR - Competitive Intelligence Retriever',
+      description: t('agents.cirDesc'),
+      icon: Activity,
+      color: 'bg-orange-500',
+      route: '/agents/cir',
+      capabilities: [
+        t('agents.cirCapabilities.metrics'),
+        t('agents.cirCapabilities.domain'),
+        t('agents.cirCapabilities.traffic'),
+        t('agents.cirCapabilities.teams'),
+        t('agents.cirCapabilities.benchmarking')
+      ],
+      status: 'elite'
+    }
+  ];
+};
 
 export function IndependentAgentsHub() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const independentAgents = useIndependentAgents();
 
   return (
     <div className="space-y-8">
@@ -124,22 +131,21 @@ export function IndependentAgentsHub() {
         <div className="flex items-center justify-center gap-3 mb-4">
           <Crown className="h-12 w-12 text-yellow-500" />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Agentes IA Independientes
+            {t('agents.title')}
           </h1>
         </div>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Accede directamente a cada agente especializado con su poder completo e individual. 
-          Cada agente mantiene su metodología tripartite y capacidades específicas.
+          {t('agents.subtitle')}
         </p>
         <div className="flex items-center justify-center gap-2">
           <Badge variant="secondary" className="bg-green-100 text-green-700">
-            ✅ Sistema Tripartite Activo
+            ✅ {t('agents.tripartiteSystem')}
           </Badge>
           <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-            🚀 Autonomía Completa
+            🚀 {t('agents.autonomy')}
           </Badge>
           <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-            👑 Nivel Fortune 500
+            👑 {t('agents.fortuneLevel')}
           </Badge>
         </div>
       </div>
@@ -149,7 +155,7 @@ export function IndependentAgentsHub() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="h-6 w-6 text-blue-600" />
-            Sistema Tripartite Unificado
+            {t('agents.tripartiteSystem')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -159,21 +165,21 @@ export function IndependentAgentsHub() {
                 <Brain className="h-6 w-6 text-white" />
               </div>
               <h4 className="font-semibold">OpenAI GPT-4</h4>
-              <p className="text-sm text-muted-foreground">Análisis de contexto y comprensión</p>
+              <p className="text-sm text-muted-foreground">{t('agents.openaiDesc')}</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Search className="h-6 w-6 text-white" />
               </div>
               <h4 className="font-semibold">Perplexity AI</h4>
-              <p className="text-sm text-muted-foreground">Investigación web en tiempo real</p>
+              <p className="text-sm text-muted-foreground">{t('agents.perplexityDesc')}</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Zap className="h-6 w-6 text-white" />
               </div>
               <h4 className="font-semibold">Claude Sonnet</h4>
-              <p className="text-sm text-muted-foreground">Síntesis y refinamiento</p>
+              <p className="text-sm text-muted-foreground">{t('agents.claudeDesc')}</p>
             </div>
           </div>
         </CardContent>
@@ -211,7 +217,7 @@ export function IndependentAgentsHub() {
               
               <CardContent className="space-y-4">
                 <div>
-                  <h5 className="font-medium text-sm mb-2 text-gray-700">Capacidades Principales:</h5>
+                  <h5 className="font-medium text-sm mb-2 text-gray-700">{t('agents.mainCapabilities')}:</h5>
                   <ul className="space-y-1">
                     {agent.capabilities.slice(0, 3).map((capability, index) => (
                       <li key={index} className="text-xs text-muted-foreground flex items-start">
@@ -221,7 +227,7 @@ export function IndependentAgentsHub() {
                     ))}
                     {agent.capabilities.length > 3 && (
                       <li className="text-xs text-blue-600 font-medium">
-                        +{agent.capabilities.length - 3} capacidades más
+                        {t('agents.moreCapabilities', { count: agent.capabilities.length - 3 })}
                       </li>
                     )}
                   </ul>
@@ -234,7 +240,7 @@ export function IndependentAgentsHub() {
                     navigate(agent.route);
                   }}
                 >
-                  Acceder al Agente
+                  {t('agents.accessAgent')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
@@ -246,16 +252,15 @@ export function IndependentAgentsHub() {
       {/* Footer Info */}
       <Card className="bg-gray-50">
         <CardContent className="p-6 text-center">
-          <h3 className="font-semibold mb-2">¿Necesitas usar múltiples agentes?</h3>
+          <h3 className="font-semibold mb-2">{t('agents.needMultipleAgents')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Cada agente es independiente y mantiene su especialización. Para flujos colaborativos, 
-            puedes usar CLIPOGINO que puede coordinar con otros agentes según sea necesario.
+            {t('agents.needMultipleDescription')}
           </p>
           <Button 
             variant="outline" 
             onClick={() => navigate('/agents/clipogino')}
           >
-            Usar CLIPOGINO como Coordinador
+            {t('agents.useClipoginoCoordinator')}
           </Button>
         </CardContent>
       </Card>
