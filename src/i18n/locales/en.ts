@@ -1,6 +1,41 @@
 
 export const enTranslations = {
-  // Common
+  // Navigation
+  nav: {
+    main: 'Main',
+    dashboard: 'Dashboard',
+    dashboardDesc: 'Your personalized overview and progress tracking',
+    chat: 'CLIPOGINO Chat',
+    chatDesc: 'AI-powered mentor for professional development',
+    agents: 'Elite Agents',
+    agentsDesc: 'Advanced AI agents for competitive intelligence',
+    research: 'Research Engine',
+    researchDesc: 'Tripartite research system with AI collaboration',
+    aiContent: 'AI Content',
+    content: 'Content Generator',
+    contentDesc: 'Create professional content with AI assistance',
+    management: 'Management',
+    knowledge: 'Knowledge Base',
+    knowledgeDesc: 'Manage your documents and insights',
+    learning: 'Learning Paths',
+    learningDesc: 'Structured learning and skill development',
+    account: 'Account',
+    profile: 'Profile',
+    profileDesc: 'Manage your professional information',
+    billing: 'Billing & Credits',
+    billingDesc: 'Subscription and usage management',
+    settings: 'Admin Settings',
+    settingsDesc: 'System configuration and administration'
+  },
+
+  // Languages
+  languages: {
+    en: 'English',
+    es: 'Español',
+    it: 'Italiano'
+  },
+
+  // Common UI elements
   common: {
     loading: 'Loading...',
     save: 'Save',
@@ -8,234 +43,150 @@ export const enTranslations = {
     delete: 'Delete',
     edit: 'Edit',
     create: 'Create',
+    update: 'Update',
     search: 'Search',
     filter: 'Filter',
+    sort: 'Sort',
+    refresh: 'Refresh',
+    close: 'Close',
     back: 'Back',
     next: 'Next',
     previous: 'Previous',
-    continue: 'Continue',
-    finish: 'Finish',
-    close: 'Close',
     submit: 'Submit',
     confirm: 'Confirm',
-    error: 'Error',
-    success: 'Success',
-    warning: 'Warning',
-    info: 'Information',
-  },
-
-  // Navigation
-  nav: {
-    dashboard: 'Dashboard',
-    chat: 'CLIPOGINO AI',
-    agents: 'Independent Agents',
-    research: 'Elite Research',
-    content: 'Content Studio',
-    knowledge: 'Knowledge Base',
-    learning: 'Learning',
-    profile: 'Profile',
-    billing: 'Billing',
-    settings: 'Settings',
-    admin: 'Admin',
-  },
-
-  // Authentication
-  auth: {
-    login: 'Sign In',
-    signup: 'Sign Up',
-    logout: 'Sign Out',
-    email: 'Email',
-    password: 'Password',
-    confirmPassword: 'Confirm Password',
-    fullName: 'Full Name',
-    welcomeBack: 'Welcome Back',
-    joinLaigent: 'Join LAIGENT',
-    alreadyHaveAccount: 'Already have an account?',
-    dontHaveAccount: "Don't have an account?",
-    signInToContinue: 'Sign in to continue your professional development journey',
-    startYourJourney: 'Start your AI-powered professional development journey',
+    yes: 'Yes',
+    no: 'No'
   },
 
   // Dashboard
   dashboard: {
-    welcome: 'Welcome to LAIGENT',
-    subtitle: 'Your AI-powered professional development platform',
-    quickActions: 'Quick Actions',
+    welcome: 'Welcome back',
+    overview: 'Overview',
     recentActivity: 'Recent Activity',
-    progressInsights: 'Progress Insights',
-    metrics: 'Metrics Overview',
+    quickActions: 'Quick Actions',
+    progress: 'Your Progress',
+    metrics: 'Key Metrics',
+    systemHealth: 'System Health'
   },
 
-  // Independent Agents
-  agents: {
-    title: 'Independent AI Agents',
-    subtitle: 'Access each specialized agent directly with their full power and individual capabilities.',
-    tripartiteSystem: 'Unified Tripartite System',
-    autonomy: 'Complete Autonomy',
-    fortuneLevel: 'Fortune 500 Level',
-    accessAgent: 'Access Agent',
-    backToAgents: 'Back to Agents',
-    configuration: 'Configuration',
-    hideConfig: 'Hide Config',
-    independentActive: 'Independent Agent Active',
-    independentDescription: 'This agent operates with complete autonomy and direct access to the tripartite system (OpenAI → Perplexity → Claude) to provide the maximum level of specialization and capabilities.',
-    mainCapabilities: 'Main Capabilities',
-    moreCapabilities: '+{{count}} more capabilities',
-    needMultipleAgents: 'Need to use multiple agents?',
-    needMultipleDescription: 'Each agent is independent and maintains its specialization. For collaborative flows, you can use CLIPOGINO which can coordinate with other agents as needed.',
-    useClipoginoCoordinator: 'Use CLIPOGINO as Coordinator',
-  },
-
-  // Chat
-  chat: {
-    welcomeTitle: 'Welcome to CLIPOGINO',
-    welcomeSubtitle: 'Your AI mentor for professional development',
-    typeMessage: 'Type your message...',
-    send: 'Send',
-    newConversation: 'New Conversation',
-    conversations: 'Conversations',
-    thinking: 'Thinking...',
-    generating: 'Generating response...',
-  },
-
-  // Content
-  content: {
-    title: 'Content Studio',
-    subtitle: 'Create and manage unified content',
-    generator: 'Generator',
-    library: 'Library',
-    create: 'Create Content',
-    contentType: 'Content Type',
-    topic: 'Topic',
-    tone: 'Tone',
-    length: 'Length',
-    generate: 'Generate',
-    professional: 'Professional',
-    casual: 'Casual',
-    formal: 'Formal',
-    friendly: 'Friendly',
-    short: 'Short',
-    medium: 'Medium',
-    long: 'Long',
-  },
-
-  // Knowledge Base
-  knowledge: {
-    title: 'Knowledge Base',
-    subtitle: 'Documents and resources',
-    upload: 'Upload File',
-    search: 'Search knowledge...',
-    noFiles: 'No files uploaded yet',
-    uploadFirst: 'Upload your first document to get started',
-    processing: 'Processing...',
-    completed: 'Completed',
-    failed: 'Failed',
-  },
-
-  // Research
-  research: {
-    title: 'Elite Research',
-    subtitle: 'Fortune 500 research with unified methodology',
-    startResearch: 'Start Research',
-    query: 'Research Query',
-    type: 'Research Type',
-    industry: 'Industry',
-    search: 'Search',
-    results: 'Results',
-    sources: 'Sources',
-    insights: 'Insights',
+  // Authentication
+  auth: {
+    signIn: 'Sign In',
+    signUp: 'Sign Up',
+    signOut: 'Sign Out',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    fullName: 'Full Name',
+    forgotPassword: 'Forgot Password?',
+    rememberMe: 'Remember me',
+    alreadyHaveAccount: 'Already have an account?',
+    dontHaveAccount: "Don't have an account?",
+    createAccount: 'Create Account',
+    signInWithGoogle: 'Sign in with Google',
+    signUpWithGoogle: 'Sign up with Google'
   },
 
   // Profile
   profile: {
-    title: 'Your Profile',
-    subtitle: 'Build your professional profile to get personalized AI mentoring from CLIPOGINO',
     personalInfo: 'Personal Information',
+    professionalInfo: 'Professional Information',
     careerGoals: 'Career Goals',
     learningPreferences: 'Learning Preferences',
     currentPosition: 'Current Position',
     company: 'Company',
+    industry: 'Industry',
     experience: 'Years of Experience',
     skills: 'Skills',
-    goals: 'Goals',
+    objectives: 'Objectives',
+    completeness: 'Profile Completeness'
+  },
+
+  // Chat
+  chat: {
+    startConversation: 'Start a new conversation',
+    typeMessage: 'Type your message...',
+    send: 'Send',
+    newChat: 'New Chat',
+    conversations: 'Conversations',
+    thinking: 'Thinking...',
+    generating: 'Generating response...'
+  },
+
+  // Content
+  content: {
+    generator: 'Content Generator',
+    library: 'Content Library',
+    create: 'Create Content',
+    type: 'Content Type',
+    style: 'Writing Style',
+    audience: 'Target Audience',
+    topic: 'Topic',
+    generate: 'Generate',
+    regenerate: 'Regenerate',
+    export: 'Export',
+    save: 'Save to Library'
+  },
+
+  // Knowledge
+  knowledge: {
+    base: 'Knowledge Base',
+    upload: 'Upload Document',
+    documents: 'Documents',
+    insights: 'Insights',
+    search: 'Search knowledge...',
+    categories: 'Categories',
+    tags: 'Tags',
+    processing: 'Processing...',
+    processed: 'Processed',
+    failed: 'Failed'
   },
 
   // Learning
   learning: {
-    title: 'Learning Management',
-    subtitle: 'Learning paths and modules',
     paths: 'Learning Paths',
     modules: 'Modules',
     progress: 'Progress',
-    enrolled: 'Enrolled',
     completed: 'Completed',
     inProgress: 'In Progress',
     notStarted: 'Not Started',
+    duration: 'Duration',
+    difficulty: 'Difficulty',
+    prerequisites: 'Prerequisites'
   },
 
   // Billing
   billing: {
-    title: 'Billing & Subscriptions',
-    subtitle: 'Manage your subscription and payments',
-    currentPlan: 'Current Plan',
+    subscription: 'Subscription',
+    credits: 'Credits',
     usage: 'Usage',
-    history: 'Payment History',
-    upgrade: 'Upgrade Plan',
-    cancel: 'Cancel Subscription',
+    plan: 'Current Plan',
+    upgrade: 'Upgrade',
+    downgrade: 'Downgrade',
+    paymentHistory: 'Payment History',
+    invoices: 'Invoices',
+    billing: 'Billing Information'
   },
 
-  // Settings
-  settings: {
-    title: 'Settings',
-    subtitle: 'System configuration',
-    language: 'Language',
-    selectLanguage: 'Select Language',
-    theme: 'Theme',
-    notifications: 'Notifications',
-    privacy: 'Privacy',
-    security: 'Security',
-  },
-
-  // Onboarding
-  onboarding: {
-    welcome: 'Welcome to LAIGENT',
-    step: 'Step {{current}} of {{total}}',
-    profileSetup: 'Profile Setup',
-    knowledgeSetup: 'Knowledge Setup',
-    firstChat: 'First Chat',
-    contentCreation: 'Content Creation',
-    setupComplete: 'Setup Complete',
-    skipForNow: 'Skip for now',
-    getStarted: 'Get Started',
-    setupProfile: 'Set up your professional profile',
-    uploadKnowledge: 'Upload your first knowledge document',
-    chatWithClipogino: 'Have your first conversation with CLIPOGINO',
-    createContent: 'Create your first piece of content',
-  },
-
-  // Languages
-  languages: {
-    en: 'English',
-    es: 'Español',
-    it: 'Italiano',
-  },
-
-  // Errors
+  // Error messages
   errors: {
-    somethingWrong: 'Something went wrong',
-    tryAgain: 'Please try again',
-    fileUploadFailed: 'File upload failed',
-    networkError: 'Network error',
-    unauthorized: 'Unauthorized access',
-    notFound: 'Page not found',
+    generic: 'Something went wrong. Please try again.',
+    network: 'Network error. Please check your connection.',
+    unauthorized: 'You are not authorized to perform this action.',
+    notFound: 'The requested resource was not found.',
+    validation: 'Please check your input and try again.',
+    fileUpload: 'Failed to upload file. Please try again.',
+    fileTooLarge: 'File size exceeds the maximum limit.',
+    invalidFileType: 'Invalid file type. Please select a supported format.'
   },
 
   // Success messages
   success: {
-    saved: 'Saved successfully',
-    uploaded: 'Uploaded successfully',
-    deleted: 'Deleted successfully',
-    updated: 'Updated successfully',
-    created: 'Created successfully',
-  },
+    saved: 'Successfully saved!',
+    updated: 'Successfully updated!',
+    deleted: 'Successfully deleted!',
+    uploaded: 'File uploaded successfully!',
+    generated: 'Content generated successfully!',
+    profileUpdated: 'Profile updated successfully!'
+  }
 };

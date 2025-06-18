@@ -1,6 +1,41 @@
 
 export const esTranslations = {
-  // Common
+  // Navegación
+  nav: {
+    main: 'Principal',
+    dashboard: 'Panel de Control',
+    dashboardDesc: 'Tu resumen personalizado y seguimiento de progreso',
+    chat: 'Chat CLIPOGINO',
+    chatDesc: 'Mentor con IA para desarrollo profesional',
+    agents: 'Agentes Elite',
+    agentsDesc: 'Agentes IA avanzados para inteligencia competitiva',
+    research: 'Motor de Investigación',
+    researchDesc: 'Sistema de investigación tripartito con colaboración IA',
+    aiContent: 'Contenido IA',
+    content: 'Generador de Contenido',
+    contentDesc: 'Crea contenido profesional con asistencia IA',
+    management: 'Gestión',
+    knowledge: 'Base de Conocimiento',
+    knowledgeDesc: 'Gestiona tus documentos e insights',
+    learning: 'Rutas de Aprendizaje',
+    learningDesc: 'Aprendizaje estructurado y desarrollo de habilidades',
+    account: 'Cuenta',
+    profile: 'Perfil',
+    profileDesc: 'Gestiona tu información profesional',
+    billing: 'Facturación y Créditos',
+    billingDesc: 'Gestión de suscripción y uso',
+    settings: 'Configuración Admin',
+    settingsDesc: 'Configuración del sistema y administración'
+  },
+
+  // Idiomas
+  languages: {
+    en: 'English',
+    es: 'Español',
+    it: 'Italiano'
+  },
+
+  // Elementos comunes de UI
   common: {
     loading: 'Cargando...',
     save: 'Guardar',
@@ -8,234 +43,150 @@ export const esTranslations = {
     delete: 'Eliminar',
     edit: 'Editar',
     create: 'Crear',
+    update: 'Actualizar',
     search: 'Buscar',
     filter: 'Filtrar',
+    sort: 'Ordenar',
+    refresh: 'Actualizar',
+    close: 'Cerrar',
     back: 'Atrás',
     next: 'Siguiente',
     previous: 'Anterior',
-    continue: 'Continuar',
-    finish: 'Finalizar',
-    close: 'Cerrar',
     submit: 'Enviar',
     confirm: 'Confirmar',
-    error: 'Error',
-    success: 'Éxito',
-    warning: 'Advertencia',
-    info: 'Información',
+    yes: 'Sí',
+    no: 'No'
   },
 
-  // Navigation
-  nav: {
-    dashboard: 'Panel de Control',
-    chat: 'CLIPOGINO IA',
-    agents: 'Agentes Independientes',
-    research: 'Investigación Elite',
-    content: 'Estudio de Contenido',
-    knowledge: 'Base de Conocimiento',
-    learning: 'Aprendizaje',
-    profile: 'Perfil',
-    billing: 'Facturación',
-    settings: 'Configuración',
-    admin: 'Administración',
+  // Panel de control
+  dashboard: {
+    welcome: 'Bienvenido de nuevo',
+    overview: 'Resumen',
+    recentActivity: 'Actividad Reciente',
+    quickActions: 'Acciones Rápidas',
+    progress: 'Tu Progreso',
+    metrics: 'Métricas Clave',
+    systemHealth: 'Estado del Sistema'
   },
 
-  // Authentication
+  // Autenticación
   auth: {
-    login: 'Iniciar Sesión',
-    signup: 'Registrarse',
-    logout: 'Cerrar Sesión',
+    signIn: 'Iniciar Sesión',
+    signUp: 'Registrarse',
+    signOut: 'Cerrar Sesión',
     email: 'Correo Electrónico',
     password: 'Contraseña',
     confirmPassword: 'Confirmar Contraseña',
     fullName: 'Nombre Completo',
-    welcomeBack: 'Bienvenido de Nuevo',
-    joinLaigent: 'Únete a LAIGENT',
+    forgotPassword: '¿Olvidaste tu contraseña?',
+    rememberMe: 'Recordarme',
     alreadyHaveAccount: '¿Ya tienes una cuenta?',
     dontHaveAccount: '¿No tienes una cuenta?',
-    signInToContinue: 'Inicia sesión para continuar tu viaje de desarrollo profesional',
-    startYourJourney: 'Comienza tu viaje de desarrollo profesional impulsado por IA',
+    createAccount: 'Crear Cuenta',
+    signInWithGoogle: 'Iniciar sesión con Google',
+    signUpWithGoogle: 'Registrarse con Google'
   },
 
-  // Dashboard
-  dashboard: {
-    welcome: 'Bienvenido a LAIGENT',
-    subtitle: 'Tu plataforma de desarrollo profesional impulsada por IA',
-    quickActions: 'Acciones Rápidas',
-    recentActivity: 'Actividad Reciente',
-    progressInsights: 'Insights de Progreso',
-    metrics: 'Resumen de Métricas',
-  },
-
-  // Independent Agents
-  agents: {
-    title: 'Agentes IA Independientes',
-    subtitle: 'Accede directamente a cada agente especializado con su poder completo e individual.',
-    tripartiteSystem: 'Sistema Tripartite Unificado',
-    autonomy: 'Autonomía Completa',
-    fortuneLevel: 'Nivel Fortune 500',
-    accessAgent: 'Acceder al Agente',
-    backToAgents: 'Volver a Agentes',
-    configuration: 'Configuración',
-    hideConfig: 'Ocultar Config',
-    independentActive: 'Agente Independiente Activo',
-    independentDescription: 'Este agente opera con autonomía completa y acceso directo al sistema tripartite (OpenAI → Perplexity → Claude) para proporcionar el máximo nivel de especialización y capacidades.',
-    mainCapabilities: 'Capacidades Principales',
-    moreCapabilities: '+{{count}} capacidades más',
-    needMultipleAgents: '¿Necesitas usar múltiples agentes?',
-    needMultipleDescription: 'Cada agente es independiente y mantiene su especialización. Para flujos colaborativos, puedes usar CLIPOGINO que puede coordinar con otros agentes según sea necesario.',
-    useClipoginoCoordinator: 'Usar CLIPOGINO como Coordinador',
+  // Perfil
+  profile: {
+    personalInfo: 'Información Personal',
+    professionalInfo: 'Información Profesional',
+    careerGoals: 'Objetivos Profesionales',
+    learningPreferences: 'Preferencias de Aprendizaje',
+    currentPosition: 'Posición Actual',
+    company: 'Empresa',
+    industry: 'Industria',
+    experience: 'Años de Experiencia',
+    skills: 'Habilidades',
+    objectives: 'Objetivos',
+    completeness: 'Completitud del Perfil'
   },
 
   // Chat
   chat: {
-    welcomeTitle: 'Bienvenido a CLIPOGINO',
-    welcomeSubtitle: 'Tu mentor IA para desarrollo profesional',
+    startConversation: 'Iniciar una nueva conversación',
     typeMessage: 'Escribe tu mensaje...',
     send: 'Enviar',
-    newConversation: 'Nueva Conversación',
+    newChat: 'Nuevo Chat',
     conversations: 'Conversaciones',
     thinking: 'Pensando...',
-    generating: 'Generando respuesta...',
+    generating: 'Generando respuesta...'
   },
 
-  // Content
+  // Contenido
   content: {
-    title: 'Estudio de Contenido',
-    subtitle: 'Crea y gestiona contenido unificado',
-    generator: 'Generador',
-    library: 'Biblioteca',
+    generator: 'Generador de Contenido',
+    library: 'Biblioteca de Contenido',
     create: 'Crear Contenido',
-    contentType: 'Tipo de Contenido',
+    type: 'Tipo de Contenido',
+    style: 'Estilo de Escritura',
+    audience: 'Audiencia Objetivo',
     topic: 'Tema',
-    tone: 'Tono',
-    length: 'Longitud',
     generate: 'Generar',
-    professional: 'Profesional',
-    casual: 'Casual',
-    formal: 'Formal',
-    friendly: 'Amigable',
-    short: 'Corto',
-    medium: 'Medio',
-    long: 'Largo',
+    regenerate: 'Regenerar',
+    export: 'Exportar',
+    save: 'Guardar en Biblioteca'
   },
 
-  // Knowledge Base
+  // Conocimiento
   knowledge: {
-    title: 'Base de Conocimiento',
-    subtitle: 'Documentos y recursos',
-    upload: 'Subir Archivo',
-    search: 'Buscar conocimiento...',
-    noFiles: 'Aún no se han subido archivos',
-    uploadFirst: 'Sube tu primer documento para comenzar',
-    processing: 'Procesando...',
-    completed: 'Completado',
-    failed: 'Falló',
-  },
-
-  // Research
-  research: {
-    title: 'Investigación Elite',
-    subtitle: 'Investigación Fortune 500 con metodología unificada',
-    startResearch: 'Iniciar Investigación',
-    query: 'Consulta de Investigación',
-    type: 'Tipo de Investigación',
-    industry: 'Industria',
-    search: 'Buscar',
-    results: 'Resultados',
-    sources: 'Fuentes',
+    base: 'Base de Conocimiento',
+    upload: 'Subir Documento',
+    documents: 'Documentos',
     insights: 'Insights',
+    search: 'Buscar conocimiento...',
+    categories: 'Categorías',
+    tags: 'Etiquetas',
+    processing: 'Procesando...',
+    processed: 'Procesado',
+    failed: 'Falló'
   },
 
-  // Profile
-  profile: {
-    title: 'Tu Perfil',
-    subtitle: 'Construye tu perfil profesional para obtener mentoría IA personalizada de CLIPOGINO',
-    personalInfo: 'Información Personal',
-    careerGoals: 'Objetivos de Carrera',
-    learningPreferences: 'Preferencias de Aprendizaje',
-    currentPosition: 'Posición Actual',
-    company: 'Empresa',
-    experience: 'Años de Experiencia',
-    skills: 'Habilidades',
-    goals: 'Objetivos',
-  },
-
-  // Learning
+  // Aprendizaje
   learning: {
-    title: 'Gestión de Aprendizaje',
-    subtitle: 'Rutas y módulos de aprendizaje',
     paths: 'Rutas de Aprendizaje',
     modules: 'Módulos',
     progress: 'Progreso',
-    enrolled: 'Inscrito',
     completed: 'Completado',
     inProgress: 'En Progreso',
     notStarted: 'No Iniciado',
+    duration: 'Duración',
+    difficulty: 'Dificultad',
+    prerequisites: 'Requisitos Previos'
   },
 
-  // Billing
+  // Facturación
   billing: {
-    title: 'Facturación y Suscripciones',
-    subtitle: 'Gestiona tu suscripción y pagos',
-    currentPlan: 'Plan Actual',
+    subscription: 'Suscripción',
+    credits: 'Créditos',
     usage: 'Uso',
-    history: 'Historial de Pagos',
-    upgrade: 'Actualizar Plan',
-    cancel: 'Cancelar Suscripción',
+    plan: 'Plan Actual',
+    upgrade: 'Mejorar',
+    downgrade: 'Reducir',
+    paymentHistory: 'Historial de Pagos',
+    invoices: 'Facturas',
+    billing: 'Información de Facturación'
   },
 
-  // Settings
-  settings: {
-    title: 'Configuración',
-    subtitle: 'Configuración del sistema',
-    language: 'Idioma',
-    selectLanguage: 'Seleccionar Idioma',
-    theme: 'Tema',
-    notifications: 'Notificaciones',
-    privacy: 'Privacidad',
-    security: 'Seguridad',
-  },
-
-  // Onboarding
-  onboarding: {
-    welcome: 'Bienvenido a LAIGENT',
-    step: 'Paso {{current}} de {{total}}',
-    profileSetup: 'Configuración de Perfil',
-    knowledgeSetup: 'Configuración de Conocimiento',
-    firstChat: 'Primer Chat',
-    contentCreation: 'Creación de Contenido',
-    setupComplete: 'Configuración Completa',
-    skipForNow: 'Omitir por ahora',
-    getStarted: 'Comenzar',
-    setupProfile: 'Configura tu perfil profesional',
-    uploadKnowledge: 'Sube tu primer documento de conocimiento',
-    chatWithClipogino: 'Ten tu primera conversación con CLIPOGINO',
-    createContent: 'Crea tu primer contenido',
-  },
-
-  // Languages
-  languages: {
-    en: 'English',
-    es: 'Español',
-    it: 'Italiano',
-  },
-
-  // Errors
+  // Mensajes de error
   errors: {
-    somethingWrong: 'Algo salió mal',
-    tryAgain: 'Por favor, inténtalo de nuevo',
-    fileUploadFailed: 'Error al subir archivo',
-    networkError: 'Error de red',
-    unauthorized: 'Acceso no autorizado',
-    notFound: 'Página no encontrada',
+    generic: 'Algo salió mal. Por favor, inténtalo de nuevo.',
+    network: 'Error de red. Por favor, verifica tu conexión.',
+    unauthorized: 'No estás autorizado para realizar esta acción.',
+    notFound: 'El recurso solicitado no fue encontrado.',
+    validation: 'Por favor, verifica tu entrada e inténtalo de nuevo.',
+    fileUpload: 'Error al subir archivo. Por favor, inténtalo de nuevo.',
+    fileTooLarge: 'El tamaño del archivo excede el límite máximo.',
+    invalidFileType: 'Tipo de archivo inválido. Por favor, selecciona un formato compatible.'
   },
 
-  // Success messages
+  // Mensajes de éxito
   success: {
-    saved: 'Guardado exitosamente',
-    uploaded: 'Subido exitosamente',
-    deleted: 'Eliminado exitosamente',
-    updated: 'Actualizado exitosamente',
-    created: 'Creado exitosamente',
-  },
+    saved: '¡Guardado exitosamente!',
+    updated: '¡Actualizado exitosamente!',
+    deleted: '¡Eliminado exitosamente!',
+    uploaded: '¡Archivo subido exitosamente!',
+    generated: '¡Contenido generado exitosamente!',
+    profileUpdated: '¡Perfil actualizado exitosamente!'
+  }
 };

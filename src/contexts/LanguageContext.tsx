@@ -65,10 +65,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
       // If user is logged in, update their profile
       if (user) {
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update({ preferred_language: newLanguage })
           .eq('id', user.id);
+        
+        if (error) {
+          console.error('Error updating user language preference:', error);
+        }
       }
     } catch (error) {
       console.error('Error changing language:', error);

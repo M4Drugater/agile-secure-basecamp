@@ -1461,6 +1461,7 @@ export type Database = {
           learning_priorities: string[] | null
           learning_style: string | null
           management_level: string | null
+          preferred_language: string | null
           profile_completeness: number | null
           role: Database["public"]["Enums"]["user_role"]
           skill_gaps: string[] | null
@@ -1493,6 +1494,7 @@ export type Database = {
           learning_priorities?: string[] | null
           learning_style?: string | null
           management_level?: string | null
+          preferred_language?: string | null
           profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           skill_gaps?: string[] | null
@@ -1525,6 +1527,7 @@ export type Database = {
           learning_priorities?: string[] | null
           learning_style?: string | null
           management_level?: string | null
+          preferred_language?: string | null
           profile_completeness?: number | null
           role?: Database["public"]["Enums"]["user_role"]
           skill_gaps?: string[] | null

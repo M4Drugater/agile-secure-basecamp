@@ -1,156 +1,150 @@
 
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ConsolidatedAppLayout } from "@/components/layout/ConsolidatedAppLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Landing from "./pages/Landing";
+import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { TourProvider } from "./contexts/TourContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { UniversalLayout } from "./layouts/UniversalLayout";
+
+// Import pages
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Chat from "./pages/Chat";
 import Dashboard from "./pages/Dashboard";
+import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
-import ContentGenerator from "./pages/ContentGenerator";
 import KnowledgeBase from "./pages/KnowledgeBase";
-import OptimizedResearchWorkbench from "./pages/OptimizedResearchWorkbench";
-import LearningManagement from "./pages/LearningManagement";
-import Billing from "./pages/Billing";
+import ContentGenerator from "./pages/ContentGenerator";
 import Admin from "./pages/Admin";
+import Billing from "./pages/Billing";
+import LearningManagement from "./pages/LearningManagement";
 import ConsolidatedAgents from "./pages/ConsolidatedAgents";
-import OnboardingFlow from "@/components/journey/OnboardingFlow";
+import OptimizedResearchWorkbench from "./pages/OptimizedResearchWorkbench";
+import OnboardingPage from "./pages/OnboardingPage";
 
-// NEW: Independent Agents imports
-import IndependentAgents from "./pages/IndependentAgents";
-import ClipoginoAgent from "./pages/agents/ClipoginoAgent";
-import ContentGeneratorAgent from "./pages/agents/ContentGeneratorAgent";
-import ResearchEngineAgent from "./pages/agents/ResearchEngineAgent";
-import CDVAgent from "./pages/agents/CDVAgent";
-import CIAAgent from "./pages/agents/CIAAgent";
-import CIRAgent from "./pages/agents/CIRAgent";
+import './App.css';
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <LanguageProvider>
-            <Toaster />
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <TourProvider>
             <BrowserRouter>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                
-                {/* Protected routes with layout */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <Dashboard />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/onboarding" element={
-                  <ProtectedRoute>
-                    <OnboardingFlow />
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/chat" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <Chat />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                {/* Agents page now shows unification message before redirecting */}
-                <Route path="/agents" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <ConsolidatedAgents />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <Profile />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/content" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <ContentGenerator />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/knowledge" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <KnowledgeBase />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/research" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <OptimizedResearchWorkbench />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/learning" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <LearningManagement />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/billing" element={
-                  <ProtectedRoute>
-                    <ConsolidatedAppLayout>
-                      <Billing />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                <Route path="/admin" element={
-                  <ProtectedRoute requiredRole="admin">
-                    <ConsolidatedAppLayout>
-                      <Admin />
-                    </ConsolidatedAppLayout>
-                  </ProtectedRoute>
-                } />
-                
-                {/* Redirect legacy routes to unified systems */}
-                <Route path="/content-library" element={<Navigate to="/content?tab=library" replace />} />
-                <Route path="/content-generator" element={<Navigate to="/content?tab=generator" replace />} />
-                <Route path="/content-analytics" element={<Navigate to="/content?tab=library" replace />} />
-                
-                {/* Redirect legacy agent routes to unified chat */}
-                <Route path="/clipogino" element={<Navigate to="/chat" replace />} />
-                <Route path="/enhanced-chat" element={<Navigate to="/chat" replace />} />
-                <Route path="/unified-chat" element={<Navigate to="/chat" replace />} />
-              </Routes>
+              <div className="min-h-screen bg-gray-50">
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  
+                  {/* Protected routes wrapped in UniversalLayout */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <Dashboard />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/onboarding" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <OnboardingPage />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/chat" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <Chat />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <Profile />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/knowledge" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <KnowledgeBase />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/content-generator" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <ContentGenerator />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/competitive-intelligence" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <ConsolidatedAgents />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/research" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <OptimizedResearchWorkbench />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/learning" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <LearningManagement />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/billing" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <Billing />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  <Route path="/admin" element={
+                    <ProtectedRoute>
+                      <UniversalLayout>
+                        <Admin />
+                      </UniversalLayout>
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Redirect any unknown routes to dashboard */}
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </div>
             </BrowserRouter>
-          </LanguageProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+          </TourProvider>
+        </TooltipProvider>
+      </LanguageProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;
