@@ -9,6 +9,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { TourProvider } from "./contexts/TourContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { UniversalLayout } from "./layouts/UniversalLayout";
+import { DASHBOARD_TOUR_STEPS } from "./components/tour/tourSteps";
 
 // Import pages
 import Home from "./pages/Home";
@@ -35,7 +36,7 @@ const App = () => (
     <AuthProvider>
       <LanguageProvider>
         <TooltipProvider>
-          <TourProvider>
+          <TourProvider steps={DASHBOARD_TOUR_STEPS}>
             <BrowserRouter>
               <div className="min-h-screen bg-gray-50">
                 <Toaster />
